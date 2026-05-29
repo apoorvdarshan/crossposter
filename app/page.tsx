@@ -45,7 +45,6 @@ type ReadinessResponse = {
 };
 
 export default function Home() {
-  const [adminPassword, setAdminPassword] = useState("");
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
@@ -116,7 +115,6 @@ export default function Home() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          adminPassword,
           title: title.trim() || undefined,
           text,
           url: url.trim() || undefined,
@@ -140,7 +138,7 @@ export default function Home() {
     }
   }
 
-  const canPublish = adminPassword.trim() && text.trim() && selected.length > 0 && !isPublishing;
+  const canPublish = text.trim() && selected.length > 0 && !isPublishing;
   const readyCount = channels.filter((channel) => readiness[channel.id]?.ready).length;
 
   return (
@@ -181,20 +179,6 @@ export default function Home() {
           </div>
 
           <div className="composer">
-            <div className="field">
-              <label className="field-label" htmlFor="adminPassword">
-                Admin password
-              </label>
-              <input
-                id="adminPassword"
-                type="password"
-                autoComplete="current-password"
-                value={adminPassword}
-                onChange={(event) => setAdminPassword(event.target.value)}
-                placeholder="POSTER_ADMIN_PASSWORD"
-              />
-            </div>
-
             <div className="field-row">
               <div className="field">
                 <label className="field-label" htmlFor="title">
@@ -339,9 +323,10 @@ export default function Home() {
               <div className="setup-item">
                 <Lock size={18} />
                 <span>
-                  <strong>Private gate</strong>
+                  <strong>Local mode</strong>
                   <span>
-                    Set <code>POSTER_ADMIN_PASSWORD</code> in local <code>.env</code>.
+                    Publish without a UI password while <code>POSTER_REQUIRE_ADMIN_PASSWORD</code>{" "}
+                    is false.
                   </span>
                 </span>
               </div>

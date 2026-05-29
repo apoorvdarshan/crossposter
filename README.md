@@ -25,7 +25,9 @@ cp .env.example .env
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3020` if you run the app with `npm run dev -- --port 3020`.
+
+Local development does not show an admin password field when `POSTER_REQUIRE_ADMIN_PASSWORD=false`.
 
 ## Deploy To Vercel
 
@@ -38,6 +40,7 @@ Set the same environment variables from `.env.example` in Vercel Project Setting
 
 ```text
 POSTER_ADMIN_PASSWORD
+POSTER_REQUIRE_ADMIN_PASSWORD=true
 ```
 
 Then add provider tokens only for the channels you want to use.
@@ -150,4 +153,4 @@ MEDIUM_DEFAULT_TITLE
 
 ## Security
 
-This app is private by convention, not a multi-user auth system. Keep the Vercel project private, use a strong `POSTER_ADMIN_PASSWORD`, and never expose provider tokens in client code.
+This app is private by convention, not a multi-user auth system. For local-only use, keep `POSTER_REQUIRE_ADMIN_PASSWORD=false`. Before exposing it publicly, set `POSTER_REQUIRE_ADMIN_PASSWORD=true`, use a strong `POSTER_ADMIN_PASSWORD`, and never expose provider tokens in client code.

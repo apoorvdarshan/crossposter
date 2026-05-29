@@ -20,7 +20,7 @@ const platformSchema = z.enum([
 ]);
 
 const requestSchema = z.object({
-  adminPassword: z.string().min(1),
+  adminPassword: z.string().optional(),
   title: z.string().max(300).optional(),
   text: z.string().min(1).max(12000),
   url: z.string().url().optional().or(z.literal("")),
@@ -29,9 +29,13 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const requiresPassword =
+    process.env.POSTER_REQUIRE_ADMIN_PASSWORD === "true" ||
+    (process.env.NODE_ENV === "production" &&
+      process.env.POSTER_REQUIRE_ADMIN_PASSWORD !== "false");
   const configuredPassword = process.env.POSTER_ADMIN_PASSWORD;
 
-  if (!configuredPassword) {
+  if (requiresPassword && !configuredPassword) {
     return NextResponse.json(
       { error: "Server is missing POSTER_ADMIN_PASSWORD" },
       { status: 500 }
@@ -44,7 +48,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  if (parsed.data.adminPassword !== configuredPassword) {
+  if (requiresPassword && parsed.data.adminPassword !== configuredPassword) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
