@@ -37,7 +37,6 @@ type ApiResponse = {
 };
 
 type ReadinessResponse = {
-  adminReady: boolean;
   channels: Array<{
     platform: Platform;
     ready: boolean;
@@ -58,7 +57,6 @@ export default function Home() {
   const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
     {} as Record<Platform, ReadinessResponse["channels"][number]>
   );
-  const [adminReady, setAdminReady] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -72,7 +70,6 @@ export default function Home() {
           return;
         }
 
-        setAdminReady(body.adminReady);
         setReadiness(
           Object.fromEntries(body.channels.map((item) => [item.platform, item])) as Record<
             Platform,
@@ -196,9 +193,6 @@ export default function Home() {
                 onChange={(event) => setAdminPassword(event.target.value)}
                 placeholder="POSTER_ADMIN_PASSWORD"
               />
-              <span className={`field-hint ${adminReady ? "ready-copy" : "missing-copy"}`}>
-                {adminReady ? "Local admin password is set." : "POSTER_ADMIN_PASSWORD is missing."}
-              </span>
             </div>
 
             <div className="field-row">

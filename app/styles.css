@@ -278,16 +278,6 @@ textarea {
   font-size: 0.82rem;
 }
 
-.ready-copy {
-  color: var(--accent-dark);
-  font-weight: 800;
-}
-
-.missing-copy {
-  color: var(--danger);
-  font-weight: 800;
-}
-
 .section-line {
   justify-content: space-between;
   gap: 12px;
