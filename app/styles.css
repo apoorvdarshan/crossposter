@@ -619,6 +619,26 @@ code {
   font-weight: 500;
 }
 
+.secret-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 6px;
+}
+
+.secret-input button {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--muted);
+}
+
+.secret-input button:hover {
+  color: var(--ink);
+  border-color: #b7c2ae;
+}
+
 .settings-grid .config-panel,
 .settings-grid .config-groups {
   max-height: none;

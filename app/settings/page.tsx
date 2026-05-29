@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Plus, Save } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff, Plus, Save } from "lucide-react";
 import type { ConfigField } from "@/lib/config-spec";
 import type { Platform } from "@/lib/types";
 
@@ -47,6 +47,7 @@ export default function SettingsPage() {
   const [activeProfiles, setActiveProfiles] = useState<Partial<Record<Platform, string>>>({});
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     async function loadConfig() {
@@ -90,6 +91,17 @@ export default function SettingsPage() {
       [platform]: (current[platform] || []).map((profile) =>
         profile.id === profileId ? nextProfile : profile
       )
+    }));
+  }
+
+  function isSecretVisible(key: string): boolean {
+    return Boolean(visibleSecrets[key]);
+  }
+
+  function toggleSecret(key: string) {
+    setVisibleSecrets((current) => ({
+      ...current,
+      [key]: !current[key]
     }));
   }
 
@@ -156,14 +168,27 @@ export default function SettingsPage() {
             {baseFields.map((field) => (
               <label className="config-field" key={field.name}>
                 <span>{field.label}</span>
-                <input
-                  type={field.secret ? "password" : "text"}
-                  value={values[field.name] || ""}
-                  onChange={(event) =>
-                    setValues((current) => ({ ...current, [field.name]: event.target.value }))
-                  }
-                  placeholder={field.name}
-                />
+                <span className="secret-input">
+                  <input
+                    type={field.secret && !isSecretVisible(`base:${field.name}`) ? "password" : "text"}
+                    value={values[field.name] || ""}
+                    onChange={(event) =>
+                      setValues((current) => ({ ...current, [field.name]: event.target.value }))
+                    }
+                    placeholder={field.name}
+                  />
+                  {field.secret ? (
+                    <button
+                      aria-label={
+                        isSecretVisible(`base:${field.name}`) ? "Hide secret" : "Show secret"
+                      }
+                      type="button"
+                      onClick={() => toggleSecret(`base:${field.name}`)}
+                    >
+                      {isSecretVisible(`base:${field.name}`) ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  ) : null}
+                </span>
                 <span className="field-hint">{field.help}</span>
               </label>
             ))}
@@ -227,20 +252,43 @@ export default function SettingsPage() {
                     {providerFields.map((field) => (
                       <label className="config-field" key={field.name}>
                         <span>{field.label}</span>
-                        <input
-                          type={field.secret ? "password" : "text"}
-                          value={profile.values[field.name] || ""}
-                          onChange={(event) =>
-                            updateProfile(platform.id, profile.id, {
-                              ...profile,
-                              values: {
-                                ...profile.values,
-                                [field.name]: event.target.value
+                        <span className="secret-input">
+                          <input
+                            type={
+                              field.secret && !isSecretVisible(`${profile.id}:${field.name}`)
+                                ? "password"
+                                : "text"
+                            }
+                            value={profile.values[field.name] || ""}
+                            onChange={(event) =>
+                              updateProfile(platform.id, profile.id, {
+                                ...profile,
+                                values: {
+                                  ...profile.values,
+                                  [field.name]: event.target.value
+                                }
+                              })
+                            }
+                            placeholder={field.name}
+                          />
+                          {field.secret ? (
+                            <button
+                              aria-label={
+                                isSecretVisible(`${profile.id}:${field.name}`)
+                                  ? "Hide secret"
+                                  : "Show secret"
                               }
-                            })
-                          }
-                          placeholder={field.name}
-                        />
+                              type="button"
+                              onClick={() => toggleSecret(`${profile.id}:${field.name}`)}
+                            >
+                              {isSecretVisible(`${profile.id}:${field.name}`) ? (
+                                <EyeOff size={17} />
+                              ) : (
+                                <Eye size={17} />
+                              )}
+                            </button>
+                          ) : null}
+                        </span>
                         <span className="field-hint">{field.help}</span>
                       </label>
                     ))}
