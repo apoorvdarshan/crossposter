@@ -28,6 +28,7 @@ npm run dev
 Open `http://localhost:3020` if you run the app with `npm run dev -- --port 3020`.
 
 Local development does not show an admin password field when `POSTER_REQUIRE_ADMIN_PASSWORD=false`.
+Use `/settings` to edit local config from the UI. It saves to `poster.config.local.json`, which is gitignored. Values in that file override `.env`.
 
 ## Deploy To Vercel
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -10,9 +11,12 @@ import {
   Radio,
   Send,
   Server,
+  Settings,
   ShieldCheck
 } from "lucide-react";
 import type { Platform, PublishResult } from "@/lib/types";
+import type { ConfigField } from "@/lib/config-spec";
+import type { ProviderProfile } from "@/lib/local-config";
 
 const channels: Array<{
   id: Platform;
@@ -150,6 +154,13 @@ type ReadinessResponse = {
   }>;
 };
 
+type ConfigResponse = {
+  fields: ConfigField[];
+  values: Record<string, string>;
+  profiles: Partial<Record<Platform, ProviderProfile[]>>;
+  activeProfiles: Partial<Record<Platform, string>>;
+};
+
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -162,6 +173,12 @@ export default function Home() {
   const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
     {} as Record<Platform, ReadinessResponse["channels"][number]>
   );
+  const [configFields, setConfigFields] = useState<ConfigField[]>([]);
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
+  const [configProfiles, setConfigProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
+  const [activeProfiles, setActiveProfiles] = useState<Partial<Record<Platform, string>>>({});
+  const [configStatus, setConfigStatus] = useState("");
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -189,6 +206,36 @@ export default function Home() {
     }
 
     void loadReadiness();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadConfig() {
+      try {
+        const response = await fetch("/api/config", { cache: "no-store" });
+        const body = (await response.json()) as ConfigResponse;
+
+        if (!active) {
+          return;
+        }
+
+        setConfigFields(body.fields || []);
+        setConfigValues(body.values || {});
+        setConfigProfiles(body.profiles || {});
+        setActiveProfiles(body.activeProfiles || {});
+      } catch {
+        if (active) {
+          setConfigStatus("Config API is not available.");
+        }
+      }
+    }
+
+    void loadConfig();
 
     return () => {
       active = false;
@@ -244,8 +291,78 @@ export default function Home() {
     }
   }
 
+  async function saveConfig() {
+    setConfigStatus("");
+    setIsSavingConfig(true);
+
+    try {
+      const response = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          values: configValues,
+          profiles: configProfiles,
+          activeProfiles
+        })
+      });
+      const body = (await response.json()) as ConfigResponse & { error?: string };
+
+      if (!response.ok) {
+        setConfigStatus(body.error || "Could not save config.");
+        return;
+      }
+
+      setConfigValues(body.values || {});
+      setConfigProfiles(body.profiles || {});
+      setActiveProfiles(body.activeProfiles || {});
+      setConfigStatus("Saved to poster.config.local.json.");
+
+      const readinessResponse = await fetch("/api/readiness", { cache: "no-store" });
+      const readinessBody = (await readinessResponse.json()) as ReadinessResponse;
+
+      setReadiness(
+        Object.fromEntries(readinessBody.channels.map((item) => [item.platform, item])) as Record<
+          Platform,
+          ReadinessResponse["channels"][number]
+        >
+      );
+    } catch (saveError) {
+      setConfigStatus(saveError instanceof Error ? saveError.message : "Could not save config.");
+    } finally {
+      setIsSavingConfig(false);
+    }
+  }
+
   const canPublish = text.trim() && selected.length > 0 && !isPublishing;
   const readyCount = channels.filter((channel) => readiness[channel.id]?.ready).length;
+  const activeLabelByPlatform = useMemo(
+    () =>
+      Object.fromEntries(
+        channels.map((channel) => {
+          const profile = configProfiles[channel.id]?.find(
+            (item) => item.id === activeProfiles[channel.id]
+          );
+
+          return [channel.id, profile?.label || "Base config"];
+        })
+      ) as Record<Platform, string>,
+    [activeProfiles, configProfiles]
+  );
+  const configByGroup = useMemo(() => {
+    const groups: Array<{ title: string; platform?: Platform; fields: ConfigField[] }> = [
+      {
+        title: "Local",
+        fields: configFields.filter((field) => !field.requiredFor?.length)
+      },
+      ...channels.map((channel) => ({
+        title: channel.label,
+        platform: channel.id,
+        fields: configFields.filter((field) => field.requiredFor?.includes(channel.id))
+      }))
+    ];
+
+    return groups.filter((group) => group.fields.length > 0);
+  }, [configFields]);
 
   return (
     <main className="workspace">
@@ -268,6 +385,10 @@ export default function Home() {
             API
             <ChevronRight size={15} />
           </a>
+          <Link className="health-link" href="/settings">
+            Settings
+            <ChevronRight size={15} />
+          </Link>
         </div>
       </header>
 
@@ -380,6 +501,7 @@ export default function Home() {
                             : `Needs ${formatMissing(readiness[channel.id].missing)}`
                           : "Checking..."}
                       </span>
+                      <span className="active-profile">Active: {activeLabelByPlatform[channel.id]}</span>
                       <span className="field-map" aria-label={`${channel.label} field usage`}>
                         {channel.uses.map((field) => (
                           <span key={field}>{field}</span>
@@ -458,6 +580,62 @@ export default function Home() {
                   <span>Each click calls the provider APIs directly.</span>
                 </span>
               </div>
+            </div>
+          </section>
+
+          <section className="info-panel">
+            <div className="panel-heading compact">
+              <h2>
+                <Settings size={20} />
+                Config
+              </h2>
+            </div>
+            <div className="config-panel">
+              <p className="hint">
+                Saved locally to <code>poster.config.local.json</code>. Config values override{" "}
+                <code>.env</code>. Open <Link href="/settings">Settings</Link> to add more accounts.
+              </p>
+              <div className="config-groups">
+                {configByGroup.map((group) => (
+                  <section className="config-group" key={group.title}>
+                    <div className="config-group-title">
+                      <strong>{group.title}</strong>
+                      {group.platform ? (
+                        <span
+                          className={`mini-status ${
+                            readiness[group.platform]?.ready ? "ready" : "missing"
+                          }`}
+                        >
+                          {readiness[group.platform]?.ready ? "Ready" : "Needs config"}
+                        </span>
+                      ) : null}
+                    </div>
+                    {group.fields.map((field) => (
+                      <label className="config-field" key={field.name}>
+                        <span>{field.label}</span>
+                        <input
+                          type={field.secret ? "password" : "text"}
+                          value={configValues[field.name] || ""}
+                          onChange={(event) =>
+                            setConfigValues((current) => ({
+                              ...current,
+                              [field.name]: event.target.value
+                            }))
+                          }
+                          placeholder={field.name}
+                        />
+                        <span className="field-hint">{field.help}</span>
+                      </label>
+                    ))}
+                  </section>
+                ))}
+              </div>
+              <div className="actions">
+                <button className="primary" type="button" onClick={saveConfig} disabled={isSavingConfig}>
+                  {isSavingConfig ? "Saving..." : "Save config"}
+                </button>
+              </div>
+              {configStatus ? <p className="hint">{configStatus}</p> : null}
             </div>
           </section>
 

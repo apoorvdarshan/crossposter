@@ -1,5 +1,7 @@
+import { getConfigValue } from "@/lib/local-config";
+
 export function requireEnv(name: string): string {
-  const value = process.env[name];
+  const value = getConfigValue(name);
 
   if (!value) {
     throw new Error(`Missing ${name}`);
@@ -9,6 +11,5 @@ export function requireEnv(name: string): string {
 }
 
 export function optionalEnv(name: string): string | undefined {
-  return process.env[name] || undefined;
+  return getConfigValue(name);
 }
-
