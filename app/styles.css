@@ -307,7 +307,7 @@ textarea {
 .channel {
   position: relative;
   display: block;
-  min-height: 78px;
+  min-height: 170px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel-soft);
@@ -346,10 +346,31 @@ textarea {
 }
 
 .channel-note,
+.channel-detail,
 .readiness-pill {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.channel-detail {
+  display: block;
+}
+
+.field-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.field-map span {
+  border: 1px solid #c7d1be;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #3d4738;
+  padding: 3px 7px;
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .readiness-pill {

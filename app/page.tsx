@@ -18,18 +18,124 @@ const channels: Array<{
   id: Platform;
   label: string;
   note: string;
+  uses: string[];
+  target: string;
+  media: string;
 }> = [
-  { id: "bluesky", label: "Bluesky", note: "Text and links" },
-  { id: "mastodon", label: "Mastodon", note: "Text and links" },
-  { id: "devto", label: "Dev.to", note: "Markdown article" },
-  { id: "medium", label: "Medium", note: "Profile or publication article" },
-  { id: "linkedin", label: "LinkedIn", note: "Profile or page post" },
-  { id: "reddit", label: "Reddit", note: "Self or link post" },
-  { id: "instagram", label: "Instagram", note: "Meta approval + image URL" },
-  { id: "pinterest", label: "Pinterest", note: "Requires public image URL" },
-  { id: "youtube", label: "YouTube", note: "Requires public video URL" },
-  { id: "twitch", label: "Twitch", note: "Chat message, max 500 chars" }
+  {
+    id: "bluesky",
+    label: "Bluesky",
+    note: "Text and links",
+    uses: ["Post", "Link"],
+    target: "Uses one handle in .env. Multiple handles can be added later as profiles.",
+    media: "Media upload is not wired for Bluesky yet."
+  },
+  {
+    id: "mastodon",
+    label: "Mastodon",
+    note: "Text and links",
+    uses: ["Post", "Link"],
+    target: "Uses one instance/token now. Multiple Mastodon accounts can be profile configs later.",
+    media: "Media upload is not wired for Mastodon yet."
+  },
+  {
+    id: "devto",
+    label: "Dev.to",
+    note: "Markdown article",
+    uses: ["Title", "Post", "Link"],
+    target: "Uses one API key now. Multiple Dev.to accounts can be profile configs later.",
+    media: "Images must be inside the Markdown or hosted elsewhere."
+  },
+  {
+    id: "medium",
+    label: "Medium",
+    note: "Profile or publication article",
+    uses: ["Title", "Post", "Link"],
+    target: "Can target profile or one publication now. More publications can be profiles later.",
+    media: "Images must be in Markdown or hosted elsewhere."
+  },
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    note: "Profile or page post",
+    uses: ["Post", "Link"],
+    target: "Uses one author URN now: profile or page. More URNs can be profiles later.",
+    media: "Media upload is not wired for LinkedIn yet."
+  },
+  {
+    id: "reddit",
+    label: "Reddit",
+    note: "Self or link post",
+    uses: ["Title", "Post", "Link"],
+    target: "Uses one subreddit now. More subreddits can be profiles later.",
+    media: "Media upload is not wired for Reddit yet."
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    note: "Meta approval + image URL",
+    uses: ["Post", "Link", "Media"],
+    target: "Uses one IG professional account now. More accounts need more Meta setup.",
+    media: "Requires a public image URL. File upload can be added later."
+  },
+  {
+    id: "pinterest",
+    label: "Pinterest",
+    note: "Requires public image URL",
+    uses: ["Title", "Post", "Link", "Media"],
+    target: "Uses one board now. More boards can be profiles later.",
+    media: "Requires a public image URL. File upload can be added later."
+  },
+  {
+    id: "youtube",
+    label: "YouTube",
+    note: "Requires public video URL",
+    uses: ["Title", "Post", "Link", "Media"],
+    target: "Uses one YouTube channel token now. More channels can be profiles later.",
+    media: "Requires a public video URL. File upload can be added later."
+  },
+  {
+    id: "twitch",
+    label: "Twitch",
+    note: "Chat message, max 500 chars",
+    uses: ["Title", "Post", "Link"],
+    target: "Uses one channel chat now. More channels can be profiles later.",
+    media: "Media is ignored for Twitch chat."
+  }
 ];
+
+const envLabels: Record<string, string> = {
+  BLUESKY_IDENTIFIER: "Bluesky handle",
+  BLUESKY_APP_PASSWORD: "app password",
+  MASTODON_INSTANCE: "instance",
+  MASTODON_ACCESS_TOKEN: "access token",
+  DEVTO_API_KEY: "API key",
+  MEDIUM_ACCESS_TOKEN: "access token",
+  LINKEDIN_ACCESS_TOKEN: "access token",
+  LINKEDIN_AUTHOR_URN: "profile/page",
+  REDDIT_CLIENT_ID: "client ID",
+  REDDIT_CLIENT_SECRET: "client secret",
+  REDDIT_REFRESH_TOKEN: "refresh token",
+  REDDIT_SUBREDDIT: "subreddit",
+  INSTAGRAM_ACCESS_TOKEN: "access token",
+  INSTAGRAM_USER_ID: "IG user ID",
+  PINTEREST_ACCESS_TOKEN: "access token",
+  PINTEREST_BOARD_ID: "board",
+  YOUTUBE_CLIENT_ID: "client ID",
+  YOUTUBE_CLIENT_SECRET: "client secret",
+  YOUTUBE_REFRESH_TOKEN: "refresh token",
+  TWITCH_CLIENT_ID: "client ID",
+  TWITCH_CLIENT_SECRET: "client secret",
+  TWITCH_REFRESH_TOKEN: "refresh token",
+  TWITCH_BROADCASTER_ID: "broadcaster",
+  TWITCH_SENDER_ID: "sender"
+};
+
+function formatMissing(missing: string[]): string {
+  const labels = missing.map((name) => envLabels[name] || name);
+
+  return `${labels.slice(0, 2).join(", ")}${labels.length > 2 ? "..." : ""}`;
+}
 
 type ApiResponse = {
   results?: PublishResult[];
@@ -230,7 +336,7 @@ export default function Home() {
                 aria-describedby="mediaUrlHint"
               />
               <span className="field-hint" id="mediaUrlHint">
-                Image for Instagram/Pinterest. Video for YouTube.
+                Current build accepts public media URLs. File upload can be added later.
               </span>
             </div>
 
@@ -271,11 +377,16 @@ export default function Home() {
                         {readiness[channel.id]
                           ? readiness[channel.id].ready
                             ? "Ready"
-                            : `Needs ${readiness[channel.id].missing.slice(0, 2).join(", ")}${
-                                readiness[channel.id].missing.length > 2 ? "..." : ""
-                              }`
+                            : `Needs ${formatMissing(readiness[channel.id].missing)}`
                           : "Checking..."}
                       </span>
+                      <span className="field-map" aria-label={`${channel.label} field usage`}>
+                        {channel.uses.map((field) => (
+                          <span key={field}>{field}</span>
+                        ))}
+                      </span>
+                      <span className="channel-detail">{channel.target}</span>
+                      <span className="channel-detail">{channel.media}</span>
                     </span>
                   </label>
                 ))}
@@ -333,8 +444,11 @@ export default function Home() {
               <div className="setup-item">
                 <KeyRound size={18} />
                 <span>
-                  <strong>Server secrets</strong>
-                  <span>Keep provider tokens in environment variables.</span>
+                  <strong>Bluesky identifier</strong>
+                  <span>
+                    Use your handle without <code>@</code>, for example{" "}
+                    <code>name.bsky.social</code>.
+                  </span>
                 </span>
               </div>
               <div className="setup-item">
