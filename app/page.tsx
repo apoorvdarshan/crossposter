@@ -341,7 +341,7 @@ export default function Home() {
                 <span>
                   <strong>Private gate</strong>
                   <span>
-                    Set <code>POSTER_ADMIN_PASSWORD</code> in Vercel.
+                    Set <code>POSTER_ADMIN_PASSWORD</code> in local <code>.env</code>.
                   </span>
                 </span>
               </div>
