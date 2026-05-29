@@ -4,14 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
-  CheckCircle2,
   ChevronRight,
-  KeyRound,
-  Lock,
   Radio,
   Send,
-  Server,
-  ShieldCheck
 } from "lucide-react";
 import type { Platform, PublishResult } from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
@@ -326,10 +321,6 @@ export default function Home() {
               {selectedLabel} · {readyCount} ready
             </span>
           </div>
-          <a className="health-link" href="/api/health">
-            API
-            <ChevronRight size={15} />
-          </a>
           <Link className="health-link" href="/settings">
             Settings
             <ChevronRight size={15} />
@@ -494,60 +485,9 @@ export default function Home() {
                 <AlertTriangle size={16} /> {error}
               </p>
             ) : null}
-          </div>
-        </section>
-
-        <aside className="side-panel">
-          <section className="info-panel">
-            <div className="panel-heading compact">
-              <h2>
-                <ShieldCheck size={20} />
-                Setup
-              </h2>
-            </div>
-            <div className="setup-list">
-              <div className="setup-item">
-                <Lock size={18} />
-                <span>
-                  <strong>Local mode</strong>
-                  <span>
-                    Publish without a UI password while <code>POSTER_REQUIRE_ADMIN_PASSWORD</code>{" "}
-                    is false.
-                  </span>
-                </span>
-              </div>
-              <div className="setup-item">
-                <KeyRound size={18} />
-                <span>
-                  <strong>Bluesky identifier</strong>
-                  <span>
-                    Use your handle without <code>@</code>, for example{" "}
-                    <code>name.bsky.social</code>.
-                  </span>
-                </span>
-              </div>
-              <div className="setup-item">
-                <Server size={18} />
-                <span>
-                  <strong>No scheduler</strong>
-                  <span>Each click calls the provider APIs directly.</span>
-                </span>
-              </div>
-            </div>
-          </section>
-
-          <section className="info-panel">
-            <div className="panel-heading compact">
-              <h2>
-                <CheckCircle2 size={20} />
-                Results
-              </h2>
-            </div>
-            <div className="results">
-              {results.length === 0 ? (
-                <p className="hint">Publish results will appear here.</p>
-              ) : (
-                results.map((result) => (
+            {results.length > 0 ? (
+              <div className="inline-results">
+                {results.map((result) => (
                   <div className="result" key={result.platform}>
                     <div className="result-head">
                       <strong>{result.platform}</strong>
@@ -558,11 +498,11 @@ export default function Home() {
                     <p>{result.message}</p>
                     {result.url ? <p>{result.url}</p> : null}
                   </div>
-                ))
-              )}
-            </div>
-          </section>
-        </aside>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
       </section>
     </main>
   );

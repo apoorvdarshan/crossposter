@@ -173,7 +173,7 @@ h2 {
 
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.7fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
@@ -278,7 +278,6 @@ textarea {
 
 .field-hint,
 .hint,
-.setup-item span span,
 .result p {
   color: var(--muted);
 }
@@ -503,47 +502,21 @@ textarea {
   font-weight: 700;
 }
 
-.side-panel {
-  display: grid;
-  gap: 18px;
-}
-
-.setup-list,
-.results,
+.inline-results,
 .config-panel {
   display: grid;
   gap: 10px;
   padding: 16px 18px 18px;
 }
 
-.setup-item,
+.inline-results {
+  padding: 0;
+}
+
 .result {
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel-soft);
-}
-
-.setup-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
-}
-
-.setup-item svg {
-  flex: 0 0 auto;
-  color: var(--accent-dark);
-}
-
-.setup-item strong,
-.setup-item span span {
-  display: block;
-}
-
-.setup-item span span {
-  margin-top: 3px;
-  font-size: 0.86rem;
-  line-height: 1.35;
 }
 
 code {
