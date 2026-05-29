@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronRight,
   KeyRound,
   Lock,
   Radio,
@@ -48,10 +49,10 @@ export default function Home() {
 
   const selectedLabel = useMemo(() => {
     if (selected.length === 0) {
-      return "No channels selected";
+      return "No channels";
     }
 
-    return `${selected.length} channel${selected.length === 1 ? "" : "s"} selected`;
+    return `${selected.length} of ${channels.length} selected`;
   }, [selected.length]);
 
   function togglePlatform(platform: Platform) {
@@ -99,34 +100,45 @@ export default function Home() {
   const canPublish = adminPassword.trim() && text.trim() && selected.length > 0 && !isPublishing;
 
   return (
-    <main className="shell">
-      <header className="topbar">
-        <div className="brand">
+    <main className="workspace">
+      <header className="masthead">
+        <div className="brand-lockup">
           <div className="mark">PX</div>
           <div>
+            <p className="eyebrow">Private console</p>
             <h1>Personal Crossposter</h1>
-            <p>Private publish-now console for your own accounts.</p>
           </div>
         </div>
-        <div className="status-pill">
-          <span className="dot" />
-          <span>{selectedLabel}</span>
+        <div className="masthead-actions">
+          <div className="status-pill">
+            <span className="dot" />
+            <span>{selectedLabel}</span>
+          </div>
+          <a className="health-link" href="/api/health">
+            API
+            <ChevronRight size={15} />
+          </a>
         </div>
       </header>
 
-      <section className="grid">
-        <div className="panel">
-          <div className="panel-header">
-            <div className="panel-title">
-              <Radio size={19} />
-              Compose
+      <section className="dashboard">
+        <section className="compose-panel" aria-labelledby="composeTitle">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Publish now</p>
+              <h2 id="composeTitle">
+                <Radio size={20} />
+                Compose
+              </h2>
             </div>
-            <span className="status-copy">{text.length}/12000</span>
+            <span className="counter">{text.length}/12000</span>
           </div>
 
           <div className="composer">
             <div className="field">
-              <label htmlFor="adminPassword">Admin Password</label>
+              <label className="field-label" htmlFor="adminPassword">
+                Admin password
+              </label>
               <input
                 id="adminPassword"
                 type="password"
@@ -139,16 +151,20 @@ export default function Home() {
 
             <div className="field-row">
               <div className="field">
-                <label htmlFor="title">Title</label>
+                <label className="field-label" htmlFor="title">
+                  Title
+                </label>
                 <input
                   id="title"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Used by articles, Reddit, Pinterest, YouTube"
+                  placeholder="Article, Reddit, Pinterest, YouTube"
                 />
               </div>
               <div className="field">
-                <label htmlFor="url">Link</label>
+                <label className="field-label" htmlFor="url">
+                  Link
+                </label>
                 <input
                   id="url"
                   inputMode="url"
@@ -160,17 +176,21 @@ export default function Home() {
             </div>
 
             <div className="field">
-              <label htmlFor="text">Post</label>
+              <label className="field-label" htmlFor="text">
+                Post
+              </label>
               <textarea
                 id="text"
                 value={text}
                 onChange={(event) => setText(event.target.value)}
-                placeholder="Write once, publish to selected channels."
+                placeholder="Write the post once."
               />
             </div>
 
             <div className="field">
-              <label htmlFor="mediaUrl">Public Media URL</label>
+              <label className="field-label" htmlFor="mediaUrl">
+                Media URL
+              </label>
               <input
                 id="mediaUrl"
                 inputMode="url"
@@ -180,12 +200,22 @@ export default function Home() {
                 aria-describedby="mediaUrlHint"
               />
               <span className="field-hint" id="mediaUrlHint">
-                Use an image URL for Instagram/Pinterest, or a video URL for YouTube.
+                Image for Instagram/Pinterest. Video for YouTube.
               </span>
             </div>
 
-            <div className="field">
-              <label>Channels</label>
+            <div className="channel-section">
+              <div className="section-line">
+                <label className="field-label">Channels</label>
+                <div className="channel-actions">
+                  <button type="button" onClick={() => setSelected(channels.map((item) => item.id))}>
+                    All
+                  </button>
+                  <button type="button" onClick={() => setSelected([])}>
+                    None
+                  </button>
+                </div>
+              </div>
               <div className="channel-grid">
                 {channels.map((channel) => (
                   <label className="channel" key={channel.id}>
@@ -194,9 +224,12 @@ export default function Home() {
                       checked={selected.includes(channel.id)}
                       onChange={() => togglePlatform(channel.id)}
                     />
-                    <span>
-                      <strong>{channel.label}</strong>
-                      <span>{channel.note}</span>
+                    <span className="channel-body">
+                      <span className="channel-top">
+                        <strong>{channel.label}</strong>
+                        <span className="channel-check" />
+                      </span>
+                      <span className="channel-note">{channel.note}</span>
                     </span>
                   </label>
                 ))}
@@ -220,57 +253,59 @@ export default function Home() {
                   setError("");
                 }}
               >
-                Clear
+                Clear draft
               </button>
             </div>
 
             {error ? (
-              <p className="fineprint">
-                <AlertTriangle size={15} /> {error}
+              <p className="error-line">
+                <AlertTriangle size={16} /> {error}
               </p>
             ) : null}
           </div>
-        </div>
+        </section>
 
-        <aside className="side">
-          <div className="panel">
-            <div className="panel-header">
-              <div className="panel-title">
-                <ShieldCheck size={19} />
+        <aside className="side-panel">
+          <section className="info-panel">
+            <div className="panel-heading compact">
+              <h2>
+                <ShieldCheck size={20} />
                 Setup
-              </div>
+              </h2>
             </div>
-            <div className="checklist">
-              <div className="check-item">
+            <div className="setup-list">
+              <div className="setup-item">
                 <Lock size={18} />
                 <span>
                   <strong>Private gate</strong>
-                  <span>Set one `POSTER_ADMIN_PASSWORD` in Vercel.</span>
+                  <span>
+                    Set <code>POSTER_ADMIN_PASSWORD</code> in Vercel.
+                  </span>
                 </span>
               </div>
-              <div className="check-item">
+              <div className="setup-item">
                 <KeyRound size={18} />
                 <span>
                   <strong>Server secrets</strong>
-                  <span>Provider tokens live only in environment variables.</span>
+                  <span>Keep provider tokens in environment variables.</span>
                 </span>
               </div>
-              <div className="check-item">
+              <div className="setup-item">
                 <Server size={18} />
                 <span>
                   <strong>No scheduler</strong>
-                  <span>Designed for direct posting from Vercel Functions.</span>
+                  <span>Each click calls the provider APIs directly.</span>
                 </span>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="panel">
-            <div className="panel-header">
-              <div className="panel-title">
-                <CheckCircle2 size={19} />
+          <section className="info-panel">
+            <div className="panel-heading compact">
+              <h2>
+                <CheckCircle2 size={20} />
                 Results
-              </div>
+              </h2>
             </div>
             <div className="results">
               {results.length === 0 ? (
@@ -290,7 +325,7 @@ export default function Home() {
                 ))
               )}
             </div>
-          </div>
+          </section>
         </aside>
       </section>
     </main>
