@@ -313,6 +313,21 @@ textarea {
   gap: 10px;
 }
 
+.empty-channels {
+  display: grid;
+  gap: 6px;
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 14px;
+}
+
+.empty-channels span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .channel {
   position: relative;
   display: block;
