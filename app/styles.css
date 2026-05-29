@@ -278,6 +278,16 @@ textarea {
   font-size: 0.82rem;
 }
 
+.ready-copy {
+  color: var(--accent-dark);
+  font-weight: 800;
+}
+
+.missing-copy {
+  color: var(--danger);
+  font-weight: 800;
+}
+
 .section-line {
   justify-content: space-between;
   gap: 12px;
@@ -345,10 +355,32 @@ textarea {
   overflow-wrap: anywhere;
 }
 
-.channel-note {
+.channel-note,
+.readiness-pill {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.readiness-pill {
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 4px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+}
+
+.readiness-pill.ready {
+  background: rgba(32, 177, 90, 0.13);
+  color: var(--accent-dark);
+}
+
+.readiness-pill.missing {
+  background: rgba(199, 68, 53, 0.11);
+  color: var(--danger);
 }
 
 .channel-check {
@@ -364,10 +396,21 @@ textarea {
   background: linear-gradient(135deg, rgba(32, 177, 90, 0.14), rgba(255, 255, 255, 0));
 }
 
+.channel.is-missing input:checked + .channel-body {
+  background: linear-gradient(135deg, rgba(199, 68, 53, 0.1), rgba(255, 255, 255, 0));
+}
+
 .channel input:checked + .channel-body .channel-check {
   border-color: var(--accent-dark);
   background:
     radial-gradient(circle at center, var(--accent-dark) 0 38%, transparent 42%),
+    #ffffff;
+}
+
+.channel.is-missing input:checked + .channel-body .channel-check {
+  border-color: var(--danger);
+  background:
+    radial-gradient(circle at center, var(--danger) 0 38%, transparent 42%),
     #ffffff;
 }
 

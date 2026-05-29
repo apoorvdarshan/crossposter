@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -36,6 +36,15 @@ type ApiResponse = {
   error?: unknown;
 };
 
+type ReadinessResponse = {
+  adminReady: boolean;
+  channels: Array<{
+    platform: Platform;
+    ready: boolean;
+    missing: string[];
+  }>;
+};
+
 export default function Home() {
   const [adminPassword, setAdminPassword] = useState("");
   const [title, setTitle] = useState("");
@@ -46,6 +55,43 @@ export default function Home() {
   const [results, setResults] = useState<PublishResult[]>([]);
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
+    {} as Record<Platform, ReadinessResponse["channels"][number]>
+  );
+  const [adminReady, setAdminReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadReadiness() {
+      try {
+        const response = await fetch("/api/readiness", { cache: "no-store" });
+        const body = (await response.json()) as ReadinessResponse;
+
+        if (!active) {
+          return;
+        }
+
+        setAdminReady(body.adminReady);
+        setReadiness(
+          Object.fromEntries(body.channels.map((item) => [item.platform, item])) as Record<
+            Platform,
+            ReadinessResponse["channels"][number]
+          >
+        );
+      } catch {
+        if (active) {
+          setReadiness({} as Record<Platform, ReadinessResponse["channels"][number]>);
+        }
+      }
+    }
+
+    void loadReadiness();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const selectedLabel = useMemo(() => {
     if (selected.length === 0) {
@@ -98,6 +144,7 @@ export default function Home() {
   }
 
   const canPublish = adminPassword.trim() && text.trim() && selected.length > 0 && !isPublishing;
+  const readyCount = channels.filter((channel) => readiness[channel.id]?.ready).length;
 
   return (
     <main className="workspace">
@@ -112,7 +159,9 @@ export default function Home() {
         <div className="masthead-actions">
           <div className="status-pill">
             <span className="dot" />
-            <span>{selectedLabel}</span>
+            <span>
+              {selectedLabel} · {readyCount} ready
+            </span>
           </div>
           <a className="health-link" href="/api/health">
             API
@@ -147,6 +196,9 @@ export default function Home() {
                 onChange={(event) => setAdminPassword(event.target.value)}
                 placeholder="POSTER_ADMIN_PASSWORD"
               />
+              <span className={`field-hint ${adminReady ? "ready-copy" : "missing-copy"}`}>
+                {adminReady ? "Local admin password is set." : "POSTER_ADMIN_PASSWORD is missing."}
+              </span>
             </div>
 
             <div className="field-row">
@@ -218,7 +270,10 @@ export default function Home() {
               </div>
               <div className="channel-grid">
                 {channels.map((channel) => (
-                  <label className="channel" key={channel.id}>
+                  <label
+                    className={`channel ${readiness[channel.id]?.ready ? "is-ready" : "is-missing"}`}
+                    key={channel.id}
+                  >
                     <input
                       type="checkbox"
                       checked={selected.includes(channel.id)}
@@ -230,6 +285,19 @@ export default function Home() {
                         <span className="channel-check" />
                       </span>
                       <span className="channel-note">{channel.note}</span>
+                      <span
+                        className={`readiness-pill ${
+                          readiness[channel.id]?.ready ? "ready" : "missing"
+                        }`}
+                      >
+                        {readiness[channel.id]
+                          ? readiness[channel.id].ready
+                            ? "Ready"
+                            : `Needs ${readiness[channel.id].missing.slice(0, 2).join(", ")}${
+                                readiness[channel.id].missing.length > 2 ? "..." : ""
+                              }`
+                          : "Checking..."}
+                      </span>
                     </span>
                   </label>
                 ))}
