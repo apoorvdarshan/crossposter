@@ -86,6 +86,7 @@ button {
 .brand p,
 .status-copy,
 .hint,
+.field-hint,
 .fineprint {
   color: var(--muted);
 }
@@ -191,6 +192,11 @@ textarea {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.45;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  line-height: 1.35;
 }
 
 .channel-grid {

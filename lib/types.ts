@@ -5,7 +5,10 @@ export type Platform =
   | "linkedin"
   | "reddit"
   | "instagram"
-  | "pinterest";
+  | "pinterest"
+  | "twitch"
+  | "youtube"
+  | "medium";
 
 export type PublishPayload = {
   title?: string;
@@ -25,4 +28,3 @@ export type PublishResult = {
 export type ProviderContext = PublishPayload & {
   now: Date;
 };
-

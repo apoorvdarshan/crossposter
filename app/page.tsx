@@ -21,10 +21,13 @@ const channels: Array<{
   { id: "bluesky", label: "Bluesky", note: "Text and links" },
   { id: "mastodon", label: "Mastodon", note: "Text and links" },
   { id: "devto", label: "Dev.to", note: "Markdown article" },
-  { id: "linkedin", label: "LinkedIn", note: "Profile or page author URN" },
+  { id: "medium", label: "Medium", note: "Profile or publication article" },
+  { id: "linkedin", label: "LinkedIn", note: "Profile or page post" },
   { id: "reddit", label: "Reddit", note: "Self or link post" },
-  { id: "instagram", label: "Instagram", note: "Requires public image URL" },
-  { id: "pinterest", label: "Pinterest", note: "Requires public image URL" }
+  { id: "instagram", label: "Instagram", note: "Meta approval + image URL" },
+  { id: "pinterest", label: "Pinterest", note: "Requires public image URL" },
+  { id: "youtube", label: "YouTube", note: "Requires public video URL" },
+  { id: "twitch", label: "Twitch", note: "Chat message, max 500 chars" }
 ];
 
 type ApiResponse = {
@@ -141,7 +144,7 @@ export default function Home() {
                   id="title"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Used by Dev.to, Reddit, Pinterest"
+                  placeholder="Used by articles, Reddit, Pinterest, YouTube"
                 />
               </div>
               <div className="field">
@@ -173,8 +176,12 @@ export default function Home() {
                 inputMode="url"
                 value={mediaUrl}
                 onChange={(event) => setMediaUrl(event.target.value)}
-                placeholder="Required for Instagram and Pinterest image posts"
+                placeholder="Image URL or YouTube video URL"
+                aria-describedby="mediaUrlHint"
               />
+              <span className="field-hint" id="mediaUrlHint">
+                Use an image URL for Instagram/Pinterest, or a video URL for YouTube.
+              </span>
             </div>
 
             <div className="field">

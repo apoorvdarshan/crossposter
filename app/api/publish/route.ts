@@ -13,7 +13,10 @@ const platformSchema = z.enum([
   "linkedin",
   "reddit",
   "instagram",
-  "pinterest"
+  "pinterest",
+  "twitch",
+  "youtube",
+  "medium"
 ]);
 
 const requestSchema = z.object({
@@ -70,4 +73,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ results });
 }
-

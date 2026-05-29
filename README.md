@@ -13,8 +13,9 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 - Reddit: self or link posts
 - Instagram: image posts through a public image URL
 - Pinterest: pins through a public image URL
-
-YouTube is not included in this first version because proper uploads need an OAuth upload flow and file handling. Add it as a separate provider once storage/upload handling is decided.
+- Twitch: chat messages to your channel
+- YouTube: video uploads from a public video URL
+- Medium: profile or publication posts
 
 ## Run Locally
 
@@ -107,7 +108,46 @@ PINTEREST_ACCESS_TOKEN
 PINTEREST_BOARD_ID
 ```
 
+### Twitch
+
+Twitch does not have a normal feed-post API. This provider sends a message to your channel chat. The user token needs `user:write:chat`.
+
+```text
+TWITCH_CLIENT_ID
+TWITCH_CLIENT_SECRET
+TWITCH_REFRESH_TOKEN
+TWITCH_BROADCASTER_ID
+TWITCH_SENDER_ID
+TWITCH_CHANNEL_LOGIN
+```
+
+### YouTube
+
+YouTube uploads need OAuth with the `https://www.googleapis.com/auth/youtube.upload` scope and a public video URL in the Media URL field. New or unaudited Google API projects may be forced to upload videos as private.
+
+```text
+YOUTUBE_CLIENT_ID
+YOUTUBE_CLIENT_SECRET
+YOUTUBE_REFRESH_TOKEN
+YOUTUBE_CATEGORY_ID
+YOUTUBE_PRIVACY_STATUS
+YOUTUBE_NOTIFY_SUBSCRIBERS
+YOUTUBE_MADE_FOR_KIDS
+YOUTUBE_TAGS
+```
+
+### Medium
+
+Medium can publish to your profile or, if `MEDIUM_PUBLICATION_ID` is set, to a publication you can write to. Set `MEDIUM_PUBLISH_STATUS` to `public`, `draft`, or `unlisted`.
+
+```text
+MEDIUM_ACCESS_TOKEN
+MEDIUM_PUBLICATION_ID
+MEDIUM_TAGS
+MEDIUM_PUBLISH_STATUS
+MEDIUM_DEFAULT_TITLE
+```
+
 ## Security
 
 This app is private by convention, not a multi-user auth system. Keep the Vercel project private, use a strong `POSTER_ADMIN_PASSWORD`, and never expose provider tokens in client code.
-
