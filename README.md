@@ -21,7 +21,7 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example .env
 npm run dev
 ```
 
