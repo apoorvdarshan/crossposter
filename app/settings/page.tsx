@@ -81,9 +81,7 @@ export default function SettingsPage() {
   }, [localUrl, values.POSTER_LOCAL_PORT]);
 
   function fieldsFor(platform: Platform): ConfigField[] {
-    return fields.filter(
-      (field) => field.requiredFor?.includes(platform) || field.optionalFor?.includes(platform)
-    );
+    return fields.filter((field) => field.requiredFor?.includes(platform));
   }
 
   function addProfile(platform: Platform) {
