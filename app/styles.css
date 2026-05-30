@@ -868,13 +868,61 @@ code {
   gap: 8px;
 }
 
-.history-result p {
-  margin-top: 0;
+.history-head > div {
+  display: grid;
+  gap: 3px;
 }
 
 .history-time {
+  color: var(--muted);
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.history-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+  padding: 2px 8px 2px 3px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.history-platform span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-platform.ok {
+  border-color: rgba(32, 177, 90, 0.28);
+  color: var(--accent-dark);
+}
+
+a.history-platform.ok:hover {
+  border-color: var(--accent-dark);
+  background: rgba(32, 177, 90, 0.08);
+}
+
+.history-platform.err {
+  border-color: rgba(199, 68, 53, 0.26);
+  background: rgba(199, 68, 53, 0.05);
+  color: var(--danger);
 }
 
 .config-groups {

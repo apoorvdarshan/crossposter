@@ -1199,26 +1199,53 @@ export default function Home() {
 
             {publishedPosts.length > 0 ? (
               <div className="result-list" aria-label="Published posts">
-                {publishedPosts.map((post) => (
-                  post.results.map((result) => (
-                    <article className="result history-result" key={`${post.id}-${result.platform}`}>
-                      <div className="result-head">
-                        <strong>{result.platform}</strong>
-                        <span className={`badge ${result.ok ? "ok" : "err"}`}>
-                          {result.ok ? "ok" : "error"}
+                {publishedPosts.map((post) => {
+                  const okCount = post.results.filter((result) => result.ok).length;
+
+                  return (
+                    <article className="result history-result" key={post.id}>
+                      <div className="result-head history-head">
+                        <div>
+                          <strong>Published</strong>
+                          <time className="history-time">{formatDateTime(post.createdAt)}</time>
+                        </div>
+                        <span className={`badge ${okCount > 0 ? "ok" : "err"}`}>
+                          {okCount}/{post.results.length} ok
                         </span>
                       </div>
-                      <p>{result.message}</p>
-                      {result.url ? (
-                        <a className="result-link" href={result.url} target="_blank" rel="noreferrer">
-                          <span>{result.url}</span>
-                          <ExternalLink size={14} />
-                        </a>
-                      ) : null}
-                      <time className="history-time">{formatDateTime(post.createdAt)}</time>
+                      <div className="history-platforms">
+                        {post.results.map((result) => {
+                          const channel = channels.find((item) => item.id === result.platform);
+                          const className = `history-platform ${result.ok ? "ok" : "err"}`;
+                          const content = (
+                            <>
+                              <SocialLogo platform={result.platform} size="sm" />
+                              <span>{channel?.label || result.platform}</span>
+                              {result.url ? <ExternalLink size={13} /> : null}
+                            </>
+                          );
+
+                          return result.url ? (
+                            <a
+                              className={className}
+                              href={result.url}
+                              key={result.platform}
+                              rel="noreferrer"
+                              target="_blank"
+                              title={result.message}
+                            >
+                              {content}
+                            </a>
+                          ) : (
+                            <span className={className} key={result.platform} title={result.message}>
+                              {content}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </article>
-                  ))
-                ))}
+                  );
+                })}
               </div>
             ) : null}
           </div>
