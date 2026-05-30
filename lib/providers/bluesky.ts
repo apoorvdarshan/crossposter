@@ -24,6 +24,18 @@ type BlueskyBlob = {
   };
 };
 
+type BlueskyImageEmbed = {
+  $type: "app.bsky.embed.images";
+  images: Array<{
+    image: BlueskyBlob["blob"];
+    alt: string;
+    aspectRatio?: {
+      width: number;
+      height: number;
+    };
+  }>;
+};
+
 const blueskyMaxTextLength = 300;
 const blueskyMaxImageSize = 1_000_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -43,6 +55,17 @@ function textLength(value: string): number {
   }
 
   return Array.from(value).length;
+}
+
+function blueskyAspectRatio(media: NonNullable<ProviderContext["media"]>) {
+  if (!media.width || !media.height) {
+    return undefined;
+  }
+
+  return {
+    width: media.width,
+    height: media.height
+  };
 }
 
 export async function publishBluesky(ctx: ProviderContext): Promise<PublishResult> {
@@ -65,15 +88,7 @@ export async function publishBluesky(ctx: ProviderContext): Promise<PublishResul
     })
   );
 
-  let embed:
-    | {
-        $type: "app.bsky.embed.images";
-        images: Array<{
-          image: BlueskyBlob["blob"];
-          alt: string;
-        }>;
-      }
-    | undefined;
+  let embed: BlueskyImageEmbed | undefined;
 
   if (ctx.media) {
     if (ctx.media.kind !== "image") {
@@ -103,12 +118,15 @@ export async function publishBluesky(ctx: ProviderContext): Promise<PublishResul
       })
     );
 
+    const aspectRatio = blueskyAspectRatio(ctx.media);
+
     embed = {
       $type: "app.bsky.embed.images",
       images: [
         {
           image: uploaded.blob,
-          alt: ctx.title || ""
+          alt: ctx.title || "",
+          ...(aspectRatio ? { aspectRatio } : {})
         }
       ]
     };

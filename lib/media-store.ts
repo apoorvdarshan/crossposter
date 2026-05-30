@@ -5,6 +5,7 @@ import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { imageSize } from "image-size";
 
 export type MediaKind = "image" | "video" | "audio" | "file";
 
@@ -16,6 +17,8 @@ export type UploadedMedia = {
   kind: MediaKind;
   path: string;
   url: string;
+  width?: number;
+  height?: number;
 };
 
 type StoredMedia = Omit<UploadedMedia, "url">;
@@ -68,6 +71,26 @@ export function mediaKind(contentType: string): MediaKind {
   return "file";
 }
 
+async function readImageDimensions(filePath: string, kind: MediaKind) {
+  if (kind !== "image") {
+    return {};
+  }
+
+  try {
+    const dimensions = imageSize(await readFile(filePath));
+    const width = dimensions.width;
+    const height = dimensions.height;
+
+    if (!width || !height) {
+      return {};
+    }
+
+    return { width, height };
+  } catch {
+    return {};
+  }
+}
+
 function mediaUrl(id: string, requestUrl: string): string {
   return new URL(`/api/media/${encodeURIComponent(id)}`, requestUrl).toString();
 }
@@ -86,6 +109,7 @@ export async function saveUploadedMedia(file: File, requestUrl: string): Promise
   const filename = cleanFilename(file.name);
   const id = `${randomUUID()}${extensionFromFilename(filename)}`;
   const contentType = file.type || "application/octet-stream";
+  const kind = mediaKind(contentType);
   const destination = mediaPath(id);
 
   const fileStream = Readable.fromWeb(
@@ -99,8 +123,9 @@ export async function saveUploadedMedia(file: File, requestUrl: string): Promise
     filename,
     contentType,
     size: file.size,
-    kind: mediaKind(contentType),
-    path: destination
+    kind,
+    path: destination,
+    ...(await readImageDimensions(destination, kind))
   };
 
   await writeFile(metadataPath(id), `${JSON.stringify(stored, null, 2)}\n`);
@@ -123,7 +148,9 @@ export async function getUploadedMedia(id: string, requestUrl = "http://localhos
     size: fileStat.size,
     kind: mediaKind(metadata.contentType),
     path: storedPath,
-    url: mediaUrl(metadata.id, requestUrl)
+    url: mediaUrl(metadata.id, requestUrl),
+    width: metadata.width,
+    height: metadata.height
   };
 }
 

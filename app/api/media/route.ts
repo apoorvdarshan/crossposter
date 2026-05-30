@@ -22,7 +22,9 @@ export async function POST(request: Request) {
         filename: media.filename,
         contentType: media.contentType,
         size: media.size,
-        kind: media.kind
+        kind: media.kind,
+        width: media.width,
+        height: media.height
       }
     });
   } catch (error) {

@@ -35,6 +35,8 @@ export type ProviderContext = PublishPayload & {
     kind: "image" | "video" | "audio" | "file";
     path: string;
     url: string;
+    width?: number;
+    height?: number;
   };
   now: Date;
 };
