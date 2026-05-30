@@ -26,6 +26,32 @@ export type PublishResult = {
   url?: string;
 };
 
+export type ComposeDraft = {
+  title: string;
+  text: string;
+  url: string;
+  platforms: Platform[];
+  updatedAt?: string;
+};
+
+export type PublishedPost = {
+  id: string;
+  createdAt: string;
+  title?: string;
+  text: string;
+  url?: string;
+  platforms: Platform[];
+  results: PublishResult[];
+  media?: {
+    id: string;
+    filename: string;
+    contentType: string;
+    size: number;
+    kind: "image" | "video" | "audio" | "file";
+    url: string;
+  };
+};
+
 export type ProviderContext = PublishPayload & {
   media?: {
     id: string;

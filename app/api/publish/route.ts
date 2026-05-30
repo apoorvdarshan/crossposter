@@ -1,8 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { appendPublishedPost } from "@/lib/local-config";
 import { getUploadedMedia } from "@/lib/media-store";
 import { providers } from "@/lib/providers";
-import type { Platform, ProviderContext, PublishResult } from "@/lib/types";
+import type { Platform, ProviderContext, PublishedPost, PublishResult } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -139,6 +141,27 @@ export async function POST(request: Request) {
       }
     })
   );
+  const publishedPost = appendPublishedPost({
+    id: randomUUID(),
+    createdAt: new Date().toISOString(),
+    ...(ctx.title ? { title: ctx.title } : {}),
+    text: ctx.text,
+    ...(ctx.url ? { url: ctx.url } : {}),
+    platforms: parsed.data.platforms as Platform[],
+    results,
+    ...(media
+      ? {
+          media: {
+            id: media.id,
+            filename: media.filename,
+            contentType: media.contentType,
+            size: media.size,
+            kind: media.kind,
+            url: media.url
+          }
+        }
+      : {})
+  } satisfies PublishedPost);
 
-  return NextResponse.json({ results });
+  return NextResponse.json({ results, publishedPost });
 }

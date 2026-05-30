@@ -18,7 +18,7 @@ import {
   X
 } from "lucide-react";
 import { SocialLogo } from "@/components/social-logo";
-import type { Platform, PublishResult } from "@/lib/types";
+import type { ComposeDraft, Platform, PublishedPost, PublishResult } from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
 
 const channels: Array<{
@@ -146,6 +146,7 @@ function formatMissing(missing: string[]): string {
 
 type ApiResponse = {
   results?: PublishResult[];
+  publishedPost?: PublishedPost;
   error?: unknown;
 };
 
@@ -162,6 +163,11 @@ type ConfigProfilesResponse = {
   activeProfiles: Partial<Record<Platform, string>>;
 };
 
+type DraftResponse = {
+  draft?: ComposeDraft;
+  publishedPosts?: PublishedPost[];
+};
+
 type UploadedMedia = {
   id: string;
   filename: string;
@@ -176,10 +182,175 @@ type MediaUploadResponse = {
   error?: unknown;
 };
 
+type SavedDraft = {
+  title?: string;
+  text?: string;
+  url?: string;
+  selected?: Platform[];
+  platforms?: Platform[];
+  updatedAt?: string;
+};
+
+type StoredDraftMedia = {
+  id: string;
+  blob: Blob;
+  name: string;
+  type: string;
+  lastModified: number;
+};
+
 type ApiFieldError = {
   formErrors?: string[];
   fieldErrors?: Record<string, string[]>;
 };
+
+const draftStorageKey = "personal-crossposter:compose-draft:v1";
+const draftDbName = "personal-crossposter-drafts";
+const draftDbVersion = 1;
+const draftStoreName = "media";
+const draftMediaKey = "compose-media";
+const platformIds = channels.map((channel) => channel.id);
+
+function normalizePlatforms(value: unknown): Platform[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is Platform => platformIds.includes(item as Platform));
+}
+
+function readStoredDraft(): SavedDraft | null {
+  try {
+    const stored = window.localStorage.getItem(draftStorageKey);
+
+    if (!stored) {
+      return null;
+    }
+
+    const parsed = JSON.parse(stored) as SavedDraft;
+
+    return {
+      title: typeof parsed.title === "string" ? parsed.title : "",
+      text: typeof parsed.text === "string" ? parsed.text : "",
+      url: typeof parsed.url === "string" ? parsed.url : "",
+      platforms: normalizePlatforms(parsed.platforms || parsed.selected),
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : undefined
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredDraft(draft: ComposeDraft) {
+  try {
+    window.localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+  } catch {}
+}
+
+function draftTimestamp(draft: ComposeDraft | SavedDraft | undefined | null): number {
+  if (!draft?.updatedAt) {
+    return 0;
+  }
+
+  const timestamp = Date.parse(draft.updatedAt);
+
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function normalizeDraft(draft: ComposeDraft | SavedDraft | undefined | null): ComposeDraft {
+  return {
+    title: typeof draft?.title === "string" ? draft.title : "",
+    text: typeof draft?.text === "string" ? draft.text : "",
+    url: typeof draft?.url === "string" ? draft.url : "",
+    platforms: normalizePlatforms(draft?.platforms || (draft as SavedDraft | undefined)?.selected),
+    ...(typeof draft?.updatedAt === "string" ? { updatedAt: draft.updatedAt } : {})
+  };
+}
+
+function newestDraft(
+  configDraft: ComposeDraft | undefined,
+  browserDraft: SavedDraft | null
+): ComposeDraft {
+  return draftTimestamp(browserDraft) > draftTimestamp(configDraft)
+    ? normalizeDraft(browserDraft)
+    : normalizeDraft(configDraft);
+}
+
+function openDraftDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = window.indexedDB.open(draftDbName, draftDbVersion);
+
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(draftStoreName)) {
+        request.result.createObjectStore(draftStoreName, { keyPath: "id" });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Could not open draft media store"));
+  });
+}
+
+async function withDraftStore<T>(
+  mode: IDBTransactionMode,
+  run: (store: IDBObjectStore) => IDBRequest<T>
+): Promise<T> {
+  const db = await openDraftDb();
+
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const transaction = db.transaction(draftStoreName, mode);
+      const request = run(transaction.objectStore(draftStoreName));
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Draft media operation failed"));
+      transaction.onerror = () =>
+        reject(transaction.error || new Error("Draft media transaction failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function readStoredDraftMedia(): Promise<File | null> {
+  if (!("indexedDB" in window)) {
+    return null;
+  }
+
+  const stored = (await withDraftStore("readonly", (store) =>
+    store.get(draftMediaKey)
+  )) as StoredDraftMedia | undefined;
+
+  if (!stored?.blob) {
+    return null;
+  }
+
+  return new File([stored.blob], stored.name || "draft-media", {
+    type: stored.type || stored.blob.type || "application/octet-stream",
+    lastModified: stored.lastModified || Date.now()
+  });
+}
+
+async function saveStoredDraftMedia(file: File | null): Promise<void> {
+  if (!("indexedDB" in window)) {
+    return;
+  }
+
+  if (!file) {
+    await withDraftStore("readwrite", (store) => store.delete(draftMediaKey));
+    return;
+  }
+
+  await withDraftStore("readwrite", (store) =>
+    store.put({
+      id: draftMediaKey,
+      blob: file,
+      name: file.name,
+      type: file.type,
+      lastModified: file.lastModified
+    } satisfies StoredDraftMedia)
+  );
+}
 
 function formatApiError(error: unknown): string {
   if (typeof error === "string") {
@@ -259,6 +430,25 @@ function postTextLength(value: string): number {
   return Array.from(value).length;
 }
 
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Saved locally";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date);
+}
+
+function snippet(value: string, maxLength = 180): string {
+  const trimmed = value.trim();
+
+  return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength).trim()}...` : trimmed;
+}
+
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -266,12 +456,15 @@ export default function Home() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
-  const [selected, setSelected] = useState<Platform[]>(["bluesky"]);
+  const [selected, setSelected] = useState<Platform[]>([]);
   const [results, setResults] = useState<PublishResult[]>([]);
+  const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
     {} as Record<Platform, ReadinessResponse["channels"][number]>
   );
@@ -315,12 +508,18 @@ export default function Home() {
       .filter((channel) => (configProfiles[channel.id]?.length || 0) > 0)
       .map((channel) => channel.id);
 
+    if (!draftHydrated) {
+      return;
+    }
+
     setSelected((current) =>
-      current.length === 0
-        ? configured.slice(0, 1)
-        : current.filter((platform) => configured.includes(platform))
+      hasSavedDraft
+        ? current.filter((platform) => configured.includes(platform))
+        : current.filter((platform) => configured.includes(platform)).length > 0
+          ? current.filter((platform) => configured.includes(platform))
+          : configured.slice(0, 1)
     );
-  }, [configProfiles]);
+  }, [configProfiles, draftHydrated, hasSavedDraft]);
 
   useEffect(() => {
     let active = true;
@@ -347,6 +546,60 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+
+    async function loadDraft() {
+      try {
+        const response = await fetch("/api/draft", { cache: "no-store" });
+        const body = (await response.json()) as DraftResponse;
+        const browserDraft = readStoredDraft();
+        const draft = newestDraft(body.draft, browserDraft);
+        const hasDraft = draftTimestamp(draft) > 0;
+        const storedMedia = await readStoredDraftMedia();
+
+        if (!active) {
+          return;
+        }
+
+        setTitle(draft.title);
+        setText(draft.text);
+        setUrl(draft.url);
+        setSelected(draft.platforms);
+        setHasSavedDraft(hasDraft);
+        setPublishedPosts(body.publishedPosts || []);
+
+        if (storedMedia) {
+          setMediaFile(storedMedia);
+          setMediaInputKey((current) => current + 1);
+        }
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        const browserDraft = readStoredDraft();
+        const draft = normalizeDraft(browserDraft);
+
+        setTitle(draft.title);
+        setText(draft.text);
+        setUrl(draft.url);
+        setSelected(draft.platforms);
+        setHasSavedDraft(draftTimestamp(draft) > 0);
+      } finally {
+        if (active) {
+          setDraftHydrated(true);
+        }
+      }
+    }
+
+    void loadDraft();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!mediaFile) {
       setMediaPreviewUrl("");
       return;
@@ -361,6 +614,44 @@ export default function Home() {
     };
   }, [mediaFile]);
 
+  useEffect(() => {
+    if (!draftHydrated) {
+      return;
+    }
+
+    if (!hasSavedDraft && !title && !text && !url && selected.length === 0) {
+      return;
+    }
+
+    const draft: ComposeDraft = {
+      title,
+      text,
+      url,
+      platforms: selected,
+      updatedAt: new Date().toISOString()
+    };
+
+    writeStoredDraft(draft);
+
+    const timer = window.setTimeout(() => {
+      void fetch("/api/draft", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ draft })
+      }).catch(() => undefined);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [title, text, url, selected, draftHydrated, hasSavedDraft]);
+
+  useEffect(() => {
+    if (!draftHydrated) {
+      return;
+    }
+
+    void saveStoredDraftMedia(mediaFile).catch(() => undefined);
+  }, [mediaFile, draftHydrated]);
+
   const selectedLabel = useMemo(() => {
     if (selected.length === 0) {
       return "No channels";
@@ -370,6 +661,7 @@ export default function Home() {
   }, [selected.length]);
 
   function togglePlatform(platform: Platform) {
+    setHasSavedDraft(true);
     setSelected((current) =>
       current.includes(platform)
         ? current.filter((item) => item !== platform)
@@ -378,6 +670,7 @@ export default function Home() {
   }
 
   function setDraftMedia(file: File | null) {
+    setHasSavedDraft(true);
     setMediaFile(file);
     setError("");
     setResults([]);
@@ -430,8 +723,40 @@ export default function Home() {
   }
 
   function clearMedia() {
+    setHasSavedDraft(true);
     setMediaFile(null);
     setMediaInputKey((current) => current + 1);
+  }
+
+  async function clearDraft() {
+    const draft: ComposeDraft = {
+      title: "",
+      text: "",
+      url: "",
+      platforms: [],
+      updatedAt: new Date().toISOString()
+    };
+
+    setHasSavedDraft(true);
+    setTitle("");
+    setText("");
+    setUrl("");
+    setSelected([]);
+    clearMedia();
+    setResults([]);
+    setError("");
+    writeStoredDraft(draft);
+    await saveStoredDraftMedia(null).catch(() => undefined);
+    await fetch("/api/draft", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ draft })
+    }).catch(() => undefined);
+  }
+
+  async function clearPublishedPosts() {
+    setPublishedPosts([]);
+    await fetch("/api/draft?scope=history", { method: "DELETE" }).catch(() => undefined);
   }
 
   async function uploadSelectedMedia(): Promise<UploadedMedia | undefined> {
@@ -489,6 +814,12 @@ export default function Home() {
       }
 
       setResults(body.results || []);
+      if (body.publishedPost) {
+        setPublishedPosts((current) => [
+          body.publishedPost as PublishedPost,
+          ...current.filter((post) => post.id !== body.publishedPost?.id)
+        ]);
+      }
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Publish failed");
     } finally {
@@ -575,7 +906,10 @@ export default function Home() {
                 <input
                   id="title"
                   value={title}
-                  onChange={(event) => setTitle(event.target.value)}
+                  onChange={(event) => {
+                    setHasSavedDraft(true);
+                    setTitle(event.target.value);
+                  }}
                   placeholder="Article, Reddit, Pinterest, YouTube"
                 />
               </div>
@@ -587,7 +921,10 @@ export default function Home() {
                   id="url"
                   inputMode="url"
                   value={url}
-                  onChange={(event) => setUrl(event.target.value)}
+                  onChange={(event) => {
+                    setHasSavedDraft(true);
+                    setUrl(event.target.value);
+                  }}
                   placeholder="example.com or https://example.com"
                 />
                 <span className="field-hint">Leave empty if there is no link.</span>
@@ -601,7 +938,10 @@ export default function Home() {
               <textarea
                 id="text"
                 value={text}
-                onChange={(event) => setText(event.target.value)}
+                onChange={(event) => {
+                  setHasSavedDraft(true);
+                  setText(event.target.value);
+                }}
                 placeholder="Write the post once."
               />
               {showBlueskyLimit ? (
@@ -693,10 +1033,22 @@ export default function Home() {
               <div className="section-line">
                 <label className="field-label">Channels</label>
                 <div className="channel-actions">
-                  <button type="button" onClick={() => setSelected(visibleChannels.map((item) => item.id))}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHasSavedDraft(true);
+                      setSelected(visibleChannels.map((item) => item.id));
+                    }}
+                  >
                     All
                   </button>
-                  <button type="button" onClick={() => setSelected([])}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHasSavedDraft(true);
+                      setSelected([]);
+                    }}
+                  >
                     None
                   </button>
                 </div>
@@ -762,14 +1114,7 @@ export default function Home() {
               <button
                 className="secondary"
                 type="button"
-                onClick={() => {
-                  setText("");
-                  setTitle("");
-                  setUrl("");
-                  clearMedia();
-                  setResults([]);
-                  setError("");
-                }}
+                onClick={() => void clearDraft()}
               >
                 Clear draft
               </button>
@@ -786,7 +1131,18 @@ export default function Home() {
                 Published
               </h2>
             </div>
-            <span className="counter">{results.length}</span>
+            <div className="panel-actions">
+              <span className="counter">{publishedPosts.length}</span>
+              {publishedPosts.length > 0 ? (
+                <button
+                  className="secondary compact-button"
+                  type="button"
+                  onClick={() => void clearPublishedPosts()}
+                >
+                  Clear history
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className="publish-feed">
@@ -810,16 +1166,21 @@ export default function Home() {
               </div>
             ) : null}
 
-            {!isPublishing && !isUploadingMedia && !error && results.length === 0 ? (
+            {!isPublishing &&
+            !isUploadingMedia &&
+            !error &&
+            results.length === 0 &&
+            publishedPosts.length === 0 ? (
               <div className="publish-empty">
                 <CheckCircle2 size={24} />
                 <strong>No published post yet</strong>
-                <span>After you click Publish now, each channel result appears here.</span>
+                <span>After you click Publish now, saved local history appears here.</span>
               </div>
             ) : null}
 
             {results.length > 0 ? (
-              <div className="result-list">
+              <div className="result-list" aria-label="Latest publish result">
+                <p className="result-section-label">Latest result</p>
                 {results.map((result) => (
                   <div className="result" key={result.platform}>
                     <div className="result-head">
@@ -836,6 +1197,41 @@ export default function Home() {
                       </a>
                     ) : null}
                   </div>
+                ))}
+              </div>
+            ) : null}
+
+            {publishedPosts.length > 0 ? (
+              <div className="result-list" aria-label="Saved published posts">
+                <p className="result-section-label">Saved posts</p>
+                {publishedPosts.map((post) => (
+                  <article className="result history-result" key={post.id}>
+                    <div className="result-head">
+                      <strong>{post.title || "Untitled post"}</strong>
+                      <time>{formatDateTime(post.createdAt)}</time>
+                    </div>
+                    <p>{snippet(post.text) || "No post text saved."}</p>
+                    {post.url ? (
+                      <a className="result-link" href={post.url} target="_blank" rel="noreferrer">
+                        <span>{post.url}</span>
+                        <ExternalLink size={14} />
+                      </a>
+                    ) : null}
+                    {post.media ? (
+                      <p className="history-media">
+                        <ImageIcon size={14} />
+                        {post.media.filename}
+                      </p>
+                    ) : null}
+                    <div className="history-platforms">
+                      {post.results.map((result) => (
+                        <span className={`history-platform ${result.ok ? "ok" : "err"}`} key={result.platform}>
+                          <SocialLogo platform={result.platform} size="sm" />
+                          {result.platform}
+                        </span>
+                      ))}
+                    </div>
+                  </article>
                 ))}
               </div>
             ) : null}

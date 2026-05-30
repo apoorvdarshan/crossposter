@@ -31,7 +31,9 @@ export async function PUT(request: Request) {
   }
 
   const body = (await request.json()) as Partial<LocalConfigFile>;
+  const localConfig = readLocalConfig();
   const saved = writeLocalConfig({
+    ...localConfig,
     values: body.values || {},
     profiles: body.profiles || {},
     activeProfiles: body.activeProfiles || {}
