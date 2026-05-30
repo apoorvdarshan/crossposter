@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Eye, EyeOff, Plus, Save } from "lucide-react";
+import { SocialLogo } from "@/components/social-logo";
 import type { ConfigField } from "@/lib/config-spec";
 import type { Platform } from "@/lib/types";
 
@@ -204,7 +205,10 @@ export default function SettingsPage() {
           return (
             <section className="info-panel" key={platform.id}>
               <div className="panel-heading compact">
-                <h2>{platform.label}</h2>
+                <h2>
+                  <SocialLogo platform={platform.id} />
+                  {platform.label}
+                </h2>
                 <button className="secondary compact-button" type="button" onClick={() => addProfile(platform.id)}>
                   <Plus size={16} />
                   Add profile

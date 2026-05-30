@@ -82,6 +82,7 @@ button:disabled {
 .section-line,
 .channel-actions,
 .channel-top,
+.channel-title,
 .result-head {
   display: flex;
   align-items: center;
@@ -217,6 +218,40 @@ h2 {
 
 .panel-heading h2 {
   gap: 9px;
+}
+
+.social-logo {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(104, 112, 102, 0.22);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--brand);
+}
+
+.social-logo svg {
+  display: block;
+  width: 58%;
+  height: 58%;
+  fill: currentColor;
+}
+
+.social-logo-md {
+  width: 30px;
+  height: 30px;
+}
+
+.social-logo-sm {
+  width: 24px;
+  height: 24px;
+}
+
+.linkedin-mark {
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .counter {
@@ -478,6 +513,11 @@ textarea {
 .channel-top {
   justify-content: space-between;
   gap: 10px;
+}
+
+.channel-title {
+  min-width: 0;
+  gap: 9px;
 }
 
 .channel strong {

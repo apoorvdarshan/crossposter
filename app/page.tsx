@@ -17,6 +17,7 @@ import {
   Video,
   X
 } from "lucide-react";
+import { SocialLogo } from "@/components/social-logo";
 import type { Platform, PublishResult } from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
 
@@ -666,7 +667,10 @@ export default function Home() {
                     />
                     <span className="channel-body">
                       <span className="channel-top">
-                        <strong>{channel.label}</strong>
+                        <span className="channel-title">
+                          <SocialLogo platform={channel.id} />
+                          <strong>{channel.label}</strong>
+                        </span>
                         <span className="channel-check" />
                       </span>
                       <span className="channel-note">{channel.note}</span>
