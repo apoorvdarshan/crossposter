@@ -6,6 +6,7 @@ export type ConfigField = {
   help: string;
   secret?: boolean;
   requiredFor?: Platform[];
+  optionalFor?: Platform[];
 };
 
 export const configFields: ConfigField[] = [
@@ -45,6 +46,20 @@ export const configFields: ConfigField[] = [
     help: "Token from your Mastodon account settings.",
     secret: true,
     requiredFor: ["mastodon"]
+  },
+  {
+    name: "MASTODON_CLIENT_KEY",
+    label: "Mastodon client key",
+    help: "OAuth app client key. Stored for local reference; direct posting uses the access token.",
+    secret: true,
+    optionalFor: ["mastodon"]
+  },
+  {
+    name: "MASTODON_CLIENT_SECRET",
+    label: "Mastodon client secret",
+    help: "OAuth app client secret. Stored for local reference; direct posting uses the access token.",
+    secret: true,
+    optionalFor: ["mastodon"]
   },
   {
     name: "DEVTO_API_KEY",

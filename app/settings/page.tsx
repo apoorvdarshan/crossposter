@@ -69,7 +69,9 @@ export default function SettingsPage() {
   );
 
   function fieldsFor(platform: Platform): ConfigField[] {
-    return fields.filter((field) => field.requiredFor?.includes(platform));
+    return fields.filter(
+      (field) => field.requiredFor?.includes(platform) || field.optionalFor?.includes(platform)
+    );
   }
 
   function addProfile(platform: Platform) {

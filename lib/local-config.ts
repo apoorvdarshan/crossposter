@@ -23,7 +23,9 @@ const configPath = path.join(process.cwd(), "poster.config.local.json");
 const allowedFields = new Set(configFields.map((field) => field.name));
 const fieldPlatform = new Map<string, Platform>(
   configFields.flatMap((field) =>
-    field.requiredFor?.map((platform) => [field.name, platform] as const) || []
+    [...(field.requiredFor || []), ...(field.optionalFor || [])].map(
+      (platform) => [field.name, platform] as const
+    )
   )
 );
 
