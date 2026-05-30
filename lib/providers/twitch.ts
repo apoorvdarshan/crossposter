@@ -41,10 +41,6 @@ export async function publishTwitch(ctx: ProviderContext): Promise<PublishResult
   const accessToken = await getTwitchAccessToken();
   const message = compactText([ctx.title, ctx.text, ctx.url]);
 
-  if (ctx.media) {
-    throw new Error("Twitch chat does not accept media files");
-  }
-
   if (message.length > 500) {
     throw new Error("Twitch chat messages must be 500 characters or less");
   }
@@ -74,7 +70,7 @@ export async function publishTwitch(ctx: ProviderContext): Promise<PublishResult
   return {
     platform: "twitch",
     ok: result?.is_sent ?? true,
-    message: "Sent chat message",
+    message: ctx.media ? "Sent chat message without media" : "Sent chat message",
     url: channelLogin ? `https://www.twitch.tv/${channelLogin}` : undefined
   };
 }

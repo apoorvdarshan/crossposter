@@ -10,10 +10,6 @@ export async function publishDevto(ctx: ProviderContext): Promise<PublishResult>
   const apiKey = requireEnv("DEVTO_API_KEY");
   const title = ctx.title || optionalEnv("DEVTO_DEFAULT_TITLE");
 
-  if (ctx.media) {
-    throw new Error("Dev.to local media upload is not supported; use Markdown image links");
-  }
-
   if (!title) {
     throw new Error("Dev.to requires a title");
   }
@@ -39,7 +35,7 @@ export async function publishDevto(ctx: ProviderContext): Promise<PublishResult>
   return {
     platform: "devto",
     ok: true,
-    message: "Published",
+    message: ctx.media ? "Published without local media" : "Published",
     url: article.url
   };
 }

@@ -11,10 +11,6 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
   const author = requireEnv("LINKEDIN_AUTHOR_URN");
   const version = optionalEnv("LINKEDIN_VERSION") || "202506";
 
-  if (ctx.media) {
-    throw new Error("LinkedIn local media upload is not wired yet");
-  }
-
   const created = await assertOk<LinkedInPost>(
     await fetch("https://api.linkedin.com/rest/posts", {
       method: "POST",
@@ -42,7 +38,7 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
   return {
     platform: "linkedin",
     ok: true,
-    message: "Published",
+    message: ctx.media ? "Published without local media" : "Published",
     url: created.id ? `https://www.linkedin.com/feed/update/${created.id}` : undefined
   };
 }

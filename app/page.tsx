@@ -51,7 +51,7 @@ const channels: Array<{
     note: "Markdown article",
     uses: ["Title", "Post", "Link"],
     target: "Uses the active Dev.to profile from Settings.",
-    media: "Local file upload is not supported; use Markdown image links."
+    media: "Local files are ignored; add hosted images as Markdown links."
   },
   {
     id: "medium",
@@ -59,7 +59,7 @@ const channels: Array<{
     note: "Profile or publication article",
     uses: ["Title", "Post", "Link"],
     target: "Uses the active Medium profile from Settings.",
-    media: "Local file upload is not supported; use Markdown image links."
+    media: "Local files are ignored; add hosted images as Markdown links."
   },
   {
     id: "linkedin",
@@ -67,7 +67,7 @@ const channels: Array<{
     note: "Profile or page post",
     uses: ["Post", "Link"],
     target: "Uses the active LinkedIn profile from Settings.",
-    media: "Local media upload is not wired yet."
+    media: "Local media is ignored until LinkedIn upload is wired."
   },
   {
     id: "reddit",
@@ -75,7 +75,7 @@ const channels: Array<{
     note: "Self or link post",
     uses: ["Title", "Post", "Link"],
     target: "Uses the active Reddit profile from Settings.",
-    media: "Local media upload is not wired yet."
+    media: "Local media is ignored until Reddit upload is wired."
   },
   {
     id: "instagram",
@@ -107,7 +107,7 @@ const channels: Array<{
     note: "Chat message, max 500 chars",
     uses: ["Title", "Post", "Link"],
     target: "Uses the active Twitch profile from Settings.",
-    media: "Twitch chat does not accept media files."
+    media: "Local media is ignored for chat messages."
   }
 ];
 

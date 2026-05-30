@@ -19,10 +19,6 @@ export async function publishMedium(ctx: ProviderContext): Promise<PublishResult
   const publicationId = optionalEnv("MEDIUM_PUBLICATION_ID");
   const title = ctx.title || optionalEnv("MEDIUM_DEFAULT_TITLE");
 
-  if (ctx.media) {
-    throw new Error("Medium local media upload is not supported; use Markdown image links");
-  }
-
   if (!title) {
     throw new Error("Medium requires a title");
   }
@@ -60,7 +56,7 @@ export async function publishMedium(ctx: ProviderContext): Promise<PublishResult
   return {
     platform: "medium",
     ok: true,
-    message: "Published",
+    message: ctx.media ? "Published without local media" : "Published",
     url: post.data?.url
   };
 }
