@@ -4,6 +4,7 @@ export type ConfigField = {
   name: string;
   label: string;
   help: string;
+  defaultValue?: string;
   secret?: boolean;
   requiredFor?: Platform[];
   optionalFor?: Platform[];
@@ -20,6 +21,12 @@ export const configFields: ConfigField[] = [
     name: "POSTER_REQUIRE_ADMIN_PASSWORD",
     label: "Require admin password",
     help: "Keep false for local-only use. Set true before public hosting."
+  },
+  {
+    name: "POSTER_LOCAL_PORT",
+    label: "Local app port",
+    help: "Default localhost port for npm run dev:local and the macOS auto-start service. Restart the local service after changing it.",
+    defaultValue: "2004"
   },
   {
     name: "BLUESKY_IDENTIFIER",

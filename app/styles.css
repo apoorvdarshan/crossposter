@@ -150,6 +150,12 @@ h2 {
   justify-content: flex-end;
 }
 
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .status-pill,
 .health-link {
   min-height: 38px;
@@ -846,6 +852,55 @@ textarea {
   display: grid;
   gap: 10px;
   padding: 16px 18px 18px;
+}
+
+.config-location {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 12px;
+}
+
+.config-location > div:first-child {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.config-location span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.config-location a,
+.config-location code {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.config-location a {
+  color: var(--accent-dark);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.config-location a:hover {
+  text-decoration: underline;
+}
+
+.config-location p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
 .result {

@@ -21,7 +21,7 @@ export type LocalConfigFile = {
   publishedPosts: PublishedPost[];
 };
 
-const configPath = path.join(process.cwd(), "poster.config.local.json");
+export const localConfigPath = path.join(process.cwd(), "poster.config.local.json");
 const allowedFields = new Set(configFields.map((field) => field.name));
 const platforms: Platform[] = [
   "bluesky",
@@ -234,7 +234,7 @@ function normalizeConfig(value: unknown): LocalConfigFile {
 }
 
 export function readLocalConfig(): LocalConfigFile {
-  if (!existsSync(configPath)) {
+  if (!existsSync(localConfigPath)) {
     return {
       values: {},
       profiles: {},
@@ -245,7 +245,7 @@ export function readLocalConfig(): LocalConfigFile {
   }
 
   try {
-    return normalizeConfig(JSON.parse(readFileSync(configPath, "utf8")));
+    return normalizeConfig(JSON.parse(readFileSync(localConfigPath, "utf8")));
   } catch {
     return {
       values: {},
@@ -260,7 +260,7 @@ export function readLocalConfig(): LocalConfigFile {
 export function writeLocalConfig(config: LocalConfigFile): LocalConfigFile {
   const normalized = normalizeConfig(config);
 
-  writeFileSync(configPath, `${JSON.stringify(normalized, null, 2)}\n`);
+  writeFileSync(localConfigPath, `${JSON.stringify(normalized, null, 2)}\n`);
 
   return normalized;
 }

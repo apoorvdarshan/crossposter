@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "node scripts/run-local.mjs",
+    "local:install": "./scripts/install-local-service.sh",
+    "local:uninstall": "./scripts/uninstall-local-service.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

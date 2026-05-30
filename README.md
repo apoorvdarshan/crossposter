@@ -22,10 +22,34 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 ```bash
 npm install
 cp .env.example .env
-npm run dev
+npm run dev:local
 ```
 
-Open `http://localhost:3020` if you run the app with `npm run dev -- --port 3020`.
+Open `http://localhost:2004`. That is the default bookmarkable local URL.
+
+To change the port, set `POSTER_LOCAL_PORT` in Settings or in `poster.config.local.json`, then restart the local service:
+
+```bash
+POSTER_LOCAL_PORT=2080 npm run dev:local
+```
+
+For a macOS auto-start service that comes back after login/restart and keeps the same bookmarkable URL:
+
+```bash
+npm run local:install
+```
+
+Use a custom port by passing it once. The installer saves it into local config:
+
+```bash
+./scripts/install-local-service.sh 2080
+```
+
+Remove the auto-start service with:
+
+```bash
+npm run local:uninstall
+```
 
 Local development does not show an admin password field when `POSTER_REQUIRE_ADMIN_PASSWORD=false`.
 Use `/settings` to edit local config from the UI. It saves to `poster.config.local.json`, which is gitignored. Values in that file override `.env`.

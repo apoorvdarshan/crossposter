@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Eye, EyeOff, Plus, Save } from "lucide-react";
+import { ChevronLeft, Copy, ExternalLink, Eye, EyeOff, Plus, Save } from "lucide-react";
 import { SocialLogo } from "@/components/social-logo";
 import type { ConfigField } from "@/lib/config-spec";
 import type { Platform } from "@/lib/types";
@@ -18,6 +18,8 @@ type ConfigResponse = {
   values: Record<string, string>;
   profiles: Partial<Record<Platform, ProviderProfile[]>>;
   activeProfiles: Partial<Record<Platform, string>>;
+  configPath?: string;
+  localUrl?: string;
 };
 
 const platforms: Array<{ id: Platform; label: string }> = [
@@ -46,6 +48,8 @@ export default function SettingsPage() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [profiles, setProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
   const [activeProfiles, setActiveProfiles] = useState<Partial<Record<Platform, string>>>({});
+  const [configPath, setConfigPath] = useState("");
+  const [localUrl, setLocalUrl] = useState("http://localhost:2004");
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
@@ -59,6 +63,8 @@ export default function SettingsPage() {
       setValues(body.values || {});
       setProfiles(body.profiles || {});
       setActiveProfiles(body.activeProfiles || {});
+      setConfigPath(body.configPath || "");
+      setLocalUrl(body.localUrl || "http://localhost:2004");
     }
 
     void loadConfig();
@@ -68,6 +74,11 @@ export default function SettingsPage() {
     () => fields.filter((field) => !field.requiredFor?.length),
     [fields]
   );
+  const displayLocalUrl = useMemo(() => {
+    const port = values.POSTER_LOCAL_PORT?.trim();
+
+    return port && /^\d+$/.test(port) ? `http://localhost:${port}` : localUrl;
+  }, [localUrl, values.POSTER_LOCAL_PORT]);
 
   function fieldsFor(platform: Platform): ConfigField[] {
     return fields.filter(
@@ -128,11 +139,45 @@ export default function SettingsPage() {
       setValues(body.values || {});
       setProfiles(body.profiles || {});
       setActiveProfiles(body.activeProfiles || {});
+      setConfigPath(body.configPath || "");
+      setLocalUrl(body.localUrl || "http://localhost:2004");
       setStatus("Saved locally.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not save config.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function openConfigFile() {
+    setStatus("");
+
+    try {
+      const response = await fetch("/api/config/open", { method: "POST" });
+      const body = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not open config file.");
+        return;
+      }
+
+      setStatus("Opened local config file.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not open config file.");
+    }
+  }
+
+  async function copyConfigPath() {
+    if (!configPath) {
+      setStatus("Config path is not loaded yet.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(configPath);
+      setStatus("Copied config path.");
+    } catch {
+      setStatus(configPath);
     }
   }
 
@@ -168,6 +213,32 @@ export default function SettingsPage() {
               Everything here is saved to <code>poster.config.local.json</code>. That file is
               gitignored and stays on this machine.
             </p>
+            <div className="config-location">
+              <div>
+                <span>Bookmark URL</span>
+                <a href={displayLocalUrl} target="_blank" rel="noreferrer">
+                  {displayLocalUrl}
+                  <ExternalLink size={15} />
+                </a>
+              </div>
+              <p>Auto-start uses this same port after the next local service restart.</p>
+            </div>
+            <div className="config-location">
+              <div>
+                <span>Config file</span>
+                <code>{configPath || "poster.config.local.json"}</code>
+              </div>
+              <div className="inline-actions">
+                <button className="secondary compact-button" type="button" onClick={openConfigFile}>
+                  <ExternalLink size={15} />
+                  Open file
+                </button>
+                <button className="secondary compact-button" type="button" onClick={copyConfigPath}>
+                  <Copy size={15} />
+                  Copy path
+                </button>
+              </div>
+            </div>
             {baseFields.map((field) => (
               <label className="config-field" key={field.name}>
                 <span>{field.label}</span>
