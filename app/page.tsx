@@ -271,6 +271,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [isDraggingMedia, setIsDraggingMedia] = useState(false);
   const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
     {} as Record<Platform, ReadinessResponse["channels"][number]>
   );
@@ -376,12 +377,56 @@ export default function Home() {
     );
   }
 
-  function selectMedia(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0] || null;
-
+  function setDraftMedia(file: File | null) {
     setMediaFile(file);
     setError("");
     setResults([]);
+  }
+
+  function selectMedia(event: React.ChangeEvent<HTMLInputElement>) {
+    setDraftMedia(event.target.files?.[0] || null);
+  }
+
+  function pickClipboardFile(items: DataTransferItemList): File | null {
+    for (const item of Array.from(items)) {
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+
+        if (file) {
+          return file;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function pasteMedia(event: React.ClipboardEvent<HTMLDivElement>) {
+    const file = pickClipboardFile(event.clipboardData.items);
+
+    if (!file) {
+      return;
+    }
+
+    event.preventDefault();
+    setDraftMedia(file);
+  }
+
+  function dragMedia(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingMedia(true);
+  }
+
+  function leaveMediaDrop(event: React.DragEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setIsDraggingMedia(false);
+    }
+  }
+
+  function dropMedia(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingMedia(false);
+    setDraftMedia(event.dataTransfer.files[0] || null);
   }
 
   function clearMedia() {
@@ -570,7 +615,17 @@ export default function Home() {
               <label className="field-label" htmlFor="mediaFile">
                 Media file
               </label>
-              <div className={`media-picker ${mediaFile ? "has-file" : ""}`}>
+              <div
+                className={`media-picker ${mediaFile ? "has-file" : ""} ${
+                  isDraggingMedia ? "is-dragging" : ""
+                }`}
+                onDragEnter={dragMedia}
+                onDragOver={dragMedia}
+                onDragLeave={leaveMediaDrop}
+                onDrop={dropMedia}
+                onPaste={pasteMedia}
+                tabIndex={0}
+              >
                 <div className="media-preview">
                   {mediaFile && mediaPreviewUrl && selectedMediaKind === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -594,7 +649,7 @@ export default function Home() {
                   {!mediaFile ? (
                     <div className="media-empty">
                       <Upload size={28} />
-                      <span>No file selected</span>
+                      <span>Drop, paste, or choose a file</span>
                     </div>
                   ) : null}
                 </div>
@@ -630,7 +685,7 @@ export default function Home() {
                 </div>
               </div>
               <span className="field-hint">
-                Supported now: Bluesky images, Mastodon media, Pinterest images, YouTube videos.
+                Paste an image from the clipboard, drag and drop a file, or choose one manually.
               </span>
             </div>
 
