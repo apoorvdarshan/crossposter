@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { assertOk, compactText } from "@/lib/http";
 import { optionalEnv, requireEnv } from "@/lib/env";
 import type { ProviderContext, PublishResult } from "@/lib/types";
@@ -35,19 +36,30 @@ export async function publishYouTube(ctx: ProviderContext): Promise<PublishResul
     throw new Error("YouTube requires a title");
   }
 
-  if (!ctx.mediaUrl) {
-    throw new Error("YouTube requires a public video URL in mediaUrl");
-  }
+  let contentType = "video/mp4";
+  let media: Buffer;
 
-  const mediaResponse = await fetch(ctx.mediaUrl);
+  if (ctx.media) {
+    if (ctx.media.kind !== "video") {
+      throw new Error("YouTube requires a video file upload");
+    }
 
-  if (!mediaResponse.ok) {
-    throw new Error(`Could not fetch YouTube media: ${mediaResponse.status}`);
+    contentType = ctx.media.contentType || contentType;
+    media = await readFile(ctx.media.path);
+  } else if (ctx.mediaUrl) {
+    const mediaResponse = await fetch(ctx.mediaUrl);
+
+    if (!mediaResponse.ok) {
+      throw new Error(`Could not fetch YouTube media: ${mediaResponse.status}`);
+    }
+
+    contentType = mediaResponse.headers.get("content-type") || contentType;
+    media = Buffer.from(await mediaResponse.arrayBuffer());
+  } else {
+    throw new Error("YouTube requires a video file upload");
   }
 
   const accessToken = await getYouTubeAccessToken();
-  const contentType = mediaResponse.headers.get("content-type") || "video/mp4";
-  const media = Buffer.from(await mediaResponse.arrayBuffer());
   const boundary = `personal-crossposter-${randomUUID()}`;
   const tags = optionalEnv("YOUTUBE_TAGS")
     ?.split(",")

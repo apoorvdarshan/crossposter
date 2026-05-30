@@ -1,0 +1,34 @@
+import { NextResponse } from "next/server";
+import { saveUploadedMedia } from "@/lib/media-store";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+export async function POST(request: Request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file");
+
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "Missing media file" }, { status: 400 });
+    }
+
+    const media = await saveUploadedMedia(file, request.url);
+
+    return NextResponse.json({
+      media: {
+        id: media.id,
+        url: media.url,
+        filename: media.filename,
+        contentType: media.contentType,
+        size: media.size,
+        kind: media.kind
+      }
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Media upload failed" },
+      { status: 400 }
+    );
+  }
+}

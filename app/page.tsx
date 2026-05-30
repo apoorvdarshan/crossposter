@@ -5,8 +5,14 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ChevronRight,
+  File as FileIcon,
+  ImageIcon,
+  Music2,
   Radio,
   Send,
+  Upload,
+  Video,
+  X
 } from "lucide-react";
 import type { Platform, PublishResult } from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
@@ -22,82 +28,82 @@ const channels: Array<{
   {
     id: "bluesky",
     label: "Bluesky",
-    note: "Text and links",
-    uses: ["Post", "Link"],
-    target: "Uses one handle in .env. Multiple handles can be added later as profiles.",
-    media: "Media upload is not wired for Bluesky yet."
+    note: "Text, links, images",
+    uses: ["Post", "Link", "Media"],
+    target: "Uses the active Bluesky profile from Settings.",
+    media: "Local image upload is supported."
   },
   {
     id: "mastodon",
     label: "Mastodon",
-    note: "Text and links",
-    uses: ["Post", "Link"],
-    target: "Uses one instance/token now. Multiple Mastodon accounts can be profile configs later.",
-    media: "Media upload is not wired for Mastodon yet."
+    note: "Text, links, media",
+    uses: ["Post", "Link", "Media"],
+    target: "Uses the active Mastodon profile from Settings.",
+    media: "Local image, video, audio, or file upload is supported."
   },
   {
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
     uses: ["Title", "Post", "Link"],
-    target: "Uses one API key now. Multiple Dev.to accounts can be profile configs later.",
-    media: "Images must be inside the Markdown or hosted elsewhere."
+    target: "Uses the active Dev.to profile from Settings.",
+    media: "Local file upload is not supported; use Markdown image links."
   },
   {
     id: "medium",
     label: "Medium",
     note: "Profile or publication article",
     uses: ["Title", "Post", "Link"],
-    target: "Can target profile or one publication now. More publications can be profiles later.",
-    media: "Images must be in Markdown or hosted elsewhere."
+    target: "Uses the active Medium profile from Settings.",
+    media: "Local file upload is not supported; use Markdown image links."
   },
   {
     id: "linkedin",
     label: "LinkedIn",
     note: "Profile or page post",
     uses: ["Post", "Link"],
-    target: "Uses one author URN now: profile or page. More URNs can be profiles later.",
-    media: "Media upload is not wired for LinkedIn yet."
+    target: "Uses the active LinkedIn profile from Settings.",
+    media: "Local media upload is not wired yet."
   },
   {
     id: "reddit",
     label: "Reddit",
     note: "Self or link post",
     uses: ["Title", "Post", "Link"],
-    target: "Uses one subreddit now. More subreddits can be profiles later.",
-    media: "Media upload is not wired for Reddit yet."
+    target: "Uses the active Reddit profile from Settings.",
+    media: "Local media upload is not wired yet."
   },
   {
     id: "instagram",
     label: "Instagram",
-    note: "Meta approval + image URL",
+    note: "Meta approval required",
     uses: ["Post", "Link", "Media"],
-    target: "Uses one IG professional account now. More accounts need more Meta setup.",
-    media: "Requires a public image URL. File upload can be added later."
+    target: "Uses the active Instagram profile from Settings.",
+    media: "Local file upload is not supported by Meta publishing yet."
   },
   {
     id: "pinterest",
     label: "Pinterest",
-    note: "Requires public image URL",
+    note: "Image pin",
     uses: ["Title", "Post", "Link", "Media"],
-    target: "Uses one board now. More boards can be profiles later.",
-    media: "Requires a public image URL. File upload can be added later."
+    target: "Uses the active Pinterest profile from Settings.",
+    media: "Local image upload is supported."
   },
   {
     id: "youtube",
     label: "YouTube",
-    note: "Requires public video URL",
+    note: "Video upload",
     uses: ["Title", "Post", "Link", "Media"],
-    target: "Uses one YouTube channel token now. More channels can be profiles later.",
-    media: "Requires a public video URL. File upload can be added later."
+    target: "Uses the active YouTube profile from Settings.",
+    media: "Local video upload is supported."
   },
   {
     id: "twitch",
     label: "Twitch",
     note: "Chat message, max 500 chars",
     uses: ["Title", "Post", "Link"],
-    target: "Uses one channel chat now. More channels can be profiles later.",
-    media: "Media is ignored for Twitch chat."
+    target: "Uses the active Twitch profile from Settings.",
+    media: "Twitch chat does not accept media files."
   }
 ];
 
@@ -152,15 +158,69 @@ type ConfigProfilesResponse = {
   activeProfiles: Partial<Record<Platform, string>>;
 };
 
+type UploadedMedia = {
+  id: string;
+  filename: string;
+  contentType: string;
+  size: number;
+  kind: "image" | "video" | "audio" | "file";
+  url: string;
+};
+
+type MediaUploadResponse = {
+  media?: UploadedMedia;
+  error?: unknown;
+};
+
+function fileKind(file: File | null): UploadedMedia["kind"] {
+  if (!file) {
+    return "file";
+  }
+
+  if (file.type.startsWith("image/")) {
+    return "image";
+  }
+
+  if (file.type.startsWith("video/")) {
+    return "video";
+  }
+
+  if (file.type.startsWith("audio/")) {
+    return "audio";
+  }
+
+  return "file";
+}
+
+function formatBytes(size: number): string {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  const units = ["KB", "MB", "GB"];
+  let value = size / 1024;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+}
+
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
-  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaInputKey, setMediaInputKey] = useState(0);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
   const [selected, setSelected] = useState<Platform[]>(["bluesky"]);
   const [results, setResults] = useState<PublishResult[]>([]);
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
     {} as Record<Platform, ReadinessResponse["channels"][number]>
   );
@@ -235,6 +295,21 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!mediaFile) {
+      setMediaPreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(mediaFile);
+
+    setMediaPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [mediaFile]);
+
   const selectedLabel = useMemo(() => {
     if (selected.length === 0) {
       return "No channels";
@@ -251,12 +326,54 @@ export default function Home() {
     );
   }
 
+  function selectMedia(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] || null;
+
+    setMediaFile(file);
+    setError("");
+    setResults([]);
+  }
+
+  function clearMedia() {
+    setMediaFile(null);
+    setMediaInputKey((current) => current + 1);
+  }
+
+  async function uploadSelectedMedia(): Promise<UploadedMedia | undefined> {
+    if (!mediaFile) {
+      return undefined;
+    }
+
+    setIsUploadingMedia(true);
+
+    try {
+      const formData = new FormData();
+
+      formData.set("file", mediaFile);
+
+      const response = await fetch("/api/media", {
+        method: "POST",
+        body: formData
+      });
+      const body = (await response.json()) as MediaUploadResponse;
+
+      if (!response.ok || !body.media) {
+        throw new Error(typeof body.error === "string" ? body.error : "Media upload failed");
+      }
+
+      return body.media;
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  }
+
   async function publish() {
     setError("");
     setResults([]);
     setIsPublishing(true);
 
     try {
+      const uploadedMedia = await uploadSelectedMedia();
       const response = await fetch("/api/publish", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -264,7 +381,7 @@ export default function Home() {
           title: title.trim() || undefined,
           text,
           url: url.trim() || undefined,
-          mediaUrl: mediaUrl.trim() || undefined,
+          mediaId: uploadedMedia?.id,
           platforms: selected
         })
       });
@@ -284,7 +401,7 @@ export default function Home() {
     }
   }
 
-  const canPublish = text.trim() && selected.length > 0 && !isPublishing;
+  const canPublish = text.trim() && selected.length > 0 && !isPublishing && !isUploadingMedia;
   const configuredChannels = useMemo(
     () => channels.filter((channel) => (configProfiles[channel.id]?.length || 0) > 0),
     [configProfiles]
@@ -304,6 +421,16 @@ export default function Home() {
       ) as Record<Platform, string>,
     [activeProfiles, configProfiles]
   );
+  const selectedMediaKind = fileKind(mediaFile);
+  const SelectedMediaIcon =
+    selectedMediaKind === "image"
+      ? ImageIcon
+      : selectedMediaKind === "video"
+        ? Video
+        : selectedMediaKind === "audio"
+          ? Music2
+          : FileIcon;
+
   return (
     <main className="workspace">
       <header className="masthead">
@@ -381,19 +508,70 @@ export default function Home() {
             </div>
 
             <div className="field">
-              <label className="field-label" htmlFor="mediaUrl">
-                Media URL
+              <label className="field-label" htmlFor="mediaFile">
+                Media file
               </label>
-              <input
-                id="mediaUrl"
-                inputMode="url"
-                value={mediaUrl}
-                onChange={(event) => setMediaUrl(event.target.value)}
-                placeholder="Image URL or YouTube video URL"
-                aria-describedby="mediaUrlHint"
-              />
-              <span className="field-hint" id="mediaUrlHint">
-                Current build accepts public media URLs. File upload can be added later.
+              <div className={`media-picker ${mediaFile ? "has-file" : ""}`}>
+                <div className="media-preview">
+                  {mediaFile && mediaPreviewUrl && selectedMediaKind === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={mediaPreviewUrl} alt={mediaFile.name} />
+                  ) : null}
+                  {mediaFile && mediaPreviewUrl && selectedMediaKind === "video" ? (
+                    <video src={mediaPreviewUrl} controls />
+                  ) : null}
+                  {mediaFile && mediaPreviewUrl && selectedMediaKind === "audio" ? (
+                    <div className="media-empty media-audio">
+                      <Music2 size={24} />
+                      <audio src={mediaPreviewUrl} controls />
+                    </div>
+                  ) : null}
+                  {mediaFile && selectedMediaKind === "file" ? (
+                    <div className="media-empty">
+                      <FileIcon size={28} />
+                      <span>{mediaFile.name}</span>
+                    </div>
+                  ) : null}
+                  {!mediaFile ? (
+                    <div className="media-empty">
+                      <Upload size={28} />
+                      <span>No file selected</span>
+                    </div>
+                  ) : null}
+                </div>
+                <div className="media-controls">
+                  <label className="secondary file-button" htmlFor="mediaFile">
+                    <Upload size={18} />
+                    Choose file
+                  </label>
+                  <input
+                    key={mediaInputKey}
+                    className="sr-only"
+                    id="mediaFile"
+                    type="file"
+                    onChange={selectMedia}
+                  />
+                  {mediaFile ? (
+                    <button className="secondary icon-button" type="button" onClick={clearMedia}>
+                      <X size={18} />
+                      <span className="sr-only">Remove media file</span>
+                    </button>
+                  ) : null}
+                  {mediaFile ? (
+                    <div className="media-meta">
+                      <span>
+                        <SelectedMediaIcon size={16} />
+                        {mediaFile.name}
+                      </span>
+                      <span>
+                        {mediaFile.type || "file"} · {formatBytes(mediaFile.size)}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <span className="field-hint">
+                Supported now: Bluesky images, Mastodon media, Pinterest images, YouTube videos.
               </span>
             </div>
 
@@ -462,7 +640,7 @@ export default function Home() {
             <div className="actions">
               <button className="primary" disabled={!canPublish} onClick={publish}>
                 <Send size={18} />
-                {isPublishing ? "Publishing..." : "Publish now"}
+                {isUploadingMedia ? "Uploading..." : isPublishing ? "Publishing..." : "Publish now"}
               </button>
               <button
                 className="secondary"
@@ -471,7 +649,7 @@ export default function Home() {
                   setText("");
                   setTitle("");
                   setUrl("");
-                  setMediaUrl("");
+                  clearMedia();
                   setResults([]);
                   setError("");
                 }}

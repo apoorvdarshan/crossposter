@@ -2,6 +2,7 @@
 .env
 .env*.local
 poster.config.local.json
+.poster-uploads
 .next
 node_modules
 out

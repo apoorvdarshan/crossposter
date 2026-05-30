@@ -14,6 +14,7 @@ export type PublishPayload = {
   title?: string;
   text: string;
   url?: string;
+  mediaId?: string;
   mediaUrl?: string;
   platforms: Platform[];
 };
@@ -26,5 +27,14 @@ export type PublishResult = {
 };
 
 export type ProviderContext = PublishPayload & {
+  media?: {
+    id: string;
+    filename: string;
+    contentType: string;
+    size: number;
+    kind: "image" | "video" | "audio" | "file";
+    path: string;
+    url: string;
+  };
   now: Date;
 };

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getUploadedMedia } from "@/lib/media-store";
 import { providers } from "@/lib/providers";
 import type { Platform, ProviderContext, PublishResult } from "@/lib/types";
 
@@ -24,6 +25,7 @@ const requestSchema = z.object({
   title: z.string().max(300).optional(),
   text: z.string().min(1).max(12000),
   url: z.string().url().optional().or(z.literal("")),
+  mediaId: z.string().max(80).optional().or(z.literal("")),
   mediaUrl: z.string().url().optional().or(z.literal("")),
   platforms: z.array(platformSchema).min(1).max(10)
 });
@@ -52,11 +54,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let media: ProviderContext["media"] | undefined;
+
+  if (parsed.data.mediaId) {
+    try {
+      media = await getUploadedMedia(parsed.data.mediaId, request.url);
+    } catch {
+      return NextResponse.json({ error: "Uploaded media was not found" }, { status: 400 });
+    }
+  }
+
   const ctx: ProviderContext = {
     title: parsed.data.title?.trim() || undefined,
     text: parsed.data.text.trim(),
     url: parsed.data.url || undefined,
+    mediaId: parsed.data.mediaId || undefined,
     mediaUrl: parsed.data.mediaUrl || undefined,
+    media,
     platforms: parsed.data.platforms,
     now: new Date()
   };

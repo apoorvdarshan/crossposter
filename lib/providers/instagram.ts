@@ -15,8 +15,12 @@ export async function publishInstagram(ctx: ProviderContext): Promise<PublishRes
   const userId = requireEnv("INSTAGRAM_USER_ID");
   const graphVersion = optionalEnv("META_GRAPH_VERSION") || "v23.0";
 
+  if (ctx.media) {
+    throw new Error("Instagram local media upload is not supported yet");
+  }
+
   if (!ctx.mediaUrl) {
-    throw new Error("Instagram requires a public image URL in mediaUrl");
+    throw new Error("Instagram publishing needs hosted media support; local upload is not wired yet");
   }
 
   const createBody = new URLSearchParams();
@@ -49,4 +53,3 @@ export async function publishInstagram(ctx: ProviderContext): Promise<PublishRes
     url: published.id ? `https://www.instagram.com/p/${published.id}` : undefined
   };
 }
-

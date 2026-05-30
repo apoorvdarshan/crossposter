@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { assertOk } from "@/lib/http";
 import { requireEnv } from "@/lib/env";
 import type { ProviderContext, PublishResult } from "@/lib/types";
@@ -7,12 +8,39 @@ type PinterestPin = {
   link?: string;
 };
 
+type PinterestMediaSource =
+  | {
+      source_type: "image_base64";
+      content_type: string;
+      data: string;
+    }
+  | {
+      source_type: "image_url";
+      url: string;
+    };
+
 export async function publishPinterest(ctx: ProviderContext): Promise<PublishResult> {
   const accessToken = requireEnv("PINTEREST_ACCESS_TOKEN");
   const boardId = requireEnv("PINTEREST_BOARD_ID");
+  let mediaSource: PinterestMediaSource;
 
-  if (!ctx.mediaUrl) {
-    throw new Error("Pinterest requires a public image URL in mediaUrl");
+  if (ctx.media) {
+    if (ctx.media.kind !== "image") {
+      throw new Error("Pinterest local upload supports image files only");
+    }
+
+    mediaSource = {
+      source_type: "image_base64",
+      content_type: ctx.media.contentType,
+      data: (await readFile(ctx.media.path)).toString("base64")
+    };
+  } else if (ctx.mediaUrl) {
+    mediaSource = {
+      source_type: "image_url",
+      url: ctx.mediaUrl
+    };
+  } else {
+    throw new Error("Pinterest requires an image file upload");
   }
 
   const pin = await assertOk<PinterestPin>(
@@ -27,10 +55,7 @@ export async function publishPinterest(ctx: ProviderContext): Promise<PublishRes
         title: ctx.title || ctx.text.split("\n")[0]?.slice(0, 100) || "New pin",
         description: ctx.text,
         link: ctx.url,
-        media_source: {
-          source_type: "image_url",
-          url: ctx.mediaUrl
-        }
+        media_source: mediaSource
       })
     })
   );
@@ -42,4 +67,3 @@ export async function publishPinterest(ctx: ProviderContext): Promise<PublishRes
     url: pin.link || (pin.id ? `https://www.pinterest.com/pin/${pin.id}` : undefined)
   };
 }
-

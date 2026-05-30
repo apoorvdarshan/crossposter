@@ -43,6 +43,10 @@ export async function publishReddit(ctx: ProviderContext): Promise<PublishResult
   const accessToken = await getRedditAccessToken();
   const title = ctx.title || ctx.text.split("\n")[0]?.slice(0, 280);
 
+  if (ctx.media) {
+    throw new Error("Reddit local media upload is not wired yet");
+  }
+
   if (!title) {
     throw new Error("Reddit requires a title");
   }
@@ -78,4 +82,3 @@ export async function publishReddit(ctx: ProviderContext): Promise<PublishResult
     url: submitted.json?.data?.url
   };
 }
-

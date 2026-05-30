@@ -41,6 +41,10 @@ export async function publishTwitch(ctx: ProviderContext): Promise<PublishResult
   const accessToken = await getTwitchAccessToken();
   const message = compactText([ctx.title, ctx.text, ctx.url]);
 
+  if (ctx.media) {
+    throw new Error("Twitch chat does not accept media files");
+  }
+
   if (message.length > 500) {
     throw new Error("Twitch chat messages must be 500 characters or less");
   }
