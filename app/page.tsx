@@ -220,7 +220,7 @@ const mastodonVideoSizeLimit = 103_809_024;
 type PreflightIssue = {
   id: string;
   message: string;
-  canCompress?: boolean;
+  compress?: "image" | "video";
 };
 
 function normalizePlatforms(value: unknown): Platform[] {
@@ -481,7 +481,7 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
       issues.push({
         id: "bluesky-size",
         message: `Bluesky image limit is 1 MB; selected file is ${formatBytes(file.size)}.`,
-        canCompress: compressibleImageTypes.has(file.type)
+        compress: compressibleImageTypes.has(file.type) ? "image" : undefined
       });
     }
   }
@@ -491,14 +491,15 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
       issues.push({
         id: "mastodon-image-size",
         message: `Mastodon image limit on mastodon.social is 16 MB; selected file is ${formatBytes(file.size)}.`,
-        canCompress: compressibleImageTypes.has(file.type)
+        compress: compressibleImageTypes.has(file.type) ? "image" : undefined
       });
     }
 
     if (kind === "video" && file.size > mastodonVideoSizeLimit) {
       issues.push({
         id: "mastodon-video-size",
-        message: `Mastodon video limit on mastodon.social is about 99 MB; selected file is ${formatBytes(file.size)}.`
+        message: `Mastodon video limit on mastodon.social is about 99 MB; selected file is ${formatBytes(file.size)}.`,
+        compress: "video"
       });
     }
   }
@@ -511,6 +512,13 @@ function imageFileName(filename: string): string {
   const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
 
   return `${basename}-compressed.jpg`;
+}
+
+function videoFileName(filename: string): string {
+  const dotIndex = filename.lastIndexOf(".");
+  const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
+
+  return `${basename}-compressed.mp4`;
 }
 
 function loadImage(file: File): Promise<HTMLImageElement> {
@@ -596,6 +604,31 @@ async function compressImageForBluesky(file: File): Promise<File> {
 
   return new File([bestBlob], imageFileName(file.name), {
     type: "image/jpeg",
+    lastModified: Date.now()
+  });
+}
+
+async function compressVideoForMastodon(file: File): Promise<File> {
+  const formData = new FormData();
+
+  formData.set("file", file);
+
+  const response = await fetch("/api/media/compress-video", {
+    method: "POST",
+    body: formData
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+
+    throw new Error(body.error || "Video compression failed");
+  }
+
+  const blob = await response.blob();
+  const filename = response.headers.get("x-compressed-filename") || videoFileName(file.name);
+
+  return new File([blob], filename, {
+    type: response.headers.get("content-type") || "video/mp4",
     lastModified: Date.now()
   });
 }
@@ -946,16 +979,24 @@ export default function Home() {
       return;
     }
 
+    const compression = mediaPreflightIssues(selected, mediaFile).find((issue) => issue.compress)?.compress;
+
+    if (!compression) {
+      return;
+    }
+
     setError("");
     setIsCompressingMedia(true);
 
     try {
-      const compressed = await compressImageForBluesky(mediaFile);
+      const compressed = compression === "video"
+        ? await compressVideoForMastodon(mediaFile)
+        : await compressImageForBluesky(mediaFile);
 
       setDraftMedia(compressed);
     } catch (compressionError) {
       setError(
-        compressionError instanceof Error ? compressionError.message : "Image compression failed"
+        compressionError instanceof Error ? compressionError.message : "Media compression failed"
       );
     } finally {
       setIsCompressingMedia(false);
@@ -1089,7 +1130,8 @@ export default function Home() {
         : selectedMediaKind === "audio"
           ? Music2
           : FileIcon;
-  const canCompressMedia = preflightIssues.some((issue) => issue.canCompress) && Boolean(mediaFile);
+  const compressionKind = preflightIssues.find((issue) => issue.compress)?.compress;
+  const canCompressMedia = Boolean(compressionKind && mediaFile);
 
   return (
     <main className="workspace">
@@ -1273,7 +1315,11 @@ export default function Home() {
                       onClick={() => void compressSelectedMedia()}
                       type="button"
                     >
-                      {isCompressingMedia ? "Compressing..." : "Compress image"}
+                      {isCompressingMedia
+                        ? "Compressing..."
+                        : compressionKind === "video"
+                          ? "Compress video"
+                          : "Compress image"}
                     </button>
                   ) : null}
                 </div>
