@@ -173,7 +173,7 @@ h2 {
 
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
   gap: 18px;
   align-items: start;
 }
@@ -186,12 +186,19 @@ h2 {
 }
 
 .compose-panel,
+.publish-panel,
 .info-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow);
   overflow: hidden;
+}
+
+.publish-panel {
+  position: sticky;
+  top: 28px;
+  align-self: start;
 }
 
 .panel-heading {
@@ -611,15 +618,89 @@ textarea {
   font-weight: 700;
 }
 
-.inline-results,
+.publish-feed {
+  display: grid;
+  gap: 10px;
+  max-height: calc(100vh - 144px);
+  overflow: auto;
+  padding: 14px;
+}
+
+.result-list {
+  display: grid;
+  gap: 10px;
+}
+
+.publish-state,
+.publish-empty {
+  display: flex;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 12px;
+}
+
+.publish-state svg,
+.publish-empty svg {
+  flex: 0 0 auto;
+}
+
+.publish-state div,
+.publish-empty {
+  min-width: 0;
+}
+
+.publish-state div {
+  display: grid;
+  gap: 3px;
+}
+
+.publish-state strong,
+.publish-empty strong {
+  font-weight: 900;
+}
+
+.publish-state span,
+.publish-empty span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.publish-state.is-working {
+  border-color: #c7d1be;
+}
+
+.publish-state.is-working svg {
+  color: var(--accent-dark);
+}
+
+.publish-state.is-error {
+  border-color: rgba(199, 68, 53, 0.34);
+  background: rgba(199, 68, 53, 0.08);
+}
+
+.publish-state.is-error svg {
+  color: var(--danger);
+}
+
+.publish-empty {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  min-height: 172px;
+}
+
+.publish-empty svg {
+  color: var(--accent-dark);
+}
+
 .config-panel {
   display: grid;
   gap: 10px;
   padding: 16px 18px 18px;
-}
-
-.inline-results {
-  padding: 0;
 }
 
 .result {
@@ -676,6 +757,32 @@ code {
 .result p {
   margin: 8px 0 0;
   overflow-wrap: anywhere;
+}
+
+.result-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 9px;
+  color: var(--accent-dark);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.result-link:hover {
+  text-decoration: underline;
+}
+
+.result-link span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.result-link svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
 
 .config-groups {
@@ -796,6 +903,14 @@ code {
 
   .masthead-actions {
     justify-content: flex-start;
+  }
+
+  .publish-panel {
+    position: static;
+  }
+
+  .publish-feed {
+    max-height: none;
   }
 
   h1 {

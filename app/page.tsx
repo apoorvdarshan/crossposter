@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
+  CheckCircle2,
   ChevronRight,
+  Clock3,
+  ExternalLink,
   File as FileIcon,
   ImageIcon,
   Music2,
@@ -682,14 +685,52 @@ export default function Home() {
                 Clear draft
               </button>
             </div>
+          </div>
+        </section>
+
+        <aside className="publish-panel" aria-labelledby="publishPanelTitle">
+          <div className="panel-heading compact">
+            <div>
+              <p className="eyebrow">Publish output</p>
+              <h2 id="publishPanelTitle">
+                <Send size={18} />
+                Published
+              </h2>
+            </div>
+            <span className="counter">{results.length}</span>
+          </div>
+
+          <div className="publish-feed">
+            {isPublishing || isUploadingMedia ? (
+              <div className="publish-state is-working">
+                <Clock3 size={20} />
+                <div>
+                  <strong>{isUploadingMedia ? "Uploading media" : "Publishing post"}</strong>
+                  <span>Results will appear here on the right.</span>
+                </div>
+              </div>
+            ) : null}
 
             {error ? (
-              <p className="error-line">
-                <AlertTriangle size={16} /> {error}
-              </p>
+              <div className="publish-state is-error">
+                <AlertTriangle size={20} />
+                <div>
+                  <strong>Publish failed</strong>
+                  <span>{error}</span>
+                </div>
+              </div>
             ) : null}
+
+            {!isPublishing && !isUploadingMedia && !error && results.length === 0 ? (
+              <div className="publish-empty">
+                <CheckCircle2 size={24} />
+                <strong>No published post yet</strong>
+                <span>After you click Publish now, each channel result appears here.</span>
+              </div>
+            ) : null}
+
             {results.length > 0 ? (
-              <div className="inline-results">
+              <div className="result-list">
                 {results.map((result) => (
                   <div className="result" key={result.platform}>
                     <div className="result-head">
@@ -699,13 +740,18 @@ export default function Home() {
                       </span>
                     </div>
                     <p>{result.message}</p>
-                    {result.url ? <p>{result.url}</p> : null}
+                    {result.url ? (
+                      <a className="result-link" href={result.url} target="_blank" rel="noreferrer">
+                        <span>{result.url}</span>
+                        <ExternalLink size={14} />
+                      </a>
+                    ) : null}
                   </div>
                 ))}
               </div>
             ) : null}
           </div>
-        </section>
+        </aside>
       </section>
     </main>
   );
