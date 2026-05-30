@@ -48,10 +48,10 @@ const channels: Array<{
   {
     id: "devto",
     label: "Dev.to",
-    note: "Markdown article",
-    uses: ["Title", "Post", "Link"],
+    note: "Markdown article + main image",
+    uses: ["Title", "Post", "Link", "Media"],
     target: "Uses the active Dev.to profile from Settings.",
-    media: "Local files are ignored; add hosted images as Markdown links."
+    media: "Uploaded images become main_image when this app has a public URL."
   },
   {
     id: "medium",
