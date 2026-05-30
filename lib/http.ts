@@ -14,14 +14,32 @@ export async function readJson<T>(response: Response): Promise<T> {
   }
 }
 
+function compactErrorDetail(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const title = value.match(/<title[^>]*>(.*?)<\/title>/is)?.[1]
+    ?.replace(/\s+/g, " ")
+    .trim();
+
+  if (title) {
+    return title;
+  }
+
+  return value.replace(/\s+/g, " ").trim().slice(0, 240);
+}
+
 export async function assertOk<T>(response: Response): Promise<T> {
   const body = await readJson<T & { error?: string; message?: string }>(response);
 
   if (!response.ok) {
-    const detail =
-      typeof body === "object" && body
-        ? [body.error, body.message].filter(Boolean).join(": ") || JSON.stringify(body)
-        : response.statusText;
+    const detail = typeof body === "object" && body
+      ? [body.error, body.message, compactErrorDetail("raw" in body ? body.raw : undefined)]
+          .filter(Boolean)
+          .join(": ") || JSON.stringify(body).slice(0, 240)
+      : response.statusText;
+
     throw new Error(`${response.status} ${response.statusText}: ${detail}`);
   }
 

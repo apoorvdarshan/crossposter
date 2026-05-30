@@ -340,6 +340,30 @@ textarea {
   font-weight: 900;
 }
 
+.preflight-list {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(199, 68, 53, 0.28);
+  border-radius: 7px;
+  background: rgba(199, 68, 53, 0.07);
+  padding: 10px;
+}
+
+.preflight-item {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.preflight-item svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

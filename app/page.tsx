@@ -35,7 +35,7 @@ const channels: Array<{
     note: "Text, links, images",
     uses: ["Post", "Link", "Media"],
     target: "Uses the active Bluesky profile from Settings.",
-    media: "Local image upload is supported."
+    media: "Local image only: JPEG, PNG, WebP, GIF up to 1 MB."
   },
   {
     id: "mastodon",
@@ -210,6 +210,18 @@ const draftDbVersion = 1;
 const draftStoreName = "media";
 const draftMediaKey = "compose-media";
 const platformIds = channels.map((channel) => channel.id);
+const blueskyMaxImageSize = 1_000_000;
+const blueskyCompressTargetSize = 950_000;
+const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const compressibleImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const mastodonImageSizeLimit = 16_777_216;
+const mastodonVideoSizeLimit = 103_809_024;
+
+type PreflightIssue = {
+  id: string;
+  message: string;
+  canCompress?: boolean;
+};
 
 function normalizePlatforms(value: unknown): Platform[] {
   if (!Array.isArray(value)) {
@@ -413,6 +425,181 @@ function formatBytes(size: number): string {
   return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+function mediaKindLabel(kind: UploadedMedia["kind"]): string {
+  return kind === "file" ? "file" : `${kind} file`;
+}
+
+function mediaPreflightIssues(platforms: Platform[], file: File | null): PreflightIssue[] {
+  const issues: PreflightIssue[] = [];
+  const kind = fileKind(file);
+
+  if (platforms.includes("instagram")) {
+    issues.push({
+      id: "instagram-local",
+      message: "Instagram local publishing is not available in this local-only setup."
+    });
+  }
+
+  if (platforms.includes("pinterest")) {
+    if (!file) {
+      issues.push({ id: "pinterest-missing", message: "Pinterest requires an image file." });
+    } else if (kind !== "image") {
+      issues.push({
+        id: "pinterest-kind",
+        message: `Pinterest needs an image file; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    }
+  }
+
+  if (platforms.includes("youtube")) {
+    if (!file) {
+      issues.push({ id: "youtube-missing", message: "YouTube requires a video file." });
+    } else if (kind !== "video") {
+      issues.push({
+        id: "youtube-kind",
+        message: `YouTube needs a video file; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    }
+  }
+
+  if (!file) {
+    return issues;
+  }
+
+  if (platforms.includes("bluesky")) {
+    if (kind !== "image") {
+      issues.push({
+        id: "bluesky-kind",
+        message: `Bluesky can upload images only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (!blueskyImageTypes.has(file.type)) {
+      issues.push({
+        id: "bluesky-type",
+        message: `Bluesky supports JPEG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`
+      });
+    } else if (file.size > blueskyMaxImageSize) {
+      issues.push({
+        id: "bluesky-size",
+        message: `Bluesky image limit is 1 MB; selected file is ${formatBytes(file.size)}.`,
+        canCompress: compressibleImageTypes.has(file.type)
+      });
+    }
+  }
+
+  if (platforms.includes("mastodon")) {
+    if (kind === "image" && file.size > mastodonImageSizeLimit) {
+      issues.push({
+        id: "mastodon-image-size",
+        message: `Mastodon image limit on mastodon.social is 16 MB; selected file is ${formatBytes(file.size)}.`,
+        canCompress: compressibleImageTypes.has(file.type)
+      });
+    }
+
+    if (kind === "video" && file.size > mastodonVideoSizeLimit) {
+      issues.push({
+        id: "mastodon-video-size",
+        message: `Mastodon video limit on mastodon.social is about 99 MB; selected file is ${formatBytes(file.size)}.`
+      });
+    }
+  }
+
+  return issues;
+}
+
+function imageFileName(filename: string): string {
+  const dotIndex = filename.lastIndexOf(".");
+  const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
+
+  return `${basename}-compressed.jpg`;
+}
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not read this image for compression"));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Image compression failed"));
+          return;
+        }
+
+        resolve(blob);
+      },
+      "image/jpeg",
+      quality
+    );
+  });
+}
+
+async function compressImageForBluesky(file: File): Promise<File> {
+  if (!compressibleImageTypes.has(file.type)) {
+    throw new Error("Compression is available for JPEG, PNG, and WebP images.");
+  }
+
+  const image = await loadImage(file);
+  const maxDimension = 2048;
+  const initialScale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+  const scales = [1, 0.85, 0.7, 0.55, 0.42].map((scale) => scale * initialScale);
+  const qualities = [0.86, 0.76, 0.66, 0.56, 0.46, 0.36];
+  let bestBlob: Blob | undefined;
+
+  for (const scale of scales) {
+    const canvas = document.createElement("canvas");
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    if (!context) {
+      throw new Error("Image compression is not available in this browser");
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    for (const quality of qualities) {
+      const blob = await canvasToBlob(canvas, quality);
+
+      if (!bestBlob || blob.size < bestBlob.size) {
+        bestBlob = blob;
+      }
+
+      if (blob.size <= blueskyCompressTargetSize) {
+        return new File([blob], imageFileName(file.name), {
+          type: "image/jpeg",
+          lastModified: Date.now()
+        });
+      }
+    }
+  }
+
+  if (!bestBlob || bestBlob.size >= file.size) {
+    throw new Error("Could not compress this image enough for Bluesky");
+  }
+
+  return new File([bestBlob], imageFileName(file.name), {
+    type: "image/jpeg",
+    lastModified: Date.now()
+  });
+}
+
 function postTextLength(value: string): number {
   const Segmenter = (
     Intl as typeof Intl & {
@@ -456,6 +643,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [isCompressingMedia, setIsCompressingMedia] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
@@ -753,6 +941,27 @@ export default function Home() {
     await fetch("/api/draft?scope=history", { method: "DELETE" }).catch(() => undefined);
   }
 
+  async function compressSelectedMedia() {
+    if (!mediaFile) {
+      return;
+    }
+
+    setError("");
+    setIsCompressingMedia(true);
+
+    try {
+      const compressed = await compressImageForBluesky(mediaFile);
+
+      setDraftMedia(compressed);
+    } catch (compressionError) {
+      setError(
+        compressionError instanceof Error ? compressionError.message : "Image compression failed"
+      );
+    } finally {
+      setIsCompressingMedia(false);
+    }
+  }
+
   async function uploadSelectedMedia(): Promise<UploadedMedia | undefined> {
     if (!mediaFile) {
       return undefined;
@@ -784,6 +993,23 @@ export default function Home() {
   async function publish() {
     setError("");
     setResults([]);
+
+    const isBlueskyTooLong =
+      selected.includes("bluesky") &&
+      postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n")) > 300;
+
+    if (isBlueskyTooLong) {
+      setError("Bluesky is over 300 characters. Shorten the post or deselect Bluesky.");
+      return;
+    }
+
+    const preflightIssues = mediaPreflightIssues(selected, mediaFile);
+
+    if (preflightIssues.length > 0) {
+      setError(preflightIssues[0].message);
+      return;
+    }
+
     setIsPublishing(true);
 
     try {
@@ -823,7 +1049,18 @@ export default function Home() {
     }
   }
 
-  const canPublish = text.trim() && selected.length > 0 && !isPublishing && !isUploadingMedia;
+  const preflightIssues = mediaPreflightIssues(selected, mediaFile);
+  const blueskyLength = postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n"));
+  const showBlueskyLimit = selected.includes("bluesky");
+  const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
+  const canPublish =
+    text.trim() &&
+    selected.length > 0 &&
+    preflightIssues.length === 0 &&
+    !blueskyTooLong &&
+    !isPublishing &&
+    !isUploadingMedia &&
+    !isCompressingMedia;
   const configuredChannels = useMemo(
     () => channels.filter((channel) => (configProfiles[channel.id]?.length || 0) > 0),
     [configProfiles]
@@ -852,9 +1089,7 @@ export default function Home() {
         : selectedMediaKind === "audio"
           ? Music2
           : FileIcon;
-  const blueskyLength = postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n"));
-  const showBlueskyLimit = selected.includes("bluesky");
-  const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
+  const canCompressMedia = preflightIssues.some((issue) => issue.canCompress) && Boolean(mediaFile);
 
   return (
     <main className="workspace">
@@ -1023,6 +1258,26 @@ export default function Home() {
               <span className="field-hint">
                 Paste an image from the clipboard, drag and drop a file, or choose one manually.
               </span>
+              {preflightIssues.length > 0 ? (
+                <div className="preflight-list" role="alert">
+                  {preflightIssues.map((issue) => (
+                    <p className="preflight-item" key={issue.id}>
+                      <AlertTriangle size={16} />
+                      <span>{issue.message}</span>
+                    </p>
+                  ))}
+                  {canCompressMedia ? (
+                    <button
+                      className="secondary compact-button"
+                      disabled={isCompressingMedia}
+                      onClick={() => void compressSelectedMedia()}
+                      type="button"
+                    >
+                      {isCompressingMedia ? "Compressing..." : "Compress image"}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <div className="channel-section">
@@ -1105,7 +1360,13 @@ export default function Home() {
             <div className="actions">
               <button className="primary" disabled={!canPublish} onClick={publish}>
                 <Send size={18} />
-                {isUploadingMedia ? "Uploading..." : isPublishing ? "Publishing..." : "Publish now"}
+                {isCompressingMedia
+                  ? "Compressing..."
+                  : isUploadingMedia
+                    ? "Uploading..."
+                    : isPublishing
+                      ? "Publishing..."
+                      : "Publish now"}
               </button>
               <button
                 className="secondary"
