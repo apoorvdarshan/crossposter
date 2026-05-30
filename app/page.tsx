@@ -1224,12 +1224,32 @@ export default function Home() {
                       </p>
                     ) : null}
                     <div className="history-platforms">
-                      {post.results.map((result) => (
-                        <span className={`history-platform ${result.ok ? "ok" : "err"}`} key={result.platform}>
-                          <SocialLogo platform={result.platform} size="sm" />
-                          {result.platform}
-                        </span>
-                      ))}
+                      {post.results.map((result) => {
+                        const className = `history-platform ${result.ok ? "ok" : "err"}`;
+                        const content = (
+                          <>
+                            <SocialLogo platform={result.platform} size="sm" />
+                            {result.platform}
+                            {result.url ? <ExternalLink size={13} /> : null}
+                          </>
+                        );
+
+                        return result.url ? (
+                          <a
+                            className={className}
+                            href={result.url}
+                            key={result.platform}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {content}
+                          </a>
+                        ) : (
+                          <span className={className} key={result.platform}>
+                            {content}
+                          </span>
+                        );
+                      })}
                     </div>
                   </article>
                 ))}
