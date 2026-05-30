@@ -1170,6 +1170,8 @@ export default function Home() {
           : FileIcon;
   const compressionKind = preflightIssues.find((issue) => issue.compress)?.compress;
   const canCompressMedia = Boolean(compressionKind && mediaFile);
+  const compressionProgress = isCompressingMedia ? progress : null;
+  const actionProgress = progress && !isCompressingMedia ? progress : null;
 
   return (
     <main className="workspace">
@@ -1205,7 +1207,16 @@ export default function Home() {
                 Compose
               </h2>
             </div>
-            <span className="counter">{text.length}/12000</span>
+            <div className="compose-head-actions">
+              <span className="counter">{text.length}/12000</span>
+              <button className="primary compact-button" disabled={!canPublish} onClick={publish}>
+                <Send size={16} />
+                Publish draft
+              </button>
+              <button className="secondary compact-button" type="button" onClick={() => void clearDraft()}>
+                Clear draft
+              </button>
+            </div>
           </div>
 
           <div className="composer">
@@ -1362,6 +1373,21 @@ export default function Home() {
                   ) : null}
                 </div>
               ) : null}
+              {compressionProgress ? (
+                <div className="progress-box media-progress" role="status" aria-live="polite">
+                  <div className="progress-copy">
+                    <strong>{compressionProgress.label}</strong>
+                    <span>{Math.round(compressionProgress.value)}%</span>
+                  </div>
+                  <div className="progress-track">
+                    <span
+                      style={{
+                        width: `${Math.max(3, Math.min(100, compressionProgress.value))}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="channel-section">
@@ -1460,14 +1486,14 @@ export default function Home() {
                 Clear draft
               </button>
             </div>
-            {progress ? (
+            {actionProgress ? (
               <div className="progress-box" role="status" aria-live="polite">
                 <div className="progress-copy">
-                  <strong>{progress.label}</strong>
-                  <span>{Math.round(progress.value)}%</span>
+                  <strong>{actionProgress.label}</strong>
+                  <span>{Math.round(actionProgress.value)}%</span>
                 </div>
                 <div className="progress-track">
-                  <span style={{ width: `${Math.max(3, Math.min(100, progress.value))}%` }} />
+                  <span style={{ width: `${Math.max(3, Math.min(100, actionProgress.value))}%` }} />
                 </div>
               </div>
             ) : null}

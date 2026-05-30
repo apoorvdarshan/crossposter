@@ -88,6 +88,14 @@ button:disabled {
   align-items: center;
 }
 
+.compose-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .brand-lockup {
   gap: 13px;
   min-width: 0;
@@ -670,6 +678,10 @@ textarea {
   border-radius: 7px;
   background: #f3f7ee;
   padding: 10px;
+}
+
+.media-progress {
+  margin-top: 0;
 }
 
 .progress-copy {
