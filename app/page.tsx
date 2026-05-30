@@ -175,6 +175,35 @@ type MediaUploadResponse = {
   error?: unknown;
 };
 
+type ApiFieldError = {
+  formErrors?: string[];
+  fieldErrors?: Record<string, string[]>;
+};
+
+function formatApiError(error: unknown): string {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error && typeof error === "object") {
+    const fieldError = error as ApiFieldError;
+
+    if (fieldError.fieldErrors?.url?.length) {
+      return "Link is invalid. Use a full URL like https://example.com, or leave Link empty.";
+    }
+
+    if (fieldError.fieldErrors?.mediaUrl?.length) {
+      return "Media URL is invalid. Upload a local file instead.";
+    }
+
+    if (fieldError.formErrors?.length) {
+      return fieldError.formErrors.join(" ");
+    }
+  }
+
+  return "Publish request is invalid. Check the fields and try again.";
+}
+
 function fileKind(file: File | null): UploadedMedia["kind"] {
   if (!file) {
     return "file";
@@ -409,7 +438,7 @@ export default function Home() {
       const body = (await response.json()) as ApiResponse;
 
       if (!response.ok) {
-        setError(typeof body.error === "string" ? body.error : JSON.stringify(body.error));
+        setError(formatApiError(body.error));
         return;
       }
 
@@ -513,8 +542,9 @@ export default function Home() {
                   inputMode="url"
                   value={url}
                   onChange={(event) => setUrl(event.target.value)}
-                  placeholder="https://example.com"
+                  placeholder="example.com or https://example.com"
                 />
+                <span className="field-hint">Leave empty if there is no link.</span>
               </div>
             </div>
 

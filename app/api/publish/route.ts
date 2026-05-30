@@ -20,15 +20,66 @@ const platformSchema = z.enum([
   "medium"
 ]);
 
+function normalizeOptionalUrl(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+}
+
+const optionalUrlSchema = z.preprocess(
+  normalizeOptionalUrl,
+  z
+    .string()
+    .url()
+    .refine((value) => {
+      try {
+        const parsed = new URL(value);
+        const isHttp = parsed.protocol === "http:" || parsed.protocol === "https:";
+        const isPublicLike = parsed.hostname === "localhost" || parsed.hostname.includes(".");
+
+        return isHttp && isPublicLike && !parsed.username && !parsed.password;
+      } catch {
+        return false;
+      }
+    })
+    .optional()
+);
+
 const requestSchema = z.object({
   adminPassword: z.string().optional(),
   title: z.string().max(300).optional(),
   text: z.string().min(1).max(12000),
-  url: z.string().url().optional().or(z.literal("")),
+  url: optionalUrlSchema,
   mediaId: z.string().max(80).optional().or(z.literal("")),
-  mediaUrl: z.string().url().optional().or(z.literal("")),
+  mediaUrl: optionalUrlSchema,
   platforms: z.array(platformSchema).min(1).max(10)
 });
+
+function validationMessage(error: z.ZodError): string {
+  const fields = error.flatten().fieldErrors;
+
+  if (fields.url?.length) {
+    return "Link is invalid. Use a full URL like https://example.com, or leave Link empty.";
+  }
+
+  if (fields.mediaUrl?.length) {
+    return "Media URL is invalid. Upload a local file instead.";
+  }
+
+  return "Publish request is invalid. Check the highlighted fields and try again.";
+}
 
 export async function POST(request: Request) {
   const requiresPassword =
@@ -47,7 +98,7 @@ export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(await request.json());
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
   }
 
   if (requiresPassword && parsed.data.adminPassword !== configuredPassword) {
