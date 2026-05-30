@@ -199,6 +199,12 @@ type StoredDraftMedia = {
   lastModified: number;
 };
 
+type HistoryMediaPreview = {
+  file: File;
+  kind: UploadedMedia["kind"];
+  url: string;
+};
+
 type ApiFieldError = {
   formErrors?: string[];
   fieldErrors?: Record<string, string[]>;
@@ -209,6 +215,7 @@ const draftDbName = "personal-crossposter-drafts";
 const draftDbVersion = 1;
 const draftStoreName = "media";
 const draftMediaKey = "compose-media";
+const historyMediaPrefix = "published-media:";
 const platformIds = channels.map((channel) => channel.id);
 const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
@@ -367,6 +374,53 @@ async function saveStoredDraftMedia(file: File | null): Promise<void> {
       lastModified: file.lastModified
     } satisfies StoredDraftMedia)
   );
+}
+
+function historyMediaKey(postId: string): string {
+  return `${historyMediaPrefix}${postId}`;
+}
+
+async function readStoredHistoryMedia(postId: string): Promise<File | null> {
+  if (!("indexedDB" in window)) {
+    return null;
+  }
+
+  const stored = (await withDraftStore("readonly", (store) =>
+    store.get(historyMediaKey(postId))
+  )) as StoredDraftMedia | undefined;
+
+  if (!stored?.blob) {
+    return null;
+  }
+
+  return new File([stored.blob], stored.name || "published-media", {
+    type: stored.type || stored.blob.type || "application/octet-stream",
+    lastModified: stored.lastModified || Date.now()
+  });
+}
+
+async function saveStoredHistoryMedia(postId: string, file: File | null): Promise<void> {
+  if (!("indexedDB" in window) || !file) {
+    return;
+  }
+
+  await withDraftStore("readwrite", (store) =>
+    store.put({
+      id: historyMediaKey(postId),
+      blob: file,
+      name: file.name,
+      type: file.type,
+      lastModified: file.lastModified
+    } satisfies StoredDraftMedia)
+  );
+}
+
+async function deleteStoredHistoryMedia(postId: string): Promise<void> {
+  if (!("indexedDB" in window)) {
+    return;
+  }
+
+  await withDraftStore("readwrite", (store) => store.delete(historyMediaKey(postId)));
 }
 
 function formatApiError(error: unknown): string {
@@ -685,6 +739,7 @@ export default function Home() {
   const [selected, setSelected] = useState<Platform[]>([]);
   const [results, setResults] = useState<PublishResult[]>([]);
   const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
+  const [historyMedia, setHistoryMedia] = useState<Record<string, HistoryMediaPreview>>({});
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -880,6 +935,62 @@ export default function Home() {
     void saveStoredDraftMedia(mediaFile).catch(() => undefined);
   }, [mediaFile, draftHydrated]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadHistoryMedia() {
+      if (!draftHydrated || publishedPosts.length === 0) {
+        setHistoryMedia((current) => {
+          Object.values(current).forEach((item) => URL.revokeObjectURL(item.url));
+          return {};
+        });
+        return;
+      }
+
+      const entries = await Promise.all(
+        publishedPosts.map(async (post) => {
+          const file = await readStoredHistoryMedia(post.id).catch(() => null);
+
+          if (!file) {
+            return null;
+          }
+
+          return [
+            post.id,
+            {
+              file,
+              kind: fileKind(file),
+              url: URL.createObjectURL(file)
+            }
+          ] as const;
+        })
+      );
+
+      if (!active) {
+        entries.forEach((entry) => {
+          if (entry) {
+            URL.revokeObjectURL(entry[1].url);
+          }
+        });
+        return;
+      }
+
+      setHistoryMedia((current) => {
+        Object.values(current).forEach((item) => URL.revokeObjectURL(item.url));
+
+        return Object.fromEntries(
+          entries.filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+        );
+      });
+    }
+
+    void loadHistoryMedia();
+
+    return () => {
+      active = false;
+    };
+  }, [draftHydrated, publishedPosts]);
+
   const selectedLabel = useMemo(() => {
     if (selected.length === 0) {
       return "No channels";
@@ -1005,8 +1116,15 @@ export default function Home() {
   }
 
   async function clearPublishedPosts() {
+    const postIds = publishedPosts.map((post) => post.id);
+
     setProgress({ label: "Clearing publish history", value: 60 });
     setPublishedPosts([]);
+    setHistoryMedia((current) => {
+      Object.values(current).forEach((item) => URL.revokeObjectURL(item.url));
+      return {};
+    });
+    await Promise.all(postIds.map((postId) => deleteStoredHistoryMedia(postId).catch(() => undefined)));
     await fetch("/api/draft?scope=history", { method: "DELETE" }).catch(() => undefined);
     setProgress(null);
   }
@@ -1088,7 +1206,6 @@ export default function Home() {
     setResults([]);
     setProgress(null);
     let uploadedMedia: UploadedMedia | undefined;
-    let shouldClearDraftMedia = false;
 
     const isBlueskyTooLong =
       selected.includes("bluesky") &&
@@ -1131,9 +1248,9 @@ export default function Home() {
         return;
       }
 
-      shouldClearDraftMedia = Boolean(body.publishedPost);
       setProgress({ label: "Saving publish output", value: 90 });
       if (body.publishedPost) {
+        await saveStoredHistoryMedia(body.publishedPost.id, mediaFile).catch(() => undefined);
         setResults([]);
         setPublishedPosts((current) => [
           body.publishedPost as PublishedPost,
@@ -1142,17 +1259,11 @@ export default function Home() {
       } else {
         setResults(body.results || []);
       }
-      setProgress({ label: uploadedMedia ? "Removing local upload copy" : "Publish complete", value: 96 });
+      setProgress({ label: "Publish complete", value: 100 });
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Publish failed");
     } finally {
       await deleteLocalUpload(uploadedMedia?.id);
-      if (shouldClearDraftMedia) {
-        setMediaFile(null);
-        setMediaInputKey((current) => current + 1);
-        await saveStoredDraftMedia(null).catch(() => undefined);
-        setProgress({ label: "Publish complete", value: 100 });
-      }
       setIsPublishing(false);
       window.setTimeout(() => setProgress(null), 500);
     }
@@ -1613,18 +1724,55 @@ export default function Home() {
               <div className="result-list" aria-label="Published posts">
                 {publishedPosts.map((post) => {
                   const okCount = post.results.filter((result) => result.ok).length;
+                  const preview = post.text.trim();
+                  const heading = post.title?.trim();
+                  const mediaPreview = historyMedia[post.id];
 
                   return (
                     <article className="result history-result" key={post.id}>
                       <div className="result-head history-head">
                         <div>
-                          <strong>Published</strong>
+                          {heading ? <strong>{heading}</strong> : null}
                           <time className="history-time">{formatDateTime(post.createdAt)}</time>
                         </div>
                         <span className={`badge ${okCount > 0 ? "ok" : "err"}`}>
                           {okCount}/{post.results.length} ok
                         </span>
                       </div>
+                      {preview ? <p className="history-preview">{preview}</p> : null}
+                      {post.url ? (
+                        <a className="history-source-link" href={post.url} target="_blank" rel="noreferrer">
+                          <span>{post.url}</span>
+                          <ExternalLink size={13} />
+                        </a>
+                      ) : null}
+                      {mediaPreview ? (
+                        <div className="history-media">
+                          {mediaPreview.kind === "image" ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- object URLs are local draft snapshots.
+                            <img src={mediaPreview.url} alt={mediaPreview.file.name} />
+                          ) : null}
+                          {mediaPreview.kind === "video" ? (
+                            <video controls preload="metadata" src={mediaPreview.url} />
+                          ) : null}
+                          {mediaPreview.kind === "audio" ? (
+                            <div className="history-audio">
+                              <Music2 size={18} />
+                              <audio controls src={mediaPreview.url} />
+                            </div>
+                          ) : null}
+                          {mediaPreview.kind === "file" ? (
+                            <div className="history-file">
+                              <FileIcon size={18} />
+                              <span>{mediaPreview.file.name}</span>
+                            </div>
+                          ) : null}
+                          <span>
+                            {mediaPreview.file.name} · {mediaPreview.file.type || "file"} ·{" "}
+                            {formatBytes(mediaPreview.file.size)}
+                          </span>
+                        </div>
+                      ) : null}
                       <div className="history-platforms">
                         {post.results.map((result) => {
                           const channel = channels.find((item) => item.id === result.platform);
