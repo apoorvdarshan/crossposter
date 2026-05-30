@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { saveUploadedMedia } from "@/lib/media-store";
+import { deleteAllUploadedMedia, saveUploadedMedia } from "@/lib/media-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,4 +33,16 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+}
+
+export async function DELETE(request: Request) {
+  const scope = new URL(request.url).searchParams.get("scope");
+
+  if (scope !== "all") {
+    return NextResponse.json({ error: "Use scope=all to clear local uploads" }, { status: 400 });
+  }
+
+  const deleted = await deleteAllUploadedMedia();
+
+  return NextResponse.json({ ok: true, deleted });
 }

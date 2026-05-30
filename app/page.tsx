@@ -899,9 +899,24 @@ export default function Home() {
 
   function setDraftMedia(file: File | null) {
     setHasSavedDraft(true);
+    void clearLocalUploadCache();
     setMediaFile(file);
     setError("");
     setResults([]);
+  }
+
+  async function deleteLocalUpload(mediaId: string | undefined): Promise<void> {
+    if (!mediaId) {
+      return;
+    }
+
+    await fetch(`/api/media/${encodeURIComponent(mediaId)}`, { method: "DELETE" }).catch(
+      () => undefined
+    );
+  }
+
+  async function clearLocalUploadCache(): Promise<void> {
+    await fetch("/api/media?scope=all", { method: "DELETE" }).catch(() => undefined);
   }
 
   function selectMedia(event: React.ChangeEvent<HTMLInputElement>) {
@@ -950,10 +965,12 @@ export default function Home() {
     setDraftMedia(event.dataTransfer.files[0] || null);
   }
 
-  function clearMedia() {
+  async function clearMedia() {
     setHasSavedDraft(true);
     setMediaFile(null);
     setMediaInputKey((current) => current + 1);
+    await saveStoredDraftMedia(null).catch(() => undefined);
+    await clearLocalUploadCache();
   }
 
   async function clearDraft() {
@@ -970,12 +987,15 @@ export default function Home() {
     setText("");
     setUrl("");
     setSelected([]);
-    clearMedia();
+    setMediaFile(null);
+    setMediaInputKey((current) => current + 1);
     setResults([]);
     setError("");
-    setProgress({ label: "Clearing draft", value: 60 });
+    setProgress({ label: "Clearing draft", value: 35 });
     writeStoredDraft(draft);
     await saveStoredDraftMedia(null).catch(() => undefined);
+    setProgress({ label: "Removing local draft uploads", value: 65 });
+    await clearLocalUploadCache();
     await fetch("/api/draft", {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -1067,6 +1087,8 @@ export default function Home() {
     setError("");
     setResults([]);
     setProgress(null);
+    let uploadedMedia: UploadedMedia | undefined;
+    let shouldClearDraftMedia = false;
 
     const isBlueskyTooLong =
       selected.includes("bluesky") &&
@@ -1088,7 +1110,7 @@ export default function Home() {
     setProgress({ label: mediaFile ? "Preparing media upload" : "Preparing publish", value: 8 });
 
     try {
-      const uploadedMedia = await uploadSelectedMedia();
+      uploadedMedia = await uploadSelectedMedia();
       setProgress({ label: "Sending to selected channels", value: uploadedMedia ? 45 : 25 });
       const response = await fetch("/api/publish", {
         method: "POST",
@@ -1109,6 +1131,7 @@ export default function Home() {
         return;
       }
 
+      shouldClearDraftMedia = Boolean(body.publishedPost);
       setProgress({ label: "Saving publish output", value: 90 });
       if (body.publishedPost) {
         setResults([]);
@@ -1119,10 +1142,17 @@ export default function Home() {
       } else {
         setResults(body.results || []);
       }
-      setProgress({ label: "Publish complete", value: 100 });
+      setProgress({ label: uploadedMedia ? "Removing local upload copy" : "Publish complete", value: 96 });
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Publish failed");
     } finally {
+      await deleteLocalUpload(uploadedMedia?.id);
+      if (shouldClearDraftMedia) {
+        setMediaFile(null);
+        setMediaInputKey((current) => current + 1);
+        await saveStoredDraftMedia(null).catch(() => undefined);
+        setProgress({ label: "Publish complete", value: 100 });
+      }
       setIsPublishing(false);
       window.setTimeout(() => setProgress(null), 500);
     }

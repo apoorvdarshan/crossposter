@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -161,4 +161,35 @@ export async function openUploadedMedia(id: string, requestUrl: string) {
     media,
     stream: createReadStream(media.path)
   };
+}
+
+export async function deleteUploadedMedia(id: string): Promise<boolean> {
+  let deleted = false;
+
+  try {
+    await unlink(mediaPath(id));
+    deleted = true;
+  } catch {}
+
+  try {
+    await unlink(metadataPath(id));
+    deleted = true;
+  } catch {}
+
+  return deleted;
+}
+
+export async function deleteAllUploadedMedia(): Promise<number> {
+  const entries = await readdir(mediaDir, { withFileTypes: true }).catch(() => []);
+
+  await Promise.all(
+    entries.map((entry) =>
+      rm(path.join(mediaDir, entry.name), {
+        force: true,
+        recursive: true
+      })
+    )
+  );
+
+  return entries.length;
 }

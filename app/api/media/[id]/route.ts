@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
-import { openUploadedMedia } from "@/lib/media-store";
+import { deleteUploadedMedia, openUploadedMedia } from "@/lib/media-store";
 
 export const runtime = "nodejs";
 
@@ -29,6 +29,17 @@ export async function GET(request: Request, { params }: RouteContext) {
         "content-type": media.contentType
       }
     });
+  } catch {
+    return NextResponse.json({ error: "Media not found" }, { status: 404 });
+  }
+}
+
+export async function DELETE(_request: Request, { params }: RouteContext) {
+  try {
+    const { id } = await params;
+    const deleted = await deleteUploadedMedia(id);
+
+    return NextResponse.json({ ok: true, deleted });
   } catch {
     return NextResponse.json({ error: "Media not found" }, { status: 404 });
   }
