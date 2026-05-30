@@ -223,6 +223,11 @@ type PreflightIssue = {
   compress?: "image" | "video";
 };
 
+type ProgressState = {
+  label: string;
+  value: number;
+};
+
 function normalizePlatforms(value: unknown): Platform[] {
   if (!Array.isArray(value)) {
     return [];
@@ -608,15 +613,21 @@ async function compressImageForBluesky(file: File): Promise<File> {
   });
 }
 
-async function compressVideoForMastodon(file: File): Promise<File> {
+async function compressVideoForMastodon(
+  file: File,
+  onProgress: (progress: ProgressState) => void
+): Promise<File> {
   const formData = new FormData();
 
+  onProgress({ label: "Preparing video", value: 8 });
   formData.set("file", file);
+  onProgress({ label: "Uploading to local compressor", value: 22 });
 
   const response = await fetch("/api/media/compress-video", {
     method: "POST",
     body: formData
   });
+  onProgress({ label: "Local FFmpeg compression finished", value: 82 });
 
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as { error?: string };
@@ -624,6 +635,7 @@ async function compressVideoForMastodon(file: File): Promise<File> {
     throw new Error(body.error || "Video compression failed");
   }
 
+  onProgress({ label: "Receiving compressed video", value: 92 });
   const blob = await response.blob();
   const filename = response.headers.get("x-compressed-filename") || videoFileName(file.name);
 
@@ -678,6 +690,7 @@ export default function Home() {
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isCompressingMedia, setIsCompressingMedia] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+  const [progress, setProgress] = useState<ProgressState | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
@@ -960,6 +973,7 @@ export default function Home() {
     clearMedia();
     setResults([]);
     setError("");
+    setProgress({ label: "Clearing draft", value: 60 });
     writeStoredDraft(draft);
     await saveStoredDraftMedia(null).catch(() => undefined);
     await fetch("/api/draft", {
@@ -967,11 +981,14 @@ export default function Home() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ draft })
     }).catch(() => undefined);
+    setProgress(null);
   }
 
   async function clearPublishedPosts() {
+    setProgress({ label: "Clearing publish history", value: 60 });
     setPublishedPosts([]);
     await fetch("/api/draft?scope=history", { method: "DELETE" }).catch(() => undefined);
+    setProgress(null);
   }
 
   async function compressSelectedMedia() {
@@ -987,19 +1004,32 @@ export default function Home() {
 
     setError("");
     setIsCompressingMedia(true);
+    setProgress({
+      label: compression === "video" ? "Starting video compression" : "Starting image compression",
+      value: 5
+    });
 
     try {
       const compressed = compression === "video"
-        ? await compressVideoForMastodon(mediaFile)
-        : await compressImageForBluesky(mediaFile);
+        ? await compressVideoForMastodon(mediaFile, setProgress)
+        : await (async () => {
+            setProgress({ label: "Reading image", value: 25 });
+            const image = await compressImageForBluesky(mediaFile);
 
+            setProgress({ label: "Encoding compressed image", value: 82 });
+            return image;
+          })();
+
+      setProgress({ label: "Replacing selected media", value: 96 });
       setDraftMedia(compressed);
+      setProgress({ label: "Compression complete", value: 100 });
     } catch (compressionError) {
       setError(
         compressionError instanceof Error ? compressionError.message : "Media compression failed"
       );
     } finally {
       setIsCompressingMedia(false);
+      window.setTimeout(() => setProgress(null), 500);
     }
   }
 
@@ -1009,6 +1039,7 @@ export default function Home() {
     }
 
     setIsUploadingMedia(true);
+    setProgress({ label: "Uploading media locally", value: 15 });
 
     try {
       const formData = new FormData();
@@ -1025,6 +1056,7 @@ export default function Home() {
         throw new Error(typeof body.error === "string" ? body.error : "Media upload failed");
       }
 
+      setProgress({ label: "Media ready", value: 35 });
       return body.media;
     } finally {
       setIsUploadingMedia(false);
@@ -1034,6 +1066,7 @@ export default function Home() {
   async function publish() {
     setError("");
     setResults([]);
+    setProgress(null);
 
     const isBlueskyTooLong =
       selected.includes("bluesky") &&
@@ -1052,9 +1085,11 @@ export default function Home() {
     }
 
     setIsPublishing(true);
+    setProgress({ label: mediaFile ? "Preparing media upload" : "Preparing publish", value: 8 });
 
     try {
       const uploadedMedia = await uploadSelectedMedia();
+      setProgress({ label: "Sending to selected channels", value: uploadedMedia ? 45 : 25 });
       const response = await fetch("/api/publish", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -1074,6 +1109,7 @@ export default function Home() {
         return;
       }
 
+      setProgress({ label: "Saving publish output", value: 90 });
       if (body.publishedPost) {
         setResults([]);
         setPublishedPosts((current) => [
@@ -1083,10 +1119,12 @@ export default function Home() {
       } else {
         setResults(body.results || []);
       }
+      setProgress({ label: "Publish complete", value: 100 });
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Publish failed");
     } finally {
       setIsPublishing(false);
+      window.setTimeout(() => setProgress(null), 500);
     }
   }
 
@@ -1422,6 +1460,17 @@ export default function Home() {
                 Clear draft
               </button>
             </div>
+            {progress ? (
+              <div className="progress-box" role="status" aria-live="polite">
+                <div className="progress-copy">
+                  <strong>{progress.label}</strong>
+                  <span>{Math.round(progress.value)}%</span>
+                </div>
+                <div className="progress-track">
+                  <span style={{ width: `${Math.max(3, Math.min(100, progress.value))}%` }} />
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
 

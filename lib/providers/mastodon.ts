@@ -9,7 +9,45 @@ type MastodonStatus = {
 
 type MastodonMedia = {
   id: string;
+  url?: string | null;
 };
+
+const mediaProcessingPollMs = 2_000;
+const mediaProcessingAttempts = 45;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForMastodonMedia(
+  instance: string,
+  accessToken: string,
+  media: MastodonMedia
+): Promise<string> {
+  if (media.url) {
+    return media.id;
+  }
+
+  for (let attempt = 0; attempt < mediaProcessingAttempts; attempt += 1) {
+    await sleep(mediaProcessingPollMs);
+
+    const response = await fetch(`${instance}/api/v1/media/${encodeURIComponent(media.id)}`, {
+      headers: { authorization: `Bearer ${accessToken}` }
+    });
+
+    if (response.status === 206) {
+      continue;
+    }
+
+    const current = await assertOk<MastodonMedia>(response);
+
+    if (current.url) {
+      return current.id;
+    }
+  }
+
+  throw new Error("Mastodon is still processing this media. Try publishing again in a moment.");
+}
 
 export async function publishMastodon(ctx: ProviderContext): Promise<PublishResult> {
   const instance = requireEnv("MASTODON_INSTANCE").replace(/\/$/, "");
@@ -32,15 +70,14 @@ export async function publishMastodon(ctx: ProviderContext): Promise<PublishResu
       mediaBody.set("description", ctx.title);
     }
 
-    const uploaded = await assertOk<MastodonMedia>(
-      await fetch(`${instance}/api/v2/media`, {
-        method: "POST",
-        headers: { authorization: `Bearer ${accessToken}` },
-        body: mediaBody
-      })
-    );
+    const uploadResponse = await fetch(`${instance}/api/v2/media`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${accessToken}` },
+      body: mediaBody
+    });
+    const uploaded = await assertOk<MastodonMedia>(uploadResponse);
 
-    mediaId = uploaded.id;
+    mediaId = await waitForMastodonMedia(instance, accessToken, uploaded);
   }
 
   const body = new URLSearchParams();

@@ -663,6 +663,44 @@ textarea {
   padding-top: 2px;
 }
 
+.progress-box {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #c7d1be;
+  border-radius: 7px;
+  background: #f3f7ee;
+  padding: 10px;
+}
+
+.progress-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
+.progress-copy strong,
+.progress-copy span {
+  font-weight: 900;
+}
+
+.progress-track {
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: #dfe8d7;
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 180ms ease;
+}
+
 .primary,
 .secondary {
   display: inline-flex;

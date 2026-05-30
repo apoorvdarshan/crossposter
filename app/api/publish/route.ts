@@ -7,7 +7,7 @@ import { providers } from "@/lib/providers";
 import type { Platform, ProviderContext, PublishedPost, PublishResult } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 const platformSchema = z.enum([
   "bluesky",
