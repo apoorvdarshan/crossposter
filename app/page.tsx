@@ -443,12 +443,6 @@ function formatDateTime(value: string): string {
   }).format(date);
 }
 
-function snippet(value: string, maxLength = 180): string {
-  const trimmed = value.trim();
-
-  return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength).trim()}...` : trimmed;
-}
-
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -813,12 +807,14 @@ export default function Home() {
         return;
       }
 
-      setResults(body.results || []);
       if (body.publishedPost) {
+        setResults([]);
         setPublishedPosts((current) => [
           body.publishedPost as PublishedPost,
           ...current.filter((post) => post.id !== body.publishedPost?.id)
         ]);
+      } else {
+        setResults(body.results || []);
       }
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Publish failed");
@@ -1202,56 +1198,26 @@ export default function Home() {
             ) : null}
 
             {publishedPosts.length > 0 ? (
-              <div className="result-list" aria-label="Saved published posts">
-                <p className="result-section-label">Saved posts</p>
+              <div className="result-list" aria-label="Published posts">
                 {publishedPosts.map((post) => (
-                  <article className="result history-result" key={post.id}>
-                    <div className="result-head">
-                      <strong>{post.title || "Untitled post"}</strong>
-                      <time>{formatDateTime(post.createdAt)}</time>
-                    </div>
-                    <p>{snippet(post.text) || "No post text saved."}</p>
-                    {post.url ? (
-                      <a className="result-link" href={post.url} target="_blank" rel="noreferrer">
-                        <span>{post.url}</span>
-                        <ExternalLink size={14} />
-                      </a>
-                    ) : null}
-                    {post.media ? (
-                      <p className="history-media">
-                        <ImageIcon size={14} />
-                        {post.media.filename}
-                      </p>
-                    ) : null}
-                    <div className="history-platforms">
-                      {post.results.map((result) => {
-                        const className = `history-platform ${result.ok ? "ok" : "err"}`;
-                        const content = (
-                          <>
-                            <SocialLogo platform={result.platform} size="sm" />
-                            {result.platform}
-                            {result.url ? <ExternalLink size={13} /> : null}
-                          </>
-                        );
-
-                        return result.url ? (
-                          <a
-                            className={className}
-                            href={result.url}
-                            key={result.platform}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            {content}
-                          </a>
-                        ) : (
-                          <span className={className} key={result.platform}>
-                            {content}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </article>
+                  post.results.map((result) => (
+                    <article className="result history-result" key={`${post.id}-${result.platform}`}>
+                      <div className="result-head">
+                        <strong>{result.platform}</strong>
+                        <span className={`badge ${result.ok ? "ok" : "err"}`}>
+                          {result.ok ? "ok" : "error"}
+                        </span>
+                      </div>
+                      <p>{result.message}</p>
+                      {result.url ? (
+                        <a className="result-link" href={result.url} target="_blank" rel="noreferrer">
+                          <span>{result.url}</span>
+                          <ExternalLink size={14} />
+                        </a>
+                      ) : null}
+                      <time className="history-time">{formatDateTime(post.createdAt)}</time>
+                    </article>
+                  ))
                 ))}
               </div>
             ) : null}
