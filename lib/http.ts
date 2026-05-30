@@ -20,7 +20,7 @@ export async function assertOk<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const detail =
       typeof body === "object" && body
-        ? body.error || body.message || JSON.stringify(body)
+        ? [body.error, body.message].filter(Boolean).join(": ") || JSON.stringify(body)
         : response.statusText;
     throw new Error(`${response.status} ${response.statusText}: ${detail}`);
   }
@@ -35,4 +35,3 @@ export function jsonRequest(body: RequestBody): string | URLSearchParams {
 export function compactText(parts: Array<string | undefined>): string {
   return parts.filter(Boolean).join("\n\n").trim();
 }
-

@@ -286,6 +286,11 @@ textarea {
   font-size: 0.82rem;
 }
 
+.field-hint.is-warning {
+  color: var(--danger);
+  font-weight: 900;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

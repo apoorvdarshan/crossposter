@@ -24,9 +24,38 @@ type BlueskyBlob = {
   };
 };
 
+const blueskyMaxTextLength = 300;
+const blueskyMaxImageSize = 1_000_000;
+const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+type SegmenterConstructor = new (
+  locale: string | undefined,
+  options: { granularity: "grapheme" }
+) => {
+  segment(value: string): Iterable<unknown>;
+};
+
+function textLength(value: string): number {
+  const Segmenter = (Intl as typeof Intl & { Segmenter?: SegmenterConstructor }).Segmenter;
+
+  if (Segmenter) {
+    return Array.from(new Segmenter(undefined, { granularity: "grapheme" }).segment(value)).length;
+  }
+
+  return Array.from(value).length;
+}
+
 export async function publishBluesky(ctx: ProviderContext): Promise<PublishResult> {
   const identifier = requireEnv("BLUESKY_IDENTIFIER");
   const password = requireEnv("BLUESKY_APP_PASSWORD");
+  const text = compactText([ctx.text, ctx.url]);
+  const length = textLength(text);
+
+  if (length > blueskyMaxTextLength) {
+    throw new Error(
+      `Bluesky allows ${blueskyMaxTextLength} characters; this post is ${length}. Shorten it or deselect Bluesky.`
+    );
+  }
 
   const session = await assertOk<BlueskySession>(
     await fetch("https://bsky.social/xrpc/com.atproto.server.createSession", {
@@ -36,7 +65,6 @@ export async function publishBluesky(ctx: ProviderContext): Promise<PublishResul
     })
   );
 
-  const text = compactText([ctx.text, ctx.url]);
   let embed:
     | {
         $type: "app.bsky.embed.images";
@@ -50,6 +78,18 @@ export async function publishBluesky(ctx: ProviderContext): Promise<PublishResul
   if (ctx.media) {
     if (ctx.media.kind !== "image") {
       throw new Error("Bluesky local upload supports image files only");
+    }
+
+    if (!blueskyImageTypes.has(ctx.media.contentType)) {
+      throw new Error(
+        `Bluesky supports JPEG, PNG, WebP, and GIF images; selected file is ${ctx.media.contentType}.`
+      );
+    }
+
+    if (ctx.media.size > blueskyMaxImageSize) {
+      throw new Error(
+        `Bluesky images must be 1 MB or smaller; selected file is ${ctx.media.size} bytes.`
+      );
     }
 
     const uploaded = await assertOk<BlueskyBlob>(

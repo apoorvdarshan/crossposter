@@ -209,6 +209,23 @@ function formatBytes(size: number): string {
   return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+function postTextLength(value: string): number {
+  const Segmenter = (
+    Intl as typeof Intl & {
+      Segmenter?: new (
+        locale: string | undefined,
+        options: { granularity: "grapheme" }
+      ) => { segment(text: string): Iterable<unknown> };
+    }
+  ).Segmenter;
+
+  if (Segmenter) {
+    return Array.from(new Segmenter(undefined, { granularity: "grapheme" }).segment(value)).length;
+  }
+
+  return Array.from(value).length;
+}
+
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -430,6 +447,9 @@ export default function Home() {
         : selectedMediaKind === "audio"
           ? Music2
           : FileIcon;
+  const blueskyLength = postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n"));
+  const showBlueskyLimit = selected.includes("bluesky");
+  const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
 
   return (
     <main className="workspace">
@@ -505,6 +525,11 @@ export default function Home() {
                 onChange={(event) => setText(event.target.value)}
                 placeholder="Write the post once."
               />
+              {showBlueskyLimit ? (
+                <span className={`field-hint ${blueskyTooLong ? "is-warning" : ""}`}>
+                  Bluesky: {blueskyLength}/300 characters including the Link field.
+                </span>
+              ) : null}
             </div>
 
             <div className="field">
