@@ -980,7 +980,7 @@ export default function Home() {
     await saveStoredDraftMedia(null).catch(() => undefined);
   }
 
-  async function clearDraft(placement: ProgressPlacement = "bottom") {
+  async function clearDraft() {
     const draft: ComposeDraft = {
       title: "",
       text: "",
@@ -998,8 +998,6 @@ export default function Home() {
     setMediaInputKey((current) => current + 1);
     setResults([]);
     setError("");
-    setProgressPlacement(placement);
-    setProgress({ label: "Clearing draft", value: 60 });
     writeStoredDraft(draft);
     await saveStoredDraftMedia(null).catch(() => undefined);
     await fetch("/api/draft", {
@@ -1007,7 +1005,6 @@ export default function Home() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ draft })
     }).catch(() => undefined);
-    setProgress(null);
   }
 
   async function clearPublishedPosts() {
@@ -1252,7 +1249,7 @@ export default function Home() {
               <button
                 className="secondary compact-button"
                 type="button"
-                onClick={() => void clearDraft("top")}
+                onClick={() => void clearDraft()}
               >
                 Clear draft
               </button>
@@ -1510,7 +1507,7 @@ export default function Home() {
               <button
                 className="secondary"
                 type="button"
-                onClick={() => void clearDraft("bottom")}
+                onClick={() => void clearDraft()}
               >
                 Clear draft
               </button>

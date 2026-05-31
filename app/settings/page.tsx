@@ -337,6 +337,40 @@ export default function SettingsPage() {
     }
   }
 
+  async function openStorageFolder() {
+    setStatus("");
+
+    try {
+      const response = await fetch("/api/storage/open", { method: "POST" });
+      const body = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not open storage folder.");
+        return;
+      }
+
+      setStatus("Opened storage folder.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not open storage folder.");
+    }
+  }
+
+  async function copyStoragePath() {
+    const storagePath = storage?.uploads.path;
+
+    if (!storagePath) {
+      setStatus("Storage path is not loaded yet.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(storagePath);
+      setStatus("Copied storage path.");
+    } catch {
+      setStatus(storagePath);
+    }
+  }
+
   async function clearStorage() {
     if (!confirmClearStorage) {
       setConfirmClearStorage(true);
@@ -502,6 +536,16 @@ export default function SettingsPage() {
                 <div>
                   <span>Upload folder</span>
                   <code>{storage.uploads.path}</code>
+                </div>
+                <div className="inline-actions">
+                  <button className="secondary compact-button" type="button" onClick={openStorageFolder}>
+                    <ExternalLink size={15} />
+                    Open folder
+                  </button>
+                  <button className="secondary compact-button" type="button" onClick={copyStoragePath}>
+                    <Copy size={15} />
+                    Copy path
+                  </button>
                 </div>
               </div>
             ) : null}
