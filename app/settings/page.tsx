@@ -10,6 +10,7 @@ import {
   Eye,
   EyeOff,
   HardDrive,
+  Info,
   Plus,
   Save,
   Trash2
@@ -55,6 +56,16 @@ type BrowserStorageStats = {
   mediaBytes: number;
 };
 
+type SetupGuide = {
+  title: string;
+  intro: string;
+  links: Array<{
+    label: string;
+    href: string;
+  }>;
+  steps: string[];
+};
+
 const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
@@ -67,6 +78,69 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "youtube", label: "YouTube" },
   { id: "twitch", label: "Twitch" }
 ];
+
+const setupGuides: Partial<Record<Platform, SetupGuide>> = {
+  bluesky: {
+    title: "Bluesky setup",
+    intro: "Use your Bluesky handle plus an app password. Do not use your main account password.",
+    links: [
+      { label: "Open app passwords", href: "https://bsky.app/settings/app-passwords" }
+    ],
+    steps: [
+      "Open Bluesky App Passwords and create a new app password.",
+      "Add a Bluesky profile here.",
+      "Set Bluesky handle to your handle without @, for example apoorvdarshan.com.",
+      "Paste the generated app password into Bluesky app password.",
+      "Save config, then select Bluesky on the Dashboard."
+    ]
+  },
+  mastodon: {
+    title: "Mastodon setup",
+    intro: "Create an application on your Mastodon instance and copy an access token.",
+    links: [
+      { label: "OAuth scopes", href: "https://docs.joinmastodon.org/api/oauth-scopes/" },
+      { label: "Status API", href: "https://docs.joinmastodon.org/methods/statuses/" }
+    ],
+    steps: [
+      "Open your instance settings, usually https://your-instance/settings/applications.",
+      "Create a new application with write:statuses and write:media scopes, or the broad write scope.",
+      "Copy the access token.",
+      "Add a Mastodon profile here.",
+      "Set Mastodon instance to the full URL, for example https://mastodon.social.",
+      "Paste the access token, save config, then select Mastodon on the Dashboard."
+    ]
+  },
+  devto: {
+    title: "Dev.to setup",
+    intro: "Dev.to publishes markdown articles through an API key from your account settings.",
+    links: [
+      { label: "Open Dev.to extensions", href: "https://dev.to/settings/extensions" }
+    ],
+    steps: [
+      "Open Dev.to account settings, then Extensions.",
+      "Generate or copy an API key.",
+      "Add a Dev.to profile here.",
+      "Paste the key into Dev.to API key.",
+      "Save config. On the Dashboard, fill Title and Post before publishing."
+    ]
+  },
+  medium: {
+    title: "Medium setup",
+    intro: "Medium API posting uses integration tokens. Medium has archived the API, so this works only if your account still has token access.",
+    links: [
+      { label: "Medium API docs", href: "https://github.com/Medium/medium-api-docs" },
+      { label: "Medium settings", href: "https://medium.com/me/settings" }
+    ],
+    steps: [
+      "Open Medium settings and create or copy an integration token if your account shows that option.",
+      "Add a Medium profile here.",
+      "Paste the token into Medium access token.",
+      "Optional: set a publication ID to publish into a publication instead of your profile.",
+      "Optional: set tags and publish status. Use public, draft, or unlisted.",
+      "Save config. Medium uses Title, Post, Link, and optional local image media."
+    ]
+  }
+};
 
 const draftStorageKey = "personal-crossposter:compose-draft:v1";
 const draftDbName = "personal-crossposter-drafts";
@@ -101,7 +175,7 @@ function newProfile(platform: Platform, fields: ConfigField[]): ProviderProfile 
   return {
     id: `${platform}-${Date.now()}`,
     label: `New ${platform} profile`,
-    values: Object.fromEntries(fields.map((field) => [field.name, ""]))
+    values: Object.fromEntries(fields.map((field) => [field.name, field.defaultValue || ""]))
   };
 }
 
@@ -194,6 +268,7 @@ export default function SettingsPage() {
   const [browserStorage, setBrowserStorage] =
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
+  const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
 
   useEffect(() => {
     async function loadConfig() {
@@ -216,7 +291,7 @@ export default function SettingsPage() {
   }, []);
 
   const baseFields = useMemo(
-    () => fields.filter((field) => !field.requiredFor?.length),
+    () => fields.filter((field) => !field.requiredFor?.length && !field.showFor?.length),
     [fields]
   );
   const displayLocalUrl = useMemo(() => {
@@ -227,7 +302,9 @@ export default function SettingsPage() {
   const totalStorageBytes = (storage?.totalBytes || 0) + browserStorage.bytes;
 
   function fieldsFor(platform: Platform): ConfigField[] {
-    return fields.filter((field) => field.requiredFor?.includes(platform));
+    return fields.filter(
+      (field) => field.requiredFor?.includes(platform) || field.showFor?.includes(platform)
+    );
   }
 
   function addProfile(platform: Platform) {
@@ -260,6 +337,13 @@ export default function SettingsPage() {
     setVisibleSecrets((current) => ({
       ...current,
       [key]: !current[key]
+    }));
+  }
+
+  function toggleGuide(platform: Platform) {
+    setOpenGuides((current) => ({
+      ...current,
+      [platform]: !current[platform]
     }));
   }
 
@@ -580,6 +664,7 @@ export default function SettingsPage() {
         {platforms.map((platform) => {
           const providerFields = fieldsFor(platform.id);
           const providerProfiles = profiles[platform.id] || [];
+          const setupGuide = setupGuides[platform.id];
 
           return (
             <section className="info-panel" key={platform.id}>
@@ -588,12 +673,46 @@ export default function SettingsPage() {
                   <SocialLogo platform={platform.id} />
                   {platform.label}
                 </h2>
-                <button className="secondary compact-button" type="button" onClick={() => addProfile(platform.id)}>
-                  <Plus size={16} />
-                  Add profile
-                </button>
+                <div className="panel-actions">
+                  {setupGuide ? (
+                    <button
+                      aria-expanded={Boolean(openGuides[platform.id])}
+                      aria-label={`${platform.label} setup guide`}
+                      className="secondary compact-button icon-button"
+                      type="button"
+                      onClick={() => toggleGuide(platform.id)}
+                    >
+                      <Info size={17} />
+                    </button>
+                  ) : null}
+                  <button className="secondary compact-button" type="button" onClick={() => addProfile(platform.id)}>
+                    <Plus size={16} />
+                    Add profile
+                  </button>
+                </div>
               </div>
               <div className="config-panel">
+                {setupGuide && openGuides[platform.id] ? (
+                  <section className="setup-guide">
+                    <div>
+                      <strong>{setupGuide.title}</strong>
+                      <p>{setupGuide.intro}</p>
+                    </div>
+                    <div className="setup-links">
+                      {setupGuide.links.map((link) => (
+                        <a href={link.href} key={link.href} target="_blank" rel="noreferrer">
+                          {link.label}
+                          <ExternalLink size={14} />
+                        </a>
+                      ))}
+                    </div>
+                    <ol>
+                      {setupGuide.steps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ol>
+                  </section>
+                ) : null}
                 {providerProfiles.length > 0 ? (
                   <label className="config-field">
                     <span>Active profile</span>

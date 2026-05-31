@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { assertOk, compactText } from "@/lib/http";
 import { optionalEnv, requireEnv } from "@/lib/env";
 import type { ProviderContext, PublishResult } from "@/lib/types";
@@ -14,21 +15,41 @@ type MediumPost = {
   };
 };
 
+type MediumImage = {
+  data?: {
+    url?: string;
+  };
+};
+
+const mediumImageTypes = new Set(["image/jpeg", "image/png", "image/gif", "image/tiff"]);
+const mediumPublishStatuses = new Set(["public", "draft", "unlisted"]);
+
 export async function publishMedium(ctx: ProviderContext): Promise<PublishResult> {
   const accessToken = requireEnv("MEDIUM_ACCESS_TOKEN");
   const publicationId = optionalEnv("MEDIUM_PUBLICATION_ID");
-  const title = ctx.title || optionalEnv("MEDIUM_DEFAULT_TITLE");
+  const rawTitle = ctx.title || optionalEnv("MEDIUM_DEFAULT_TITLE");
 
-  if (!title) {
+  if (!rawTitle) {
     throw new Error("Medium requires a title");
   }
 
+  const title = rawTitle.replace(/\s+/g, " ").trim().slice(0, 100);
+  const configuredPublishStatus = optionalEnv("MEDIUM_PUBLISH_STATUS") || "public";
+  const publishStatus = mediumPublishStatuses.has(configuredPublishStatus)
+    ? configuredPublishStatus
+    : "public";
   const tags = optionalEnv("MEDIUM_TAGS")
     ?.split(",")
     .map((tag) => tag.trim())
     .filter(Boolean)
-    .slice(0, 5);
-  const content = compactText([ctx.text, ctx.url]);
+    .slice(0, 3);
+  const uploadedImage = ctx.media ? await uploadMediumImage(ctx, accessToken) : undefined;
+  const content = compactText([
+    `# ${title}`,
+    uploadedImage ? `![${ctx.media?.filename || "image"}](${uploadedImage})` : undefined,
+    ctx.text,
+    ctx.url
+  ]);
   const endpoint = publicationId
     ? `https://api.medium.com/v1/publications/${publicationId}/posts`
     : await getUserPostEndpoint(accessToken);
@@ -46,7 +67,7 @@ export async function publishMedium(ctx: ProviderContext): Promise<PublishResult
         title,
         contentFormat: "markdown",
         content,
-        publishStatus: optionalEnv("MEDIUM_PUBLISH_STATUS") || "public",
+        publishStatus,
         ...(tags?.length ? { tags } : {}),
         ...(ctx.url ? { canonicalUrl: ctx.url } : {})
       })
@@ -56,9 +77,48 @@ export async function publishMedium(ctx: ProviderContext): Promise<PublishResult
   return {
     platform: "medium",
     ok: true,
-    message: ctx.media ? "Published without local media" : "Published",
+    message: uploadedImage ? "Published with image" : "Published",
     url: post.data?.url
   };
+}
+
+async function uploadMediumImage(ctx: ProviderContext, accessToken: string): Promise<string> {
+  if (!ctx.media) {
+    throw new Error("Medium image upload needs a local media file");
+  }
+
+  if (ctx.media.kind !== "image") {
+    throw new Error("Medium local upload supports image files only");
+  }
+
+  if (!mediumImageTypes.has(ctx.media.contentType)) {
+    throw new Error("Medium supports JPEG, PNG, GIF, and TIFF image uploads");
+  }
+
+  const form = new FormData();
+  const file = new Blob([await readFile(ctx.media.path)], {
+    type: ctx.media.contentType
+  });
+
+  form.append("image", file, ctx.media.filename);
+
+  const image = await assertOk<MediumImage>(
+    await fetch("https://api.medium.com/v1/images", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        accept: "application/json",
+        "accept-charset": "utf-8"
+      },
+      body: form
+    })
+  );
+
+  if (!image.data?.url) {
+    throw new Error("Medium did not return an uploaded image URL");
+  }
+
+  return image.data.url;
 }
 
 async function getUserPostEndpoint(accessToken: string): Promise<string> {

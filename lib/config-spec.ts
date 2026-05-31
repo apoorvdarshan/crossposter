@@ -7,6 +7,7 @@ export type ConfigField = {
   defaultValue?: string;
   secret?: boolean;
   requiredFor?: Platform[];
+  showFor?: Platform[];
 };
 
 export const configFields: ConfigField[] = [
@@ -63,9 +64,34 @@ export const configFields: ConfigField[] = [
   {
     name: "MEDIUM_ACCESS_TOKEN",
     label: "Medium access token",
-    help: "Medium integration token.",
+    help: "Medium integration token. Medium's API is archived, so this works only for accounts that still have tokens.",
     secret: true,
     requiredFor: ["medium"]
+  },
+  {
+    name: "MEDIUM_PUBLICATION_ID",
+    label: "Medium publication ID",
+    help: "Optional. Leave blank to publish to your own profile instead of a publication.",
+    showFor: ["medium"]
+  },
+  {
+    name: "MEDIUM_TAGS",
+    label: "Medium tags",
+    help: "Optional comma-separated tags. Medium uses the first three.",
+    showFor: ["medium"]
+  },
+  {
+    name: "MEDIUM_PUBLISH_STATUS",
+    label: "Medium publish status",
+    help: "Optional: public, draft, or unlisted. Defaults to public.",
+    defaultValue: "public",
+    showFor: ["medium"]
+  },
+  {
+    name: "MEDIUM_DEFAULT_TITLE",
+    label: "Medium fallback title",
+    help: "Optional title used when the draft title is empty.",
+    showFor: ["medium"]
   },
   {
     name: "LINKEDIN_ACCESS_TOKEN",

@@ -37,7 +37,7 @@ const platforms: Platform[] = [
 ];
 const fieldPlatform = new Map<string, Platform>(
   configFields.flatMap((field) =>
-    (field.requiredFor || []).map(
+    [...(field.requiredFor || []), ...(field.showFor || [])].map(
       (platform) => [field.name, platform] as const
     )
   )

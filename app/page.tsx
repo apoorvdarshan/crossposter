@@ -58,9 +58,9 @@ const channels: Array<{
     id: "medium",
     label: "Medium",
     note: "Profile or publication article",
-    uses: ["Title", "Post", "Link"],
+    uses: ["Title", "Post", "Link", "Media"],
     target: "Uses the active Medium profile from Settings.",
-    media: "Local files are ignored; add hosted images as Markdown links."
+    media: "Local image uploads are inserted at the top of the article."
   },
   {
     id: "linkedin",
@@ -215,6 +215,7 @@ const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const compressibleImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const mediumImageTypes = new Set(["image/jpeg", "image/png", "image/gif", "image/tiff"]);
 const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
 
@@ -508,6 +509,20 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
         id: "mastodon-video-size",
         message: `Mastodon video limit on mastodon.social is about 99 MB; selected file is ${formatBytes(file.size)}.`,
         compress: "video"
+      });
+    }
+  }
+
+  if (platforms.includes("medium")) {
+    if (kind !== "image") {
+      issues.push({
+        id: "medium-kind",
+        message: `Medium can upload images only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (!mediumImageTypes.has(file.type)) {
+      issues.push({
+        id: "medium-type",
+        message: `Medium supports JPEG, PNG, GIF, and TIFF images; selected file is ${file.type || "unknown"}.`
       });
     }
   }
