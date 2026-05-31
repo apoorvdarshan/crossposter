@@ -15,6 +15,7 @@ import {
   Trash2
 } from "lucide-react";
 import { SocialLogo } from "@/components/social-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { ConfigField } from "@/lib/config-spec";
 import type { Platform } from "@/lib/types";
 
@@ -419,6 +420,7 @@ export default function SettingsPage() {
             <ChevronLeft size={15} />
             Dashboard
           </Link>
+          <ThemeToggle />
           <button className="primary compact-button" type="button" onClick={saveConfig} disabled={isSaving}>
             <Save size={17} />
             {isSaving ? "Saving..." : "Save config"}

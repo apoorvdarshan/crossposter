@@ -18,6 +18,7 @@ import {
   X
 } from "lucide-react";
 import { SocialLogo } from "@/components/social-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { ComposeDraft, Platform, PublishedPost, PublishResult } from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
 
@@ -1223,6 +1224,7 @@ export default function Home() {
             Settings
             <ChevronRight size={15} />
           </Link>
+          <ThemeToggle />
         </div>
       </header>
 
