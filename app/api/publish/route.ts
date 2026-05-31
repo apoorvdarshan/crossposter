@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { appendPublishedPost } from "@/lib/local-config";
-import { deleteUploadedMedia, getUploadedMedia } from "@/lib/media-store";
+import { getUploadedMedia } from "@/lib/media-store";
 import { providers } from "@/lib/providers";
 import type { Platform, ProviderContext, PublishedPost, PublishResult } from "@/lib/types";
 
@@ -107,57 +107,61 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const cleanupMediaId = parsed.data.mediaId || undefined;
+  let media: ProviderContext["media"] | undefined;
 
-  try {
-    let media: ProviderContext["media"] | undefined;
-
-    if (parsed.data.mediaId) {
-      try {
-        media = await getUploadedMedia(parsed.data.mediaId, request.url);
-      } catch {
-        return NextResponse.json({ error: "Uploaded media was not found" }, { status: 400 });
-      }
-    }
-
-    const ctx: ProviderContext = {
-      title: parsed.data.title?.trim() || undefined,
-      text: parsed.data.text.trim(),
-      url: parsed.data.url || undefined,
-      mediaId: parsed.data.mediaId || undefined,
-      mediaUrl: parsed.data.mediaUrl || undefined,
-      media,
-      platforms: parsed.data.platforms,
-      now: new Date()
-    };
-
-    const results = await Promise.all(
-      parsed.data.platforms.map(async (platform): Promise<PublishResult> => {
-        try {
-          return await providers[platform as Platform](ctx);
-        } catch (error) {
-          return {
-            platform: platform as Platform,
-            ok: false,
-            message: error instanceof Error ? error.message : "Unknown error"
-          };
-        }
-      })
-    );
-    const publishedPost = appendPublishedPost({
-      id: randomUUID(),
-      createdAt: new Date().toISOString(),
-      ...(ctx.title ? { title: ctx.title } : {}),
-      text: ctx.text,
-      ...(ctx.url ? { url: ctx.url } : {}),
-      platforms: parsed.data.platforms as Platform[],
-      results
-    } satisfies PublishedPost);
-
-    return NextResponse.json({ results, publishedPost });
-  } finally {
-    if (cleanupMediaId) {
-      await deleteUploadedMedia(cleanupMediaId);
+  if (parsed.data.mediaId) {
+    try {
+      media = await getUploadedMedia(parsed.data.mediaId, request.url);
+    } catch {
+      return NextResponse.json({ error: "Uploaded media was not found" }, { status: 400 });
     }
   }
+
+  const ctx: ProviderContext = {
+    title: parsed.data.title?.trim() || undefined,
+    text: parsed.data.text.trim(),
+    url: parsed.data.url || undefined,
+    mediaId: parsed.data.mediaId || undefined,
+    mediaUrl: parsed.data.mediaUrl || undefined,
+    media,
+    platforms: parsed.data.platforms,
+    now: new Date()
+  };
+
+  const results = await Promise.all(
+    parsed.data.platforms.map(async (platform): Promise<PublishResult> => {
+      try {
+        return await providers[platform as Platform](ctx);
+      } catch (error) {
+        return {
+          platform: platform as Platform,
+          ok: false,
+          message: error instanceof Error ? error.message : "Unknown error"
+        };
+      }
+    })
+  );
+  const publishedPost = appendPublishedPost({
+    id: randomUUID(),
+    createdAt: new Date().toISOString(),
+    ...(ctx.title ? { title: ctx.title } : {}),
+    text: ctx.text,
+    ...(ctx.url ? { url: ctx.url } : {}),
+    platforms: parsed.data.platforms as Platform[],
+    results,
+    ...(media
+      ? {
+          media: {
+            id: media.id,
+            filename: media.filename,
+            contentType: media.contentType,
+            size: media.size,
+            kind: media.kind,
+            url: media.url
+          }
+        }
+      : {})
+  } satisfies PublishedPost);
+
+  return NextResponse.json({ results, publishedPost });
 }

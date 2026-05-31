@@ -199,12 +199,6 @@ type StoredDraftMedia = {
   lastModified: number;
 };
 
-type HistoryMediaPreview = {
-  file: File;
-  kind: UploadedMedia["kind"];
-  url: string;
-};
-
 type ApiFieldError = {
   formErrors?: string[];
   fieldErrors?: Record<string, string[]>;
@@ -215,7 +209,6 @@ const draftDbName = "personal-crossposter-drafts";
 const draftDbVersion = 1;
 const draftStoreName = "media";
 const draftMediaKey = "compose-media";
-const historyMediaPrefix = "published-media:";
 const platformIds = channels.map((channel) => channel.id);
 const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
@@ -234,6 +227,8 @@ type ProgressState = {
   label: string;
   value: number;
 };
+
+type ProgressPlacement = "top" | "bottom";
 
 function normalizePlatforms(value: unknown): Platform[] {
   if (!Array.isArray(value)) {
@@ -374,53 +369,6 @@ async function saveStoredDraftMedia(file: File | null): Promise<void> {
       lastModified: file.lastModified
     } satisfies StoredDraftMedia)
   );
-}
-
-function historyMediaKey(postId: string): string {
-  return `${historyMediaPrefix}${postId}`;
-}
-
-async function readStoredHistoryMedia(postId: string): Promise<File | null> {
-  if (!("indexedDB" in window)) {
-    return null;
-  }
-
-  const stored = (await withDraftStore("readonly", (store) =>
-    store.get(historyMediaKey(postId))
-  )) as StoredDraftMedia | undefined;
-
-  if (!stored?.blob) {
-    return null;
-  }
-
-  return new File([stored.blob], stored.name || "published-media", {
-    type: stored.type || stored.blob.type || "application/octet-stream",
-    lastModified: stored.lastModified || Date.now()
-  });
-}
-
-async function saveStoredHistoryMedia(postId: string, file: File | null): Promise<void> {
-  if (!("indexedDB" in window) || !file) {
-    return;
-  }
-
-  await withDraftStore("readwrite", (store) =>
-    store.put({
-      id: historyMediaKey(postId),
-      blob: file,
-      name: file.name,
-      type: file.type,
-      lastModified: file.lastModified
-    } satisfies StoredDraftMedia)
-  );
-}
-
-async function deleteStoredHistoryMedia(postId: string): Promise<void> {
-  if (!("indexedDB" in window)) {
-    return;
-  }
-
-  await withDraftStore("readwrite", (store) => store.delete(historyMediaKey(postId)));
 }
 
 function formatApiError(error: unknown): string {
@@ -729,6 +677,26 @@ function formatDateTime(value: string): string {
   }).format(date);
 }
 
+function ProgressBox({
+  progress,
+  className = ""
+}: {
+  progress: ProgressState;
+  className?: string;
+}) {
+  return (
+    <div className={`progress-box ${className}`.trim()} role="status" aria-live="polite">
+      <div className="progress-copy">
+        <strong>{progress.label}</strong>
+        <span>{Math.round(progress.value)}%</span>
+      </div>
+      <div className="progress-track">
+        <span style={{ width: `${Math.max(3, Math.min(100, progress.value))}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -739,13 +707,13 @@ export default function Home() {
   const [selected, setSelected] = useState<Platform[]>([]);
   const [results, setResults] = useState<PublishResult[]>([]);
   const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
-  const [historyMedia, setHistoryMedia] = useState<Record<string, HistoryMediaPreview>>({});
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isCompressingMedia, setIsCompressingMedia] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
   const [progress, setProgress] = useState<ProgressState | null>(null);
+  const [progressPlacement, setProgressPlacement] = useState<ProgressPlacement>("bottom");
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
@@ -935,62 +903,6 @@ export default function Home() {
     void saveStoredDraftMedia(mediaFile).catch(() => undefined);
   }, [mediaFile, draftHydrated]);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadHistoryMedia() {
-      if (!draftHydrated || publishedPosts.length === 0) {
-        setHistoryMedia((current) => {
-          Object.values(current).forEach((item) => URL.revokeObjectURL(item.url));
-          return {};
-        });
-        return;
-      }
-
-      const entries = await Promise.all(
-        publishedPosts.map(async (post) => {
-          const file = await readStoredHistoryMedia(post.id).catch(() => null);
-
-          if (!file) {
-            return null;
-          }
-
-          return [
-            post.id,
-            {
-              file,
-              kind: fileKind(file),
-              url: URL.createObjectURL(file)
-            }
-          ] as const;
-        })
-      );
-
-      if (!active) {
-        entries.forEach((entry) => {
-          if (entry) {
-            URL.revokeObjectURL(entry[1].url);
-          }
-        });
-        return;
-      }
-
-      setHistoryMedia((current) => {
-        Object.values(current).forEach((item) => URL.revokeObjectURL(item.url));
-
-        return Object.fromEntries(
-          entries.filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
-        );
-      });
-    }
-
-    void loadHistoryMedia();
-
-    return () => {
-      active = false;
-    };
-  }, [draftHydrated, publishedPosts]);
-
   const selectedLabel = useMemo(() => {
     if (selected.length === 0) {
       return "No channels";
@@ -1010,24 +922,9 @@ export default function Home() {
 
   function setDraftMedia(file: File | null) {
     setHasSavedDraft(true);
-    void clearLocalUploadCache();
     setMediaFile(file);
     setError("");
     setResults([]);
-  }
-
-  async function deleteLocalUpload(mediaId: string | undefined): Promise<void> {
-    if (!mediaId) {
-      return;
-    }
-
-    await fetch(`/api/media/${encodeURIComponent(mediaId)}`, { method: "DELETE" }).catch(
-      () => undefined
-    );
-  }
-
-  async function clearLocalUploadCache(): Promise<void> {
-    await fetch("/api/media?scope=all", { method: "DELETE" }).catch(() => undefined);
   }
 
   function selectMedia(event: React.ChangeEvent<HTMLInputElement>) {
@@ -1081,10 +978,9 @@ export default function Home() {
     setMediaFile(null);
     setMediaInputKey((current) => current + 1);
     await saveStoredDraftMedia(null).catch(() => undefined);
-    await clearLocalUploadCache();
   }
 
-  async function clearDraft() {
+  async function clearDraft(placement: ProgressPlacement = "bottom") {
     const draft: ComposeDraft = {
       title: "",
       text: "",
@@ -1102,11 +998,10 @@ export default function Home() {
     setMediaInputKey((current) => current + 1);
     setResults([]);
     setError("");
-    setProgress({ label: "Clearing draft", value: 35 });
+    setProgressPlacement(placement);
+    setProgress({ label: "Clearing draft", value: 60 });
     writeStoredDraft(draft);
     await saveStoredDraftMedia(null).catch(() => undefined);
-    setProgress({ label: "Removing local draft uploads", value: 65 });
-    await clearLocalUploadCache();
     await fetch("/api/draft", {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -1116,15 +1011,9 @@ export default function Home() {
   }
 
   async function clearPublishedPosts() {
-    const postIds = publishedPosts.map((post) => post.id);
-
+    setProgressPlacement("bottom");
     setProgress({ label: "Clearing publish history", value: 60 });
     setPublishedPosts([]);
-    setHistoryMedia((current) => {
-      Object.values(current).forEach((item) => URL.revokeObjectURL(item.url));
-      return {};
-    });
-    await Promise.all(postIds.map((postId) => deleteStoredHistoryMedia(postId).catch(() => undefined)));
     await fetch("/api/draft?scope=history", { method: "DELETE" }).catch(() => undefined);
     setProgress(null);
   }
@@ -1201,10 +1090,11 @@ export default function Home() {
     }
   }
 
-  async function publish() {
+  async function publish(placement: ProgressPlacement = "bottom") {
     setError("");
     setResults([]);
     setProgress(null);
+    setProgressPlacement(placement);
     let uploadedMedia: UploadedMedia | undefined;
 
     const isBlueskyTooLong =
@@ -1250,7 +1140,6 @@ export default function Home() {
 
       setProgress({ label: "Saving publish output", value: 90 });
       if (body.publishedPost) {
-        await saveStoredHistoryMedia(body.publishedPost.id, mediaFile).catch(() => undefined);
         setResults([]);
         setPublishedPosts((current) => [
           body.publishedPost as PublishedPost,
@@ -1263,7 +1152,6 @@ export default function Home() {
     } catch (publishError) {
       setError(publishError instanceof Error ? publishError.message : "Publish failed");
     } finally {
-      await deleteLocalUpload(uploadedMedia?.id);
       setIsPublishing(false);
       window.setTimeout(() => setProgress(null), 500);
     }
@@ -1313,6 +1201,9 @@ export default function Home() {
   const canCompressMedia = Boolean(compressionKind && mediaFile);
   const compressionProgress = isCompressingMedia ? progress : null;
   const actionProgress = progress && !isCompressingMedia ? progress : null;
+  const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
+  const bottomActionProgress =
+    actionProgress && progressPlacement === "bottom" ? actionProgress : null;
 
   return (
     <main className="workspace">
@@ -1350,13 +1241,22 @@ export default function Home() {
             </div>
             <div className="compose-head-actions">
               <span className="counter">{text.length}/12000</span>
-              <button className="primary compact-button" disabled={!canPublish} onClick={publish}>
+              <button
+                className="primary compact-button"
+                disabled={!canPublish}
+                onClick={() => void publish("top")}
+              >
                 <Send size={16} />
                 Publish draft
               </button>
-              <button className="secondary compact-button" type="button" onClick={() => void clearDraft()}>
+              <button
+                className="secondary compact-button"
+                type="button"
+                onClick={() => void clearDraft("top")}
+              >
                 Clear draft
               </button>
+              {topActionProgress ? <ProgressBox className="head-progress" progress={topActionProgress} /> : null}
             </div>
           </div>
 
@@ -1515,19 +1415,7 @@ export default function Home() {
                 </div>
               ) : null}
               {compressionProgress ? (
-                <div className="progress-box media-progress" role="status" aria-live="polite">
-                  <div className="progress-copy">
-                    <strong>{compressionProgress.label}</strong>
-                    <span>{Math.round(compressionProgress.value)}%</span>
-                  </div>
-                  <div className="progress-track">
-                    <span
-                      style={{
-                        width: `${Math.max(3, Math.min(100, compressionProgress.value))}%`
-                      }}
-                    />
-                  </div>
-                </div>
+                <ProgressBox className="media-progress" progress={compressionProgress} />
               ) : null}
             </div>
 
@@ -1609,7 +1497,7 @@ export default function Home() {
             </div>
 
             <div className="actions">
-              <button className="primary" disabled={!canPublish} onClick={publish}>
+              <button className="primary" disabled={!canPublish} onClick={() => void publish("bottom")}>
                 <Send size={18} />
                 {isCompressingMedia
                   ? "Compressing..."
@@ -1622,22 +1510,12 @@ export default function Home() {
               <button
                 className="secondary"
                 type="button"
-                onClick={() => void clearDraft()}
+                onClick={() => void clearDraft("bottom")}
               >
                 Clear draft
               </button>
             </div>
-            {actionProgress ? (
-              <div className="progress-box" role="status" aria-live="polite">
-                <div className="progress-copy">
-                  <strong>{actionProgress.label}</strong>
-                  <span>{Math.round(actionProgress.value)}%</span>
-                </div>
-                <div className="progress-track">
-                  <span style={{ width: `${Math.max(3, Math.min(100, actionProgress.value))}%` }} />
-                </div>
-              </div>
-            ) : null}
+            {bottomActionProgress ? <ProgressBox progress={bottomActionProgress} /> : null}
           </div>
         </section>
 
@@ -1726,7 +1604,6 @@ export default function Home() {
                   const okCount = post.results.filter((result) => result.ok).length;
                   const preview = post.text.trim();
                   const heading = post.title?.trim();
-                  const mediaPreview = historyMedia[post.id];
 
                   return (
                     <article className="result history-result" key={post.id}>
@@ -1746,30 +1623,30 @@ export default function Home() {
                           <ExternalLink size={13} />
                         </a>
                       ) : null}
-                      {mediaPreview ? (
+                      {post.media ? (
                         <div className="history-media">
-                          {mediaPreview.kind === "image" ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- object URLs are local draft snapshots.
-                            <img src={mediaPreview.url} alt={mediaPreview.file.name} />
+                          {post.media.kind === "image" ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- local upload URLs are generated at runtime.
+                            <img src={post.media.url} alt={post.media.filename} />
                           ) : null}
-                          {mediaPreview.kind === "video" ? (
-                            <video controls preload="metadata" src={mediaPreview.url} />
+                          {post.media.kind === "video" ? (
+                            <video controls preload="metadata" src={post.media.url} />
                           ) : null}
-                          {mediaPreview.kind === "audio" ? (
+                          {post.media.kind === "audio" ? (
                             <div className="history-audio">
                               <Music2 size={18} />
-                              <audio controls src={mediaPreview.url} />
+                              <audio controls src={post.media.url} />
                             </div>
                           ) : null}
-                          {mediaPreview.kind === "file" ? (
+                          {post.media.kind === "file" ? (
                             <div className="history-file">
                               <FileIcon size={18} />
-                              <span>{mediaPreview.file.name}</span>
+                              <span>{post.media.filename}</span>
                             </div>
                           ) : null}
                           <span>
-                            {mediaPreview.file.name} · {mediaPreview.file.type || "file"} ·{" "}
-                            {formatBytes(mediaPreview.file.size)}
+                            {post.media.filename} · {post.media.contentType || "file"} ·{" "}
+                            {formatBytes(post.media.size)}
                           </span>
                         </div>
                       ) : null}

@@ -96,6 +96,11 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.head-progress {
+  flex: 1 0 100%;
+  min-width: min(360px, 100%);
+}
+
 .brand-lockup {
   gap: 13px;
   min-width: 0;
@@ -751,6 +756,25 @@ textarea {
   color: var(--ink);
 }
 
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  width: fit-content;
+  border: 1px solid rgba(199, 68, 53, 0.44);
+  border-radius: 7px;
+  background: rgba(199, 68, 53, 0.1);
+  color: var(--danger);
+  padding: 0 16px;
+  font-weight: 900;
+}
+
+.danger-button:disabled {
+  opacity: 0.52;
+}
+
 .error-line {
   display: flex;
   align-items: center;
@@ -901,6 +925,72 @@ textarea {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.4;
+}
+
+.storage-total {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 12px;
+}
+
+.storage-total span,
+.storage-breakdown span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.storage-total strong {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.storage-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.storage-breakdown div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.storage-breakdown strong {
+  font-size: 1rem;
+}
+
+.storage-breakdown small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.storage-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid rgba(199, 68, 53, 0.3);
+  border-radius: 7px;
+  background: rgba(199, 68, 53, 0.08);
+  color: var(--danger);
+  padding: 10px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.storage-warning svg {
+  flex: 0 0 auto;
 }
 
 .result {

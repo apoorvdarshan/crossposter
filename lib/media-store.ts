@@ -193,3 +193,46 @@ export async function deleteAllUploadedMedia(): Promise<number> {
 
   return entries.length;
 }
+
+export async function getUploadedMediaStorageStats(): Promise<{
+  path: string;
+  files: number;
+  bytes: number;
+}> {
+  async function walk(directory: string): Promise<{ files: number; bytes: number }> {
+    const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+    const stats = await Promise.all(
+      entries.map(async (entry) => {
+        const entryPath = path.join(directory, entry.name);
+
+        if (entry.isDirectory()) {
+          return walk(entryPath);
+        }
+
+        if (!entry.isFile()) {
+          return { files: 0, bytes: 0 };
+        }
+
+        const fileStat = await stat(entryPath).catch(() => null);
+
+        return {
+          files: fileStat ? 1 : 0,
+          bytes: fileStat?.size || 0
+        };
+      })
+    );
+
+    return stats.reduce(
+      (total, item) => ({
+        files: total.files + item.files,
+        bytes: total.bytes + item.bytes
+      }),
+      { files: 0, bytes: 0 }
+    );
+  }
+
+  return {
+    path: mediaDir,
+    ...(await walk(mediaDir))
+  };
+}

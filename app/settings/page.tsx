@@ -2,7 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Copy, ExternalLink, Eye, EyeOff, Plus, Save } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  Copy,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  HardDrive,
+  Plus,
+  Save,
+  Trash2
+} from "lucide-react";
 import { SocialLogo } from "@/components/social-logo";
 import type { ConfigField } from "@/lib/config-spec";
 import type { Platform } from "@/lib/types";
@@ -22,6 +33,27 @@ type ConfigResponse = {
   localUrl?: string;
 };
 
+type StorageResponse = {
+  uploads: {
+    path: string;
+    files: number;
+    bytes: number;
+  };
+  config: {
+    draftBytes: number;
+    publishedPostsBytes: number;
+    publishedPosts: number;
+  };
+  totalBytes: number;
+};
+
+type BrowserStorageStats = {
+  bytes: number;
+  files: number;
+  draftBytes: number;
+  mediaBytes: number;
+};
+
 const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
@@ -35,12 +67,115 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "twitch", label: "Twitch" }
 ];
 
+const draftStorageKey = "personal-crossposter:compose-draft:v1";
+const draftDbName = "personal-crossposter-drafts";
+const draftDbVersion = 1;
+const draftStoreName = "media";
+
+const emptyBrowserStorage: BrowserStorageStats = {
+  bytes: 0,
+  files: 0,
+  draftBytes: 0,
+  mediaBytes: 0
+};
+
+function formatBytes(size: number): string {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  const units = ["KB", "MB", "GB"];
+  let value = size / 1024;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+}
+
 function newProfile(platform: Platform, fields: ConfigField[]): ProviderProfile {
   return {
     id: `${platform}-${Date.now()}`,
     label: `New ${platform} profile`,
     values: Object.fromEntries(fields.map((field) => [field.name, ""]))
   };
+}
+
+function openStorageDb(): Promise<IDBDatabase | null> {
+  if (typeof window === "undefined" || !("indexedDB" in window)) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = window.indexedDB.open(draftDbName, draftDbVersion);
+
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(draftStoreName)) {
+        request.result.createObjectStore(draftStoreName, { keyPath: "id" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("Could not open local storage"));
+  });
+}
+
+async function withStorageStore<T>(
+  mode: IDBTransactionMode,
+  run: (store: IDBObjectStore) => IDBRequest<T>
+): Promise<T | null> {
+  const db = await openStorageDb();
+
+  if (!db) {
+    return null;
+  }
+
+  try {
+    if (!db.objectStoreNames.contains(draftStoreName)) {
+      return null;
+    }
+
+    return await new Promise<T>((resolve, reject) => {
+      const transaction = db.transaction(draftStoreName, mode);
+      const request = run(transaction.objectStore(draftStoreName));
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Storage operation failed"));
+      transaction.onerror = () =>
+        reject(transaction.error || new Error("Storage transaction failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function readBrowserStorageStats(): Promise<BrowserStorageStats> {
+  const draftBytes =
+    typeof window === "undefined"
+      ? 0
+      : new Blob([window.localStorage.getItem(draftStorageKey) || ""]).size;
+  const records = ((await withStorageStore("readonly", (store) => store.getAll())) || []) as Array<{
+    blob?: Blob;
+  }>;
+  const mediaBytes = records.reduce((total, record) => total + (record.blob?.size || 0), 0);
+
+  return {
+    bytes: draftBytes + mediaBytes,
+    files: records.filter((record) => record.blob).length,
+    draftBytes,
+    mediaBytes
+  };
+}
+
+async function clearBrowserStorage(): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(draftStorageKey);
+  await withStorageStore("readwrite", (store) => store.clear()).catch(() => null);
 }
 
 export default function SettingsPage() {
@@ -52,7 +187,12 @@ export default function SettingsPage() {
   const [localUrl, setLocalUrl] = useState("http://localhost:2004");
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isClearingStorage, setIsClearingStorage] = useState(false);
   const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
+  const [storage, setStorage] = useState<StorageResponse | null>(null);
+  const [browserStorage, setBrowserStorage] =
+    useState<BrowserStorageStats>(emptyBrowserStorage);
+  const [confirmClearStorage, setConfirmClearStorage] = useState(false);
 
   useEffect(() => {
     async function loadConfig() {
@@ -70,6 +210,10 @@ export default function SettingsPage() {
     void loadConfig();
   }, []);
 
+  useEffect(() => {
+    void loadStorage();
+  }, []);
+
   const baseFields = useMemo(
     () => fields.filter((field) => !field.requiredFor?.length),
     [fields]
@@ -79,6 +223,7 @@ export default function SettingsPage() {
 
     return port && /^\d+$/.test(port) ? `http://localhost:${port}` : localUrl;
   }, [localUrl, values.POSTER_LOCAL_PORT]);
+  const totalStorageBytes = (storage?.totalBytes || 0) + browserStorage.bytes;
 
   function fieldsFor(platform: Platform): ConfigField[] {
     return fields.filter((field) => field.requiredFor?.includes(platform));
@@ -115,6 +260,19 @@ export default function SettingsPage() {
       ...current,
       [key]: !current[key]
     }));
+  }
+
+  async function loadStorage() {
+    try {
+      const [response, browserStats] = await Promise.all([
+        fetch("/api/storage", { cache: "no-store" }),
+        readBrowserStorageStats()
+      ]);
+      const body = (await response.json()) as StorageResponse;
+
+      setStorage(body);
+      setBrowserStorage(browserStats);
+    } catch {}
   }
 
   async function saveConfig() {
@@ -176,6 +334,39 @@ export default function SettingsPage() {
       setStatus("Copied config path.");
     } catch {
       setStatus(configPath);
+    }
+  }
+
+  async function clearStorage() {
+    if (!confirmClearStorage) {
+      setConfirmClearStorage(true);
+      setStatus("Confirm storage clear first.");
+      return;
+    }
+
+    setIsClearingStorage(true);
+    setStatus("");
+
+    try {
+      const response = await fetch("/api/storage", { method: "DELETE" });
+      const body = (await response.json()) as StorageResponse & { error?: string };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not clear storage.");
+        return;
+      }
+
+      await clearBrowserStorage();
+      const browserStats = await readBrowserStorageStats();
+
+      setStorage(body);
+      setBrowserStorage(browserStats);
+      setConfirmClearStorage(false);
+      setStatus("Storage cleared. Config keys and profiles were kept.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not clear storage.");
+    } finally {
+      setIsClearingStorage(false);
     }
   }
 
@@ -264,6 +455,79 @@ export default function SettingsPage() {
                 <span className="field-hint">{field.help}</span>
               </label>
             ))}
+          </div>
+        </section>
+
+        <section className="info-panel">
+          <div className="panel-heading compact">
+            <h2>
+              <HardDrive size={20} />
+              Storage
+            </h2>
+            <button className="secondary compact-button" type="button" onClick={() => void loadStorage()}>
+              Refresh
+            </button>
+          </div>
+          <div className="config-panel">
+            <div className="storage-total">
+              <span>Total saved editing data</span>
+              <strong>{formatBytes(totalStorageBytes)}</strong>
+            </div>
+            <div className="storage-breakdown">
+              <div>
+                <span>Uploaded files</span>
+                <strong>{formatBytes(storage?.uploads.bytes || 0)}</strong>
+                <small>{storage?.uploads.files || 0} files</small>
+              </div>
+              <div>
+                <span>Browser media</span>
+                <strong>{formatBytes(browserStorage.mediaBytes)}</strong>
+                <small>{browserStorage.files} draft/history files</small>
+              </div>
+              <div>
+                <span>Draft</span>
+                <strong>
+                  {formatBytes((storage?.config.draftBytes || 0) + browserStorage.draftBytes)}
+                </strong>
+                <small>Title, post, link, selected channels</small>
+              </div>
+              <div>
+                <span>Published history</span>
+                <strong>{formatBytes(storage?.config.publishedPostsBytes || 0)}</strong>
+                <small>{storage?.config.publishedPosts || 0} posts</small>
+              </div>
+            </div>
+            {storage?.uploads.path ? (
+              <div className="config-location">
+                <div>
+                  <span>Upload folder</span>
+                  <code>{storage.uploads.path}</code>
+                </div>
+              </div>
+            ) : null}
+            <p className="hint">
+              Storage clear removes current draft, draft media, uploaded media, and published history.
+              It does not delete config keys, profiles, or provider setup.
+            </p>
+            {confirmClearStorage ? (
+              <div className="storage-warning">
+                <AlertTriangle size={18} />
+                <span>This will clear saved editing/history storage. Config stays untouched.</span>
+              </div>
+            ) : null}
+            <button
+              className={confirmClearStorage ? "danger-button compact-button" : "secondary compact-button"}
+              type="button"
+              onClick={() => void clearStorage()}
+              disabled={isClearingStorage}
+            >
+              <Trash2 size={16} />
+              {isClearingStorage
+                ? "Clearing..."
+                : confirmClearStorage
+                  ? "Confirm clear storage"
+                  : "Clear storage"}
+            </button>
           </div>
         </section>
 
