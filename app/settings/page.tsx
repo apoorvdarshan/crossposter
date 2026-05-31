@@ -98,6 +98,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     title: "Mastodon setup",
     intro: "Create an application on your Mastodon instance and copy an access token.",
     links: [
+      { label: "mastodon.social apps", href: "https://mastodon.social/settings/applications" },
       { label: "OAuth scopes", href: "https://docs.joinmastodon.org/api/oauth-scopes/" },
       { label: "Status API", href: "https://docs.joinmastodon.org/methods/statuses/" }
     ],
@@ -269,6 +270,7 @@ export default function SettingsPage() {
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
+  const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
 
   useEffect(() => {
     async function loadConfig() {
@@ -327,6 +329,41 @@ export default function SettingsPage() {
         profile.id === profileId ? nextProfile : profile
       )
     }));
+  }
+
+  function deleteProfile(platform: Platform, profileId: string) {
+    const key = `${platform}:${profileId}`;
+
+    if (confirmDeleteProfile !== key) {
+      setConfirmDeleteProfile(key);
+      setStatus("Confirm profile delete first.");
+      return;
+    }
+
+    let nextActive = "";
+
+    setProfiles((current) => {
+      const remaining = (current[platform] || []).filter((profile) => profile.id !== profileId);
+
+      nextActive = remaining[0]?.id || "";
+
+      return {
+        ...current,
+        [platform]: remaining
+      };
+    });
+    setActiveProfiles((current) => {
+      if (current[platform] !== profileId) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [platform]: nextActive
+      };
+    });
+    setConfirmDeleteProfile("");
+    setStatus("Profile removed. Save config to keep this change.");
   }
 
   function isSecretVisible(key: string): boolean {
@@ -741,6 +778,23 @@ export default function SettingsPage() {
 
                 {providerProfiles.map((profile) => (
                   <section className="config-group" key={profile.id}>
+                    <div className="config-group-title">
+                      <strong>{profile.label || "Untitled profile"}</strong>
+                      <button
+                        className={
+                          confirmDeleteProfile === `${platform.id}:${profile.id}`
+                            ? "danger-button compact-button"
+                            : "secondary compact-button"
+                        }
+                        type="button"
+                        onClick={() => deleteProfile(platform.id, profile.id)}
+                      >
+                        <Trash2 size={15} />
+                        {confirmDeleteProfile === `${platform.id}:${profile.id}`
+                          ? "Confirm delete"
+                          : "Delete profile"}
+                      </button>
+                    </div>
                     <label className="config-field">
                       <span>Profile name</span>
                       <input
