@@ -7,8 +7,9 @@ type DevtoArticle = {
 };
 
 export async function publishDevto(ctx: ProviderContext): Promise<PublishResult> {
-  const apiKey = requireEnv("DEVTO_API_KEY");
-  const title = ctx.title || optionalEnv("DEVTO_DEFAULT_TITLE");
+  const profileId = ctx.target?.profileId;
+  const apiKey = requireEnv("DEVTO_API_KEY", profileId);
+  const title = ctx.title || optionalEnv("DEVTO_DEFAULT_TITLE", profileId);
 
   if (!title) {
     throw new Error("Dev.to requires a title");
@@ -25,8 +26,8 @@ export async function publishDevto(ctx: ProviderContext): Promise<PublishResult>
         article: {
           title,
           body_markdown: compactText([ctx.text, ctx.url]),
-          published: optionalEnv("DEVTO_DRAFT") !== "true",
-          tags: optionalEnv("DEVTO_TAGS")?.split(",").map((tag) => tag.trim()).filter(Boolean)
+          published: optionalEnv("DEVTO_DRAFT", profileId) !== "true",
+          tags: optionalEnv("DEVTO_TAGS", profileId)?.split(",").map((tag) => tag.trim()).filter(Boolean)
         }
       })
     })
@@ -34,6 +35,9 @@ export async function publishDevto(ctx: ProviderContext): Promise<PublishResult>
 
   return {
     platform: "devto",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: ctx.media ? "Published without local media" : "Published",
     url: article.url

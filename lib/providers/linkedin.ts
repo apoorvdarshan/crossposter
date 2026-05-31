@@ -7,9 +7,10 @@ type LinkedInPost = {
 };
 
 export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResult> {
-  const accessToken = requireEnv("LINKEDIN_ACCESS_TOKEN");
-  const author = requireEnv("LINKEDIN_AUTHOR_URN");
-  const version = optionalEnv("LINKEDIN_VERSION") || "202506";
+  const profileId = ctx.target?.profileId;
+  const accessToken = requireEnv("LINKEDIN_ACCESS_TOKEN", profileId);
+  const author = requireEnv("LINKEDIN_AUTHOR_URN", profileId);
+  const version = optionalEnv("LINKEDIN_VERSION", profileId) || "202506";
 
   const created = await assertOk<LinkedInPost>(
     await fetch("https://api.linkedin.com/rest/posts", {
@@ -37,6 +38,9 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
 
   return {
     platform: "linkedin",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: ctx.media ? "Published without local media" : "Published",
     url: created.id ? `https://www.linkedin.com/feed/update/${created.id}` : undefined

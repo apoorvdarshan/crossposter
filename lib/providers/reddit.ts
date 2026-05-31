@@ -14,10 +14,10 @@ type RedditSubmit = {
   };
 };
 
-async function getRedditAccessToken(): Promise<string> {
-  const clientId = requireEnv("REDDIT_CLIENT_ID");
-  const clientSecret = requireEnv("REDDIT_CLIENT_SECRET");
-  const refreshToken = requireEnv("REDDIT_REFRESH_TOKEN");
+async function getRedditAccessToken(profileId?: string): Promise<string> {
+  const clientId = requireEnv("REDDIT_CLIENT_ID", profileId);
+  const clientSecret = requireEnv("REDDIT_CLIENT_SECRET", profileId);
+  const refreshToken = requireEnv("REDDIT_REFRESH_TOKEN", profileId);
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
 
   const body = new URLSearchParams();
@@ -29,7 +29,7 @@ async function getRedditAccessToken(): Promise<string> {
       method: "POST",
       headers: {
         authorization: `Basic ${credentials}`,
-        "user-agent": optionalEnv("REDDIT_USER_AGENT") || "personal-crossposter/0.1"
+        "user-agent": optionalEnv("REDDIT_USER_AGENT", profileId) || "personal-crossposter/0.1"
       },
       body
     })
@@ -39,8 +39,9 @@ async function getRedditAccessToken(): Promise<string> {
 }
 
 export async function publishReddit(ctx: ProviderContext): Promise<PublishResult> {
-  const subreddit = requireEnv("REDDIT_SUBREDDIT").replace(/^r\//, "");
-  const accessToken = await getRedditAccessToken();
+  const profileId = ctx.target?.profileId;
+  const subreddit = requireEnv("REDDIT_SUBREDDIT", profileId).replace(/^r\//, "");
+  const accessToken = await getRedditAccessToken(profileId);
   const title = ctx.title || ctx.text.split("\n")[0]?.slice(0, 280);
 
   if (!title) {
@@ -65,7 +66,7 @@ export async function publishReddit(ctx: ProviderContext): Promise<PublishResult
       method: "POST",
       headers: {
         authorization: `Bearer ${accessToken}`,
-        "user-agent": optionalEnv("REDDIT_USER_AGENT") || "personal-crossposter/0.1"
+        "user-agent": optionalEnv("REDDIT_USER_AGENT", profileId) || "personal-crossposter/0.1"
       },
       body
     })
@@ -73,6 +74,9 @@ export async function publishReddit(ctx: ProviderContext): Promise<PublishResult
 
   return {
     platform: "reddit",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: ctx.media ? "Submitted without local media" : "Submitted",
     url: submitted.json?.data?.url

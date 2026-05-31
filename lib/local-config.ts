@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { configFields } from "@/lib/config-spec";
-import type { ComposeDraft, Platform, PublishedPost, PublishResult } from "@/lib/types";
+import type { ComposeDraft, Platform, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
 
 export type LocalConfigValues = Record<string, string>;
 
@@ -47,7 +47,8 @@ export const emptyComposeDraft: ComposeDraft = {
   title: "",
   text: "",
   url: "",
-  platforms: []
+  platforms: [],
+  targets: []
 };
 
 function stringValue(value: unknown, maxLength: number): string {
@@ -62,6 +63,36 @@ function normalizePlatforms(value: unknown): Platform[] {
   return value
     .filter((item): item is Platform => platforms.includes(item as Platform))
     .slice(0, 10);
+}
+
+function normalizePublishTargets(value: unknown): PublishTarget[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    .map((item) => {
+      const record = item as Record<string, unknown>;
+      const platform = record.platform;
+
+      if (!platforms.includes(platform as Platform)) {
+        return null;
+      }
+
+      const profileId = stringValue(record.profileId, 120);
+      const id = stringValue(record.id, 180) || `${platform}:${profileId || "base"}`;
+      const profileLabel = stringValue(record.profileLabel, 180);
+
+      return {
+        id,
+        platform: platform as Platform,
+        ...(profileId ? { profileId } : {}),
+        ...(profileLabel ? { profileLabel } : {})
+      };
+    })
+    .filter((item): item is PublishTarget => Boolean(item))
+    .slice(0, 30);
 }
 
 function normalizeValues(value: unknown): LocalConfigValues {
@@ -135,6 +166,7 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
     text: stringValue(record.text, 12000),
     url: stringValue(record.url, 2048),
     platforms: normalizePlatforms(record.platforms),
+    targets: normalizePublishTargets(record.targets),
     ...(updatedAt ? { updatedAt } : {})
   };
 }
@@ -153,6 +185,9 @@ function normalizePublishResult(value: unknown): PublishResult | null {
 
   return {
     platform: platform as Platform,
+    ...(typeof record.targetId === "string" && record.targetId ? { targetId: record.targetId.slice(0, 180) } : {}),
+    ...(typeof record.profileId === "string" && record.profileId ? { profileId: record.profileId.slice(0, 120) } : {}),
+    ...(typeof record.profileLabel === "string" && record.profileLabel ? { profileLabel: record.profileLabel.slice(0, 180) } : {}),
     ok: record.ok === true,
     message: stringValue(record.message, 1000),
     ...(typeof record.url === "string" && record.url ? { url: record.url.slice(0, 2048) } : {})
@@ -188,6 +223,7 @@ function normalizePublishedPost(value: unknown): PublishedPost | null {
     text: stringValue(record.text, 12000),
     ...(typeof record.url === "string" && record.url ? { url: record.url.slice(0, 2048) } : {}),
     platforms: normalizePlatforms(record.platforms),
+    targets: normalizePublishTargets(record.targets),
     results,
     ...(mediaRecord &&
     typeof mediaRecord.id === "string" &&
@@ -280,10 +316,10 @@ export function appendPublishedPost(post: PublishedPost): PublishedPost | undefi
   return saved;
 }
 
-export function getConfigValue(name: string): string | undefined {
+export function getConfigValue(name: string, profileId?: string): string | undefined {
   const localConfig = readLocalConfig();
   const platform = fieldPlatform.get(name);
-  const activeProfileId = platform ? localConfig.activeProfiles[platform] : undefined;
+  const activeProfileId = platform ? profileId || localConfig.activeProfiles[platform] : undefined;
   const activeProfile = platform && activeProfileId
     ? localConfig.profiles[platform]?.find((profile: ProviderProfile) => profile.id === activeProfileId)
     : undefined;

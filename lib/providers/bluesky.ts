@@ -69,8 +69,9 @@ function blueskyAspectRatio(media: NonNullable<ProviderContext["media"]>) {
 }
 
 export async function publishBluesky(ctx: ProviderContext): Promise<PublishResult> {
-  const identifier = requireEnv("BLUESKY_IDENTIFIER");
-  const password = requireEnv("BLUESKY_APP_PASSWORD");
+  const profileId = ctx.target?.profileId;
+  const identifier = requireEnv("BLUESKY_IDENTIFIER", profileId);
+  const password = requireEnv("BLUESKY_APP_PASSWORD", profileId);
   const text = compactText([ctx.text, ctx.url]);
   const length = textLength(text);
 
@@ -156,6 +157,9 @@ export async function publishBluesky(ctx: ProviderContext): Promise<PublishResul
 
   return {
     platform: "bluesky",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: "Published",
     url: rkey ? `https://bsky.app/profile/${session.handle}/post/${rkey}` : undefined

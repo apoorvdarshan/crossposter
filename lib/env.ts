@@ -1,7 +1,7 @@
 import { getConfigValue } from "@/lib/local-config";
 
-export function requireEnv(name: string): string {
-  const value = getConfigValue(name);
+export function requireEnv(name: string, profileId?: string): string {
+  const value = getConfigValue(name, profileId);
 
   if (!value) {
     throw new Error(`Missing ${name}`);
@@ -10,6 +10,6 @@ export function requireEnv(name: string): string {
   return value;
 }
 
-export function optionalEnv(name: string): string | undefined {
-  return getConfigValue(name);
+export function optionalEnv(name: string, profileId?: string): string | undefined {
+  return getConfigValue(name, profileId);
 }

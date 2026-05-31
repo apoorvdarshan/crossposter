@@ -25,20 +25,21 @@ const mediumImageTypes = new Set(["image/jpeg", "image/png", "image/gif", "image
 const mediumPublishStatuses = new Set(["public", "draft", "unlisted"]);
 
 export async function publishMedium(ctx: ProviderContext): Promise<PublishResult> {
-  const accessToken = requireEnv("MEDIUM_ACCESS_TOKEN");
-  const publicationId = optionalEnv("MEDIUM_PUBLICATION_ID");
-  const rawTitle = ctx.title || optionalEnv("MEDIUM_DEFAULT_TITLE");
+  const profileId = ctx.target?.profileId;
+  const accessToken = requireEnv("MEDIUM_ACCESS_TOKEN", profileId);
+  const publicationId = optionalEnv("MEDIUM_PUBLICATION_ID", profileId);
+  const rawTitle = ctx.title || optionalEnv("MEDIUM_DEFAULT_TITLE", profileId);
 
   if (!rawTitle) {
     throw new Error("Medium requires a title");
   }
 
   const title = rawTitle.replace(/\s+/g, " ").trim().slice(0, 100);
-  const configuredPublishStatus = optionalEnv("MEDIUM_PUBLISH_STATUS") || "public";
+  const configuredPublishStatus = optionalEnv("MEDIUM_PUBLISH_STATUS", profileId) || "public";
   const publishStatus = mediumPublishStatuses.has(configuredPublishStatus)
     ? configuredPublishStatus
     : "public";
-  const tags = optionalEnv("MEDIUM_TAGS")
+  const tags = optionalEnv("MEDIUM_TAGS", profileId)
     ?.split(",")
     .map((tag) => tag.trim())
     .filter(Boolean)
@@ -76,6 +77,9 @@ export async function publishMedium(ctx: ProviderContext): Promise<PublishResult
 
   return {
     platform: "medium",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: uploadedImage ? "Published with image" : "Published",
     url: post.data?.url

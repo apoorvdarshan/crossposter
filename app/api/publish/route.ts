@@ -4,7 +4,7 @@ import { z } from "zod";
 import { appendPublishedPost } from "@/lib/local-config";
 import { getUploadedMedia } from "@/lib/media-store";
 import { providers } from "@/lib/providers";
-import type { Platform, ProviderContext, PublishedPost, PublishResult } from "@/lib/types";
+import type { Platform, ProviderContext, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -21,6 +21,12 @@ const platformSchema = z.enum([
   "youtube",
   "medium"
 ]);
+const targetSchema = z.object({
+  id: z.string().min(1).max(180),
+  platform: platformSchema,
+  profileId: z.string().max(120).optional(),
+  profileLabel: z.string().max(180).optional()
+});
 
 function normalizeOptionalUrl(value: unknown): unknown {
   if (typeof value !== "string") {
@@ -59,15 +65,20 @@ const optionalUrlSchema = z.preprocess(
     .optional()
 );
 
-const requestSchema = z.object({
-  adminPassword: z.string().optional(),
-  title: z.string().max(300).optional(),
-  text: z.string().min(1).max(12000),
-  url: optionalUrlSchema,
-  mediaId: z.string().max(80).optional().or(z.literal("")),
-  mediaUrl: optionalUrlSchema,
-  platforms: z.array(platformSchema).min(1).max(10)
-});
+const requestSchema = z
+  .object({
+    adminPassword: z.string().optional(),
+    title: z.string().max(300).optional(),
+    text: z.string().min(1).max(12000),
+    url: optionalUrlSchema,
+    mediaId: z.string().max(80).optional().or(z.literal("")),
+    mediaUrl: optionalUrlSchema,
+    platforms: z.array(platformSchema).max(30).optional(),
+    targets: z.array(targetSchema).max(30).optional()
+  })
+  .refine((value) => (value.targets?.length || value.platforms?.length || 0) > 0, {
+    message: "Select at least one channel."
+  });
 
 function validationMessage(error: z.ZodError): string {
   const fields = error.flatten().fieldErrors;
@@ -80,7 +91,15 @@ function validationMessage(error: z.ZodError): string {
     return "Media URL is invalid. Upload a local file instead.";
   }
 
+  if (error.flatten().formErrors.length) {
+    return error.flatten().formErrors.join(" ");
+  }
+
   return "Publish request is invalid. Check the highlighted fields and try again.";
+}
+
+function uniquePlatforms(targets: PublishTarget[]): Platform[] {
+  return Array.from(new Set(targets.map((target) => target.platform)));
 }
 
 export async function POST(request: Request) {
@@ -117,6 +136,13 @@ export async function POST(request: Request) {
     }
   }
 
+  const targets = (parsed.data.targets?.length
+    ? parsed.data.targets
+    : (parsed.data.platforms || []).map((platform) => ({
+        id: platform,
+        platform
+      }))) as PublishTarget[];
+  const platforms = uniquePlatforms(targets);
   const ctx: ProviderContext = {
     title: parsed.data.title?.trim() || undefined,
     text: parsed.data.text.trim(),
@@ -124,17 +150,35 @@ export async function POST(request: Request) {
     mediaId: parsed.data.mediaId || undefined,
     mediaUrl: parsed.data.mediaUrl || undefined,
     media,
-    platforms: parsed.data.platforms,
+    platforms,
+    targets,
     now: new Date()
   };
 
   const results = await Promise.all(
-    parsed.data.platforms.map(async (platform): Promise<PublishResult> => {
+    targets.map(async (target): Promise<PublishResult> => {
+      const targetCtx: ProviderContext = {
+        ...ctx,
+        platforms: [target.platform],
+        target
+      };
+
       try {
-        return await providers[platform as Platform](ctx);
+        const result = await providers[target.platform](targetCtx);
+
+        return {
+          ...result,
+          platform: target.platform,
+          targetId: result.targetId || target.id,
+          profileId: result.profileId || target.profileId,
+          profileLabel: result.profileLabel || target.profileLabel
+        };
       } catch (error) {
         return {
-          platform: platform as Platform,
+          platform: target.platform,
+          targetId: target.id,
+          profileId: target.profileId,
+          profileLabel: target.profileLabel,
           ok: false,
           message: error instanceof Error ? error.message : "Unknown error"
         };
@@ -147,7 +191,8 @@ export async function POST(request: Request) {
     ...(ctx.title ? { title: ctx.title } : {}),
     text: ctx.text,
     ...(ctx.url ? { url: ctx.url } : {}),
-    platforms: parsed.data.platforms as Platform[],
+    platforms,
+    targets,
     results,
     ...(media
       ? {

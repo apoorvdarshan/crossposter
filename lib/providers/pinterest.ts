@@ -20,8 +20,9 @@ type PinterestMediaSource =
     };
 
 export async function publishPinterest(ctx: ProviderContext): Promise<PublishResult> {
-  const accessToken = requireEnv("PINTEREST_ACCESS_TOKEN");
-  const boardId = requireEnv("PINTEREST_BOARD_ID");
+  const profileId = ctx.target?.profileId;
+  const accessToken = requireEnv("PINTEREST_ACCESS_TOKEN", profileId);
+  const boardId = requireEnv("PINTEREST_BOARD_ID", profileId);
   let mediaSource: PinterestMediaSource;
 
   if (ctx.media) {
@@ -62,6 +63,9 @@ export async function publishPinterest(ctx: ProviderContext): Promise<PublishRes
 
   return {
     platform: "pinterest",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: "Published pin",
     url: pin.link || (pin.id ? `https://www.pinterest.com/pin/${pin.id}` : undefined)

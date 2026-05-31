@@ -50,9 +50,10 @@ async function waitForMastodonMedia(
 }
 
 export async function publishMastodon(ctx: ProviderContext): Promise<PublishResult> {
-  const instance = requireEnv("MASTODON_INSTANCE").replace(/\/$/, "");
-  const accessToken = requireEnv("MASTODON_ACCESS_TOKEN");
-  const visibility = optionalEnv("MASTODON_VISIBILITY") || "public";
+  const profileId = ctx.target?.profileId;
+  const instance = requireEnv("MASTODON_INSTANCE", profileId).replace(/\/$/, "");
+  const accessToken = requireEnv("MASTODON_ACCESS_TOKEN", profileId);
+  const visibility = optionalEnv("MASTODON_VISIBILITY", profileId) || "public";
   const status = compactText([ctx.text, ctx.url]);
   let mediaId: string | undefined;
 
@@ -98,6 +99,9 @@ export async function publishMastodon(ctx: ProviderContext): Promise<PublishResu
 
   return {
     platform: "mastodon",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: "Published",
     url: created.url

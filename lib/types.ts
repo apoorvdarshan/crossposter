@@ -17,10 +17,21 @@ export type PublishPayload = {
   mediaId?: string;
   mediaUrl?: string;
   platforms: Platform[];
+  targets?: PublishTarget[];
+};
+
+export type PublishTarget = {
+  id: string;
+  platform: Platform;
+  profileId?: string;
+  profileLabel?: string;
 };
 
 export type PublishResult = {
   platform: Platform;
+  targetId?: string;
+  profileId?: string;
+  profileLabel?: string;
   ok: boolean;
   message: string;
   url?: string;
@@ -31,6 +42,7 @@ export type ComposeDraft = {
   text: string;
   url: string;
   platforms: Platform[];
+  targets?: PublishTarget[];
   updatedAt?: string;
 };
 
@@ -41,6 +53,7 @@ export type PublishedPost = {
   text: string;
   url?: string;
   platforms: Platform[];
+  targets?: PublishTarget[];
   results: PublishResult[];
   media?: {
     id: string;
@@ -53,6 +66,7 @@ export type PublishedPost = {
 };
 
 export type ProviderContext = PublishPayload & {
+  target?: PublishTarget;
   media?: {
     id: string;
     filename: string;

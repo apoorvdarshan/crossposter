@@ -12,11 +12,11 @@ type YouTubeVideo = {
   id?: string;
 };
 
-async function getYouTubeAccessToken(): Promise<string> {
+async function getYouTubeAccessToken(profileId?: string): Promise<string> {
   const body = new URLSearchParams();
-  body.set("client_id", requireEnv("YOUTUBE_CLIENT_ID"));
-  body.set("client_secret", requireEnv("YOUTUBE_CLIENT_SECRET"));
-  body.set("refresh_token", requireEnv("YOUTUBE_REFRESH_TOKEN"));
+  body.set("client_id", requireEnv("YOUTUBE_CLIENT_ID", profileId));
+  body.set("client_secret", requireEnv("YOUTUBE_CLIENT_SECRET", profileId));
+  body.set("refresh_token", requireEnv("YOUTUBE_REFRESH_TOKEN", profileId));
   body.set("grant_type", "refresh_token");
 
   const token = await assertOk<GoogleToken>(
@@ -30,6 +30,7 @@ async function getYouTubeAccessToken(): Promise<string> {
 }
 
 export async function publishYouTube(ctx: ProviderContext): Promise<PublishResult> {
+  const profileId = ctx.target?.profileId;
   const title = ctx.title || ctx.text.split("\n")[0]?.slice(0, 100);
 
   if (!title) {
@@ -59,9 +60,9 @@ export async function publishYouTube(ctx: ProviderContext): Promise<PublishResul
     throw new Error("YouTube requires a video file upload");
   }
 
-  const accessToken = await getYouTubeAccessToken();
+  const accessToken = await getYouTubeAccessToken(profileId);
   const boundary = `personal-crossposter-${randomUUID()}`;
-  const tags = optionalEnv("YOUTUBE_TAGS")
+  const tags = optionalEnv("YOUTUBE_TAGS", profileId)
     ?.split(",")
     .map((tag) => tag.trim())
     .filter(Boolean);
@@ -69,12 +70,12 @@ export async function publishYouTube(ctx: ProviderContext): Promise<PublishResul
     snippet: {
       title,
       description: compactText([ctx.text, ctx.url]),
-      categoryId: optionalEnv("YOUTUBE_CATEGORY_ID") || "22",
+      categoryId: optionalEnv("YOUTUBE_CATEGORY_ID", profileId) || "22",
       ...(tags?.length ? { tags } : {})
     },
     status: {
-      privacyStatus: optionalEnv("YOUTUBE_PRIVACY_STATUS") || "private",
-      selfDeclaredMadeForKids: optionalEnv("YOUTUBE_MADE_FOR_KIDS") === "true"
+      privacyStatus: optionalEnv("YOUTUBE_PRIVACY_STATUS", profileId) || "private",
+      selfDeclaredMadeForKids: optionalEnv("YOUTUBE_MADE_FOR_KIDS", profileId) === "true"
     }
   };
   const body = Buffer.concat([
@@ -91,7 +92,7 @@ export async function publishYouTube(ctx: ProviderContext): Promise<PublishResul
   const params = new URLSearchParams({
     uploadType: "multipart",
     part: "snippet,status",
-    notifySubscribers: optionalEnv("YOUTUBE_NOTIFY_SUBSCRIBERS") || "false"
+    notifySubscribers: optionalEnv("YOUTUBE_NOTIFY_SUBSCRIBERS", profileId) || "false"
   });
 
   const video = await assertOk<YouTubeVideo>(
@@ -108,6 +109,9 @@ export async function publishYouTube(ctx: ProviderContext): Promise<PublishResul
 
   return {
     platform: "youtube",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: "Uploaded video",
     url: video.id ? `https://www.youtube.com/watch?v=${video.id}` : undefined

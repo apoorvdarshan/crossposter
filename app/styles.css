@@ -192,6 +192,9 @@ button:disabled {
 }
 
 .masthead {
+  position: sticky;
+  top: 12px;
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -383,7 +386,7 @@ h2 {
 
 .publish-panel {
   position: sticky;
-  top: 28px;
+  top: 116px;
   align-self: start;
 }
 
@@ -924,6 +927,13 @@ textarea {
   border: 1px solid var(--accent-dark);
   background: var(--accent);
   color: var(--accent-contrast);
+}
+
+.primary.is-saved {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  box-shadow: 0 0 0 4px var(--accent-ring-strong);
 }
 
 .primary:disabled {

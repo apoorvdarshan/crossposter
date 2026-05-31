@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
+  CheckCircle2,
   ChevronLeft,
   Copy,
   ExternalLink,
@@ -263,6 +264,7 @@ export default function SettingsPage() {
   const [localUrl, setLocalUrl] = useState("http://localhost:2004");
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState(false);
   const [isClearingStorage, setIsClearingStorage] = useState(false);
   const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
   const [storage, setStorage] = useState<StorageResponse | null>(null);
@@ -399,6 +401,7 @@ export default function SettingsPage() {
 
   async function saveConfig() {
     setStatus("");
+    setSaveFeedback(false);
     setIsSaving(true);
 
     try {
@@ -420,6 +423,8 @@ export default function SettingsPage() {
       setConfigPath(body.configPath || "");
       setLocalUrl(body.localUrl || "http://localhost:2004");
       setStatus("Saved locally.");
+      setSaveFeedback(true);
+      window.setTimeout(() => setSaveFeedback(false), 1600);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not save config.");
     } finally {
@@ -542,9 +547,14 @@ export default function SettingsPage() {
             Dashboard
           </Link>
           <ThemeToggle />
-          <button className="primary compact-button" type="button" onClick={saveConfig} disabled={isSaving}>
-            <Save size={17} />
-            {isSaving ? "Saving..." : "Save config"}
+          <button
+            className={`primary compact-button ${saveFeedback ? "is-saved" : ""}`}
+            type="button"
+            onClick={saveConfig}
+            disabled={isSaving}
+          >
+            {saveFeedback ? <CheckCircle2 size={17} /> : <Save size={17} />}
+            {isSaving ? "Saving..." : saveFeedback ? "Saved locally" : "Save config"}
           </button>
         </div>
       </header>

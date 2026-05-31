@@ -11,9 +11,10 @@ type InstagramPublish = {
 };
 
 export async function publishInstagram(ctx: ProviderContext): Promise<PublishResult> {
-  const accessToken = requireEnv("INSTAGRAM_ACCESS_TOKEN");
-  const userId = requireEnv("INSTAGRAM_USER_ID");
-  const graphVersion = optionalEnv("META_GRAPH_VERSION") || "v23.0";
+  const profileId = ctx.target?.profileId;
+  const accessToken = requireEnv("INSTAGRAM_ACCESS_TOKEN", profileId);
+  const userId = requireEnv("INSTAGRAM_USER_ID", profileId);
+  const graphVersion = optionalEnv("META_GRAPH_VERSION", profileId) || "v23.0";
 
   if (ctx.media) {
     throw new Error("Instagram local media upload is not supported yet");
@@ -48,6 +49,9 @@ export async function publishInstagram(ctx: ProviderContext): Promise<PublishRes
 
   return {
     platform: "instagram",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: "Published image post",
     url: published.id ? `https://www.instagram.com/p/${published.id}` : undefined

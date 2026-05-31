@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { ComposeDraft, Platform, PublishedPost, PublishResult } from "@/lib/types";
+import type { ConfigField } from "@/lib/config-spec";
+import type { ComposeDraft, Platform, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
 
 const channels: Array<{
@@ -112,6 +113,16 @@ const channels: Array<{
   }
 ];
 
+type ChannelDefinition = (typeof channels)[number];
+
+type ChannelTarget = ChannelDefinition & {
+  targetId: string;
+  profileId: string;
+  profileLabel: string;
+  ready: boolean;
+  missing: string[];
+};
+
 const envLabels: Record<string, string> = {
   BLUESKY_IDENTIFIER: "Bluesky handle",
   BLUESKY_APP_PASSWORD: "app password",
@@ -151,17 +162,10 @@ type ApiResponse = {
   error?: unknown;
 };
 
-type ReadinessResponse = {
-  channels: Array<{
-    platform: Platform;
-    ready: boolean;
-    missing: string[];
-  }>;
-};
-
 type ConfigProfilesResponse = {
+  fields: ConfigField[];
+  values: Record<string, string>;
   profiles: Partial<Record<Platform, ProviderProfile[]>>;
-  activeProfiles: Partial<Record<Platform, string>>;
 };
 
 type DraftResponse = {
@@ -187,8 +191,9 @@ type SavedDraft = {
   title?: string;
   text?: string;
   url?: string;
-  selected?: Platform[];
+  selected?: string[];
   platforms?: Platform[];
+  targets?: PublishTarget[];
   updatedAt?: string;
 };
 
@@ -240,6 +245,52 @@ function normalizePlatforms(value: unknown): Platform[] {
   return value.filter((item): item is Platform => platformIds.includes(item as Platform));
 }
 
+function normalizePublishTargets(value: unknown): PublishTarget[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    .map((item) => {
+      const record = item as Record<string, unknown>;
+      const platform = record.platform;
+
+      if (!platformIds.includes(platform as Platform)) {
+        return null;
+      }
+
+      const profileId = typeof record.profileId === "string" ? record.profileId.slice(0, 120) : "";
+      const id =
+        typeof record.id === "string" && record.id.trim()
+          ? record.id.slice(0, 180)
+          : `${platform}:${profileId || "base"}`;
+      const profileLabel =
+        typeof record.profileLabel === "string" ? record.profileLabel.slice(0, 180) : "";
+
+      return {
+        id,
+        platform: platform as Platform,
+        ...(profileId ? { profileId } : {}),
+        ...(profileLabel ? { profileLabel } : {})
+      };
+    })
+    .filter((item): item is PublishTarget => Boolean(item));
+}
+
+function isMissingConfigValue(value: string | undefined): boolean {
+  return !value || value.startsWith("your-") || value === "change-me";
+}
+
+function publishTargetFromCard(target: ChannelTarget): PublishTarget {
+  return {
+    id: target.targetId,
+    platform: target.id,
+    profileId: target.profileId,
+    profileLabel: target.profileLabel
+  };
+}
+
 function readStoredDraft(): SavedDraft | null {
   try {
     const stored = window.localStorage.getItem(draftStorageKey);
@@ -255,6 +306,7 @@ function readStoredDraft(): SavedDraft | null {
       text: typeof parsed.text === "string" ? parsed.text : "",
       url: typeof parsed.url === "string" ? parsed.url : "",
       platforms: normalizePlatforms(parsed.platforms || parsed.selected),
+      targets: normalizePublishTargets(parsed.targets),
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : undefined
     };
   } catch {
@@ -284,6 +336,7 @@ function normalizeDraft(draft: ComposeDraft | SavedDraft | undefined | null): Co
     text: typeof draft?.text === "string" ? draft.text : "",
     url: typeof draft?.url === "string" ? draft.url : "",
     platforms: normalizePlatforms(draft?.platforms || (draft as SavedDraft | undefined)?.selected),
+    targets: normalizePublishTargets(draft?.targets),
     ...(typeof draft?.updatedAt === "string" ? { updatedAt: draft.updatedAt } : {})
   };
 }
@@ -720,7 +773,7 @@ export default function Home() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
-  const [selected, setSelected] = useState<Platform[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
   const [results, setResults] = useState<PublishResult[]>([]);
   const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
   const [error, setError] = useState("");
@@ -731,62 +784,83 @@ export default function Home() {
   const [progress, setProgress] = useState<ProgressState | null>(null);
   const [progressPlacement, setProgressPlacement] = useState<ProgressPlacement>("bottom");
   const [draftHydrated, setDraftHydrated] = useState(false);
+  const [configHydrated, setConfigHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
-  const [readiness, setReadiness] = useState<Record<Platform, ReadinessResponse["channels"][number]>>(
-    {} as Record<Platform, ReadinessResponse["channels"][number]>
-  );
+  const [configFields, setConfigFields] = useState<ConfigField[]>([]);
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [configProfiles, setConfigProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
-  const [activeProfiles, setActiveProfiles] = useState<Partial<Record<Platform, string>>>({});
+
+  const visibleTargets = useMemo<ChannelTarget[]>(
+    () =>
+      channels.flatMap((channel) =>
+        (configProfiles[channel.id] || []).map((profile) => {
+          const missing = configFields
+            .filter((field) => field.requiredFor?.includes(channel.id))
+            .filter((field) =>
+              isMissingConfigValue(
+                profile.values[field.name] || configValues[field.name] || field.defaultValue
+              )
+            )
+            .map((field) => field.name);
+
+          return {
+            ...channel,
+            targetId: `${channel.id}:${profile.id}`,
+            profileId: profile.id,
+            profileLabel: profile.label,
+            ready: missing.length === 0,
+            missing
+          };
+        })
+      ),
+    [configFields, configProfiles, configValues]
+  );
 
   useEffect(() => {
-    let active = true;
-
-    async function loadReadiness() {
-      try {
-        const response = await fetch("/api/readiness", { cache: "no-store" });
-        const body = (await response.json()) as ReadinessResponse;
-
-        if (!active) {
-          return;
-        }
-
-        setReadiness(
-          Object.fromEntries(body.channels.map((item) => [item.platform, item])) as Record<
-            Platform,
-            ReadinessResponse["channels"][number]
-          >
-        );
-      } catch {
-        if (active) {
-          setReadiness({} as Record<Platform, ReadinessResponse["channels"][number]>);
-        }
-      }
-    }
-
-    void loadReadiness();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const configured = channels
-      .filter((channel) => (configProfiles[channel.id]?.length || 0) > 0)
-      .map((channel) => channel.id);
-
-    if (!draftHydrated) {
+    if (!draftHydrated || !configHydrated) {
       return;
     }
 
-    setSelected((current) =>
-      hasSavedDraft
-        ? current.filter((platform) => configured.includes(platform))
-        : current.filter((platform) => configured.includes(platform)).length > 0
-          ? current.filter((platform) => configured.includes(platform))
-          : configured.slice(0, 1)
-    );
-  }, [configProfiles, draftHydrated, hasSavedDraft]);
+    setSelected((current) => {
+      const targetIds = new Set(visibleTargets.map((target) => target.targetId));
+      const next = Array.from(
+        new Set(
+          current.flatMap((item) => {
+            if (targetIds.has(item)) {
+              return [item];
+            }
+
+            if (platformIds.includes(item as Platform)) {
+              const firstTarget = visibleTargets.find((target) => target.id === item);
+
+              return firstTarget ? [firstTarget.targetId] : [];
+            }
+
+            return [];
+          })
+        )
+      );
+
+      if (hasSavedDraft) {
+        return next;
+      }
+
+      return next.length > 0 ? next : visibleTargets.slice(0, 1).map((target) => target.targetId);
+    });
+  }, [configHydrated, draftHydrated, hasSavedDraft, visibleTargets]);
+
+  const selectedTargets = useMemo(() => {
+    const byId = new Map(visibleTargets.map((target) => [target.targetId, target]));
+
+    return selected
+      .map((targetId) => byId.get(targetId))
+      .filter((target): target is ChannelTarget => Boolean(target));
+  }, [selected, visibleTargets]);
+
+  const selectedPlatforms = useMemo(
+    () => Array.from(new Set(selectedTargets.map((target) => target.id))),
+    [selectedTargets]
+  );
 
   useEffect(() => {
     let active = true;
@@ -800,9 +874,15 @@ export default function Home() {
           return;
         }
 
+        setConfigFields(body.fields || []);
+        setConfigValues(body.values || {});
         setConfigProfiles(body.profiles || {});
-        setActiveProfiles(body.activeProfiles || {});
       } catch {}
+      finally {
+        if (active) {
+          setConfigHydrated(true);
+        }
+      }
     }
 
     void loadConfig();
@@ -831,7 +911,7 @@ export default function Home() {
         setTitle(draft.title);
         setText(draft.text);
         setUrl(draft.url);
-        setSelected(draft.platforms);
+        setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(hasDraft);
         setPublishedPosts(body.publishedPosts || []);
 
@@ -850,7 +930,7 @@ export default function Home() {
         setTitle(draft.title);
         setText(draft.text);
         setUrl(draft.url);
-        setSelected(draft.platforms);
+        setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(draftTimestamp(draft) > 0);
       } finally {
         if (active) {
@@ -882,7 +962,7 @@ export default function Home() {
   }, [mediaFile]);
 
   useEffect(() => {
-    if (!draftHydrated) {
+    if (!draftHydrated || !configHydrated) {
       return;
     }
 
@@ -894,7 +974,8 @@ export default function Home() {
       title,
       text,
       url,
-      platforms: selected,
+      platforms: selectedPlatforms,
+      targets: selectedTargets.map(publishTargetFromCard),
       updatedAt: new Date().toISOString()
     };
 
@@ -909,7 +990,17 @@ export default function Home() {
     }, 250);
 
     return () => window.clearTimeout(timer);
-  }, [title, text, url, selected, draftHydrated, hasSavedDraft]);
+  }, [
+    title,
+    text,
+    url,
+    selected,
+    selectedPlatforms,
+    selectedTargets,
+    draftHydrated,
+    configHydrated,
+    hasSavedDraft
+  ]);
 
   useEffect(() => {
     if (!draftHydrated) {
@@ -920,19 +1011,19 @@ export default function Home() {
   }, [mediaFile, draftHydrated]);
 
   const selectedLabel = useMemo(() => {
-    if (selected.length === 0) {
+    if (selectedTargets.length === 0) {
       return "No channels";
     }
 
-    return `${selected.length} selected`;
-  }, [selected.length]);
+    return `${selectedTargets.length} selected`;
+  }, [selectedTargets.length]);
 
-  function togglePlatform(platform: Platform) {
+  function toggleTarget(targetId: string) {
     setHasSavedDraft(true);
     setSelected((current) =>
-      current.includes(platform)
-        ? current.filter((item) => item !== platform)
-        : [...current, platform]
+      current.includes(targetId)
+        ? current.filter((item) => item !== targetId)
+        : [...current, targetId]
     );
   }
 
@@ -1002,6 +1093,7 @@ export default function Home() {
       text: "",
       url: "",
       platforms: [],
+      targets: [],
       updatedAt: new Date().toISOString()
     };
 
@@ -1036,7 +1128,9 @@ export default function Home() {
       return;
     }
 
-    const compression = mediaPreflightIssues(selected, mediaFile).find((issue) => issue.compress)?.compress;
+    const compression = mediaPreflightIssues(selectedPlatforms, mediaFile).find(
+      (issue) => issue.compress
+    )?.compress;
 
     if (!compression) {
       return;
@@ -1109,9 +1203,16 @@ export default function Home() {
     setProgress(null);
     setProgressPlacement(placement);
     let uploadedMedia: UploadedMedia | undefined;
+    const publishTargets = selectedTargets.map(publishTargetFromCard);
+    const publishPlatforms = Array.from(new Set(publishTargets.map((target) => target.platform)));
+
+    if (publishTargets.length === 0) {
+      setError("Select at least one connected social profile.");
+      return;
+    }
 
     const isBlueskyTooLong =
-      selected.includes("bluesky") &&
+      publishPlatforms.includes("bluesky") &&
       postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n")) > 300;
 
     if (isBlueskyTooLong) {
@@ -1119,7 +1220,7 @@ export default function Home() {
       return;
     }
 
-    const preflightIssues = mediaPreflightIssues(selected, mediaFile);
+    const preflightIssues = mediaPreflightIssues(publishPlatforms, mediaFile);
 
     if (preflightIssues.length > 0) {
       setError(preflightIssues[0].message);
@@ -1140,7 +1241,8 @@ export default function Home() {
           text,
           url: url.trim() || undefined,
           mediaId: uploadedMedia?.id,
-          platforms: selected
+          platforms: publishPlatforms,
+          targets: publishTargets
         })
       });
 
@@ -1170,37 +1272,19 @@ export default function Home() {
     }
   }
 
-  const preflightIssues = mediaPreflightIssues(selected, mediaFile);
+  const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
   const blueskyLength = postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n"));
-  const showBlueskyLimit = selected.includes("bluesky");
+  const showBlueskyLimit = selectedPlatforms.includes("bluesky");
   const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
   const canPublish =
     text.trim() &&
-    selected.length > 0 &&
+    selectedTargets.length > 0 &&
     preflightIssues.length === 0 &&
     !blueskyTooLong &&
     !isPublishing &&
     !isUploadingMedia &&
     !isCompressingMedia;
-  const configuredChannels = useMemo(
-    () => channels.filter((channel) => (configProfiles[channel.id]?.length || 0) > 0),
-    [configProfiles]
-  );
-  const visibleChannels = configuredChannels.length > 0 ? configuredChannels : [];
-  const readyCount = visibleChannels.filter((channel) => readiness[channel.id]?.ready).length;
-  const activeLabelByPlatform = useMemo(
-    () =>
-      Object.fromEntries(
-        channels.map((channel) => {
-          const profile = configProfiles[channel.id]?.find(
-            (item) => item.id === activeProfiles[channel.id]
-          );
-
-          return [channel.id, profile?.label || "Base config"];
-        })
-      ) as Record<Platform, string>,
-    [activeProfiles, configProfiles]
-  );
+  const readyCount = visibleTargets.filter((target) => target.ready).length;
   const selectedMediaKind = fileKind(mediaFile);
   const SelectedMediaIcon =
     selectedMediaKind === "image"
@@ -1441,7 +1525,7 @@ export default function Home() {
                     type="button"
                     onClick={() => {
                       setHasSavedDraft(true);
-                      setSelected(visibleChannels.map((item) => item.id));
+                      setSelected(visibleTargets.map((target) => target.targetId));
                     }}
                   >
                     All
@@ -1458,7 +1542,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="channel-grid">
-                {visibleChannels.length === 0 ? (
+                {visibleTargets.length === 0 ? (
                   <div className="empty-channels">
                     <strong>No connected socials yet.</strong>
                     <span>
@@ -1466,44 +1550,38 @@ export default function Home() {
                     </span>
                   </div>
                 ) : null}
-                {visibleChannels.map((channel) => (
+                {visibleTargets.map((target) => (
                   <label
-                    className={`channel ${readiness[channel.id]?.ready ? "is-ready" : "is-missing"}`}
-                    key={channel.id}
+                    className={`channel ${target.ready ? "is-ready" : "is-missing"}`}
+                    key={target.targetId}
                   >
                     <input
                       type="checkbox"
-                      checked={selected.includes(channel.id)}
-                      onChange={() => togglePlatform(channel.id)}
+                      checked={selected.includes(target.targetId)}
+                      onChange={() => toggleTarget(target.targetId)}
                     />
                     <span className="channel-body">
                       <span className="channel-top">
                         <span className="channel-title">
-                          <SocialLogo platform={channel.id} />
-                          <strong>{channel.label}</strong>
+                          <SocialLogo platform={target.id} />
+                          <strong>{target.label}</strong>
                         </span>
                         <span className="channel-check" />
                       </span>
-                      <span className="channel-note">{channel.note}</span>
-                      <span
-                        className={`readiness-pill ${
-                          readiness[channel.id]?.ready ? "ready" : "missing"
-                        }`}
-                      >
-                        {readiness[channel.id]
-                          ? readiness[channel.id].ready
-                            ? "Ready"
-                            : `Needs ${formatMissing(readiness[channel.id].missing)}`
-                          : "Checking..."}
+                      <span className="channel-note">{target.note}</span>
+                      <span className={`readiness-pill ${target.ready ? "ready" : "missing"}`}>
+                        {target.ready ? "Ready" : `Needs ${formatMissing(target.missing)}`}
                       </span>
-                      <span className="active-profile">Active: {activeLabelByPlatform[channel.id]}</span>
-                      <span className="field-map" aria-label={`${channel.label} field usage`}>
-                        {channel.uses.map((field) => (
+                      <span className="active-profile">Profile: {target.profileLabel}</span>
+                      <span className="field-map" aria-label={`${target.label} field usage`}>
+                        {target.uses.map((field) => (
                           <span key={field}>{field}</span>
                         ))}
                       </span>
-                      <span className="channel-detail">{channel.target}</span>
-                      <span className="channel-detail">{channel.media}</span>
+                      <span className="channel-detail">
+                        Uses this {target.label} profile from Settings.
+                      </span>
+                      <span className="channel-detail">{target.media}</span>
                     </span>
                   </label>
                 ))}
@@ -1592,10 +1670,13 @@ export default function Home() {
             {results.length > 0 ? (
               <div className="result-list" aria-label="Latest publish result">
                 <p className="result-section-label">Latest result</p>
-                {results.map((result) => (
-                  <div className="result" key={result.platform}>
+                {results.map((result, index) => (
+                  <div className="result" key={result.targetId || `${result.platform}:${index}`}>
                     <div className="result-head">
-                      <strong>{result.platform}</strong>
+                      <strong>
+                        {result.platform}
+                        {result.profileLabel ? ` · ${result.profileLabel}` : ""}
+                      </strong>
                       <span className={`badge ${result.ok ? "ok" : "err"}`}>
                         {result.ok ? "ok" : "error"}
                       </span>
@@ -1665,13 +1746,16 @@ export default function Home() {
                         </div>
                       ) : null}
                       <div className="history-platforms">
-                        {post.results.map((result) => {
+                        {post.results.map((result, index) => {
                           const channel = channels.find((item) => item.id === result.platform);
                           const className = `history-platform ${result.ok ? "ok" : "err"}`;
+                          const label = `${channel?.label || result.platform}${
+                            result.profileLabel ? ` · ${result.profileLabel}` : ""
+                          }`;
                           const content = (
                             <>
                               <SocialLogo platform={result.platform} size="sm" />
-                              <span>{channel?.label || result.platform}</span>
+                              <span>{label}</span>
                               {result.url ? <ExternalLink size={13} /> : null}
                             </>
                           );
@@ -1680,7 +1764,7 @@ export default function Home() {
                             <a
                               className={className}
                               href={result.url}
-                              key={result.platform}
+                              key={result.targetId || `${result.platform}:${index}`}
                               rel="noreferrer"
                               target="_blank"
                               title={result.message}
@@ -1688,7 +1772,11 @@ export default function Home() {
                               {content}
                             </a>
                           ) : (
-                            <span className={className} key={result.platform} title={result.message}>
+                            <span
+                              className={className}
+                              key={result.targetId || `${result.platform}:${index}`}
+                              title={result.message}
+                            >
                               {content}
                             </span>
                           );

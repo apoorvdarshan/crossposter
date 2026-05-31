@@ -16,11 +16,11 @@ type TwitchChatResponse = {
   }>;
 };
 
-async function getTwitchAccessToken(): Promise<string> {
+async function getTwitchAccessToken(profileId?: string): Promise<string> {
   const body = new URLSearchParams();
-  body.set("client_id", requireEnv("TWITCH_CLIENT_ID"));
-  body.set("client_secret", requireEnv("TWITCH_CLIENT_SECRET"));
-  body.set("refresh_token", requireEnv("TWITCH_REFRESH_TOKEN"));
+  body.set("client_id", requireEnv("TWITCH_CLIENT_ID", profileId));
+  body.set("client_secret", requireEnv("TWITCH_CLIENT_SECRET", profileId));
+  body.set("refresh_token", requireEnv("TWITCH_REFRESH_TOKEN", profileId));
   body.set("grant_type", "refresh_token");
 
   const token = await assertOk<TwitchToken>(
@@ -34,11 +34,12 @@ async function getTwitchAccessToken(): Promise<string> {
 }
 
 export async function publishTwitch(ctx: ProviderContext): Promise<PublishResult> {
-  const clientId = requireEnv("TWITCH_CLIENT_ID");
-  const broadcasterId = requireEnv("TWITCH_BROADCASTER_ID");
-  const senderId = requireEnv("TWITCH_SENDER_ID");
-  const channelLogin = optionalEnv("TWITCH_CHANNEL_LOGIN");
-  const accessToken = await getTwitchAccessToken();
+  const profileId = ctx.target?.profileId;
+  const clientId = requireEnv("TWITCH_CLIENT_ID", profileId);
+  const broadcasterId = requireEnv("TWITCH_BROADCASTER_ID", profileId);
+  const senderId = requireEnv("TWITCH_SENDER_ID", profileId);
+  const channelLogin = optionalEnv("TWITCH_CHANNEL_LOGIN", profileId);
+  const accessToken = await getTwitchAccessToken(profileId);
   const message = compactText([ctx.title, ctx.text, ctx.url]);
 
   if (message.length > 500) {
@@ -69,6 +70,9 @@ export async function publishTwitch(ctx: ProviderContext): Promise<PublishResult
 
   return {
     platform: "twitch",
+    targetId: ctx.target?.id,
+    profileId,
+    profileLabel: ctx.target?.profileLabel,
     ok: result?.is_sent ?? true,
     message: ctx.media ? "Sent chat message without media" : "Sent chat message",
     url: channelLogin ? `https://www.twitch.tv/${channelLogin}` : undefined
