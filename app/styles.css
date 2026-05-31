@@ -1517,6 +1517,10 @@ a.history-platform.ok:hover {
   font-weight: 500;
 }
 
+.config-field.is-invalid input {
+  border-color: var(--danger-line);
+}
+
 .secret-input {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 42px;

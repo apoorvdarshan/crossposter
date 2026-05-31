@@ -19,6 +19,7 @@ import {
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { ConfigField } from "@/lib/config-spec";
+import { validateConfigField } from "@/lib/config-validation";
 import type { Platform } from "@/lib/types";
 
 type ProviderProfile = {
@@ -817,49 +818,62 @@ export default function SettingsPage() {
                         }
                       />
                     </label>
-                    {providerFields.map((field) => (
-                      <label className="config-field" key={field.name}>
-                        <span>{field.label}</span>
-                        <span className="secret-input">
-                          <input
-                            type={
-                              field.secret && !isSecretVisible(`${profile.id}:${field.name}`)
-                                ? "password"
-                                : "text"
-                            }
-                            value={profile.values[field.name] || ""}
-                            onChange={(event) =>
-                              updateProfile(platform.id, profile.id, {
-                                ...profile,
-                                values: {
-                                  ...profile.values,
-                                  [field.name]: event.target.value
-                                }
-                              })
-                            }
-                            placeholder={field.name}
-                          />
-                          {field.secret ? (
-                            <button
-                              aria-label={
-                                isSecretVisible(`${profile.id}:${field.name}`)
-                                  ? "Hide secret"
-                                  : "Show secret"
+                    {providerFields.map((field) => {
+                      const issue = validateConfigField(
+                        field,
+                        profile.values[field.name],
+                        Boolean(field.requiredFor?.includes(platform.id))
+                      );
+
+                      return (
+                        <label
+                          className={`config-field ${issue ? "is-invalid" : ""}`}
+                          key={field.name}
+                        >
+                          <span>{field.label}</span>
+                          <span className="secret-input">
+                            <input
+                              type={
+                                field.secret && !isSecretVisible(`${profile.id}:${field.name}`)
+                                  ? "password"
+                                  : "text"
                               }
-                              type="button"
-                              onClick={() => toggleSecret(`${profile.id}:${field.name}`)}
-                            >
-                              {isSecretVisible(`${profile.id}:${field.name}`) ? (
-                                <EyeOff size={17} />
-                              ) : (
-                                <Eye size={17} />
-                              )}
-                            </button>
-                          ) : null}
-                        </span>
-                        <span className="field-hint">{field.help}</span>
-                      </label>
-                    ))}
+                              value={profile.values[field.name] || ""}
+                              onChange={(event) =>
+                                updateProfile(platform.id, profile.id, {
+                                  ...profile,
+                                  values: {
+                                    ...profile.values,
+                                    [field.name]: event.target.value
+                                  }
+                                })
+                              }
+                              placeholder={field.name}
+                            />
+                            {field.secret ? (
+                              <button
+                                aria-label={
+                                  isSecretVisible(`${profile.id}:${field.name}`)
+                                    ? "Hide secret"
+                                    : "Show secret"
+                                }
+                                type="button"
+                                onClick={() => toggleSecret(`${profile.id}:${field.name}`)}
+                              >
+                                {isSecretVisible(`${profile.id}:${field.name}`) ? (
+                                  <EyeOff size={17} />
+                                ) : (
+                                  <Eye size={17} />
+                                )}
+                              </button>
+                            ) : null}
+                          </span>
+                          <span className={`field-hint ${issue ? "is-warning" : ""}`}>
+                            {issue?.message || field.help}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </section>
                 ))}
               </div>

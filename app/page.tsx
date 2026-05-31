@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { ConfigField } from "@/lib/config-spec";
+import { validatePlatformConfig, type ConfigIssue } from "@/lib/config-validation";
 import type { ComposeDraft, Platform, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
 
@@ -120,7 +120,7 @@ type ChannelTarget = ChannelDefinition & {
   profileId: string;
   profileLabel: string;
   ready: boolean;
-  missing: string[];
+  issues: ConfigIssue[];
 };
 
 const envLabels: Record<string, string> = {
@@ -150,8 +150,8 @@ const envLabels: Record<string, string> = {
   TWITCH_SENDER_ID: "sender"
 };
 
-function formatMissing(missing: string[]): string {
-  const labels = missing.map((name) => envLabels[name] || name);
+function formatConfigIssues(issues: ConfigIssue[]): string {
+  const labels = issues.map((issue) => issue.message || envLabels[issue.field] || issue.field);
 
   return `${labels.slice(0, 2).join(", ")}${labels.length > 2 ? "..." : ""}`;
 }
@@ -163,8 +163,6 @@ type ApiResponse = {
 };
 
 type ConfigProfilesResponse = {
-  fields: ConfigField[];
-  values: Record<string, string>;
   profiles: Partial<Record<Platform, ProviderProfile[]>>;
 };
 
@@ -276,10 +274,6 @@ function normalizePublishTargets(value: unknown): PublishTarget[] {
       };
     })
     .filter((item): item is PublishTarget => Boolean(item));
-}
-
-function isMissingConfigValue(value: string | undefined): boolean {
-  return !value || value.startsWith("your-") || value === "change-me";
 }
 
 function publishTargetFromCard(target: ChannelTarget): PublishTarget {
@@ -786,34 +780,25 @@ export default function Home() {
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [configHydrated, setConfigHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
-  const [configFields, setConfigFields] = useState<ConfigField[]>([]);
-  const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [configProfiles, setConfigProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
 
   const visibleTargets = useMemo<ChannelTarget[]>(
     () =>
       channels.flatMap((channel) =>
         (configProfiles[channel.id] || []).map((profile) => {
-          const missing = configFields
-            .filter((field) => field.requiredFor?.includes(channel.id))
-            .filter((field) =>
-              isMissingConfigValue(
-                profile.values[field.name] || configValues[field.name] || field.defaultValue
-              )
-            )
-            .map((field) => field.name);
+          const issues = validatePlatformConfig(channel.id, profile.values);
 
           return {
             ...channel,
             targetId: `${channel.id}:${profile.id}`,
             profileId: profile.id,
             profileLabel: profile.label,
-            ready: missing.length === 0,
-            missing
+            ready: issues.length === 0,
+            issues
           };
         })
       ),
-    [configFields, configProfiles, configValues]
+    [configProfiles]
   );
 
   useEffect(() => {
@@ -874,8 +859,6 @@ export default function Home() {
           return;
         }
 
-        setConfigFields(body.fields || []);
-        setConfigValues(body.values || {});
         setConfigProfiles(body.profiles || {});
       } catch {}
       finally {
@@ -1569,8 +1552,11 @@ export default function Home() {
                         <span className="channel-check" />
                       </span>
                       <span className="channel-note">{target.note}</span>
-                      <span className={`readiness-pill ${target.ready ? "ready" : "missing"}`}>
-                        {target.ready ? "Ready" : `Needs ${formatMissing(target.missing)}`}
+                      <span
+                        className={`readiness-pill ${target.ready ? "ready" : "missing"}`}
+                        title={target.ready ? "Ready" : formatConfigIssues(target.issues)}
+                      >
+                        {target.ready ? "Ready" : formatConfigIssues(target.issues)}
                       </span>
                       <span className="active-profile">Profile: {target.profileLabel}</span>
                       <span className="field-map" aria-label={`${target.label} field usage`}>

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { configFields } from "@/lib/config-spec";
+import { isPlaceholderValue, validatePlatformConfig } from "@/lib/config-validation";
 import type { ComposeDraft, Platform, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
 
 export type LocalConfigValues = Record<string, string>;
@@ -324,6 +325,10 @@ export function getConfigValue(name: string, profileId?: string): string | undef
     ? localConfig.profiles[platform]?.find((profile: ProviderProfile) => profile.id === activeProfileId)
     : undefined;
 
+  if (platform && profileId) {
+    return activeProfile?.values[name] || undefined;
+  }
+
   return (
     activeProfile?.values[name] ||
     localConfig.values[name] ||
@@ -332,6 +337,26 @@ export function getConfigValue(name: string, profileId?: string): string | undef
   );
 }
 
-export function isPlaceholderValue(value: string | undefined): boolean {
-  return !value || value.startsWith("your-") || value === "change-me";
+export function getProfileConfigIssues(platform: Platform, profileId?: string) {
+  if (!profileId) {
+    return [];
+  }
+
+  const localConfig = readLocalConfig();
+  const profile = localConfig.profiles[platform]?.find((item) => item.id === profileId);
+
+  if (!profile) {
+    return [
+      {
+        field: "profile",
+        label: "Profile",
+        message: "Selected profile no longer exists",
+        kind: "missing" as const
+      }
+    ];
+  }
+
+  return validatePlatformConfig(platform, profile.values);
 }
+
+export { isPlaceholderValue };

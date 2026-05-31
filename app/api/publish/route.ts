@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { appendPublishedPost } from "@/lib/local-config";
+import { appendPublishedPost, getProfileConfigIssues } from "@/lib/local-config";
 import { getUploadedMedia } from "@/lib/media-store";
 import { providers } from "@/lib/providers";
 import type { Platform, ProviderContext, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
@@ -102,6 +102,16 @@ function uniquePlatforms(targets: PublishTarget[]): Platform[] {
   return Array.from(new Set(targets.map((target) => target.platform)));
 }
 
+function formatConfigIssues(target: PublishTarget): string {
+  const issues = getProfileConfigIssues(target.platform, target.profileId);
+
+  if (issues.length === 0) {
+    return "";
+  }
+
+  return issues.map((issue) => issue.message).slice(0, 2).join("; ");
+}
+
 export async function POST(request: Request) {
   const requiresPassword =
     process.env.POSTER_REQUIRE_ADMIN_PASSWORD === "true" ||
@@ -162,6 +172,18 @@ export async function POST(request: Request) {
         platforms: [target.platform],
         target
       };
+      const configError = formatConfigIssues(target);
+
+      if (configError) {
+        return {
+          platform: target.platform,
+          targetId: target.id,
+          profileId: target.profileId,
+          profileLabel: target.profileLabel,
+          ok: false,
+          message: configError
+        };
+      }
 
       try {
         const result = await providers[target.platform](targetCtx);
