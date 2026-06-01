@@ -13,6 +13,37 @@ type HostedMedia = {
   deleteAfterPublish: boolean;
 };
 
+export type SupabaseMediaStorageStats = {
+  configured: boolean;
+  bucket: string;
+  prefix: string;
+  files: number;
+  bytes: number;
+  publicBucket: boolean;
+  deleteAfterPublish: boolean;
+  signedUrlSeconds: number;
+  error?: string;
+};
+
+type SupabaseMediaConfig = {
+  baseUrl: string;
+  serviceRoleKey: string;
+  bucket: string;
+  prefix: string;
+  publicBucket: boolean;
+  deleteAfterPublish: boolean;
+  signedUrlSeconds: number;
+};
+
+type SupabaseStorageObject = {
+  name: string;
+  id?: string | null;
+  metadata?: {
+    size?: number;
+    contentLength?: number;
+  } | null;
+};
+
 const defaultBucket = "crossposter-media";
 const defaultPrefix = "temporary-media";
 const defaultSignedUrlSeconds = 20 * 60;
@@ -72,6 +103,96 @@ function supabaseClient(baseUrl: string, serviceRoleKey: string) {
       persistSession: false
     }
   });
+}
+
+function supabaseMediaConfig(): SupabaseMediaConfig | null {
+  const baseUrlValue = optionalEnv("SUPABASE_URL");
+  const serviceRoleKey = optionalEnv("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!baseUrlValue || !serviceRoleKey) {
+    return null;
+  }
+
+  return {
+    baseUrl: normalizeSupabaseUrl(baseUrlValue),
+    serviceRoleKey,
+    bucket: optionalEnv("SUPABASE_STORAGE_BUCKET")?.trim() || defaultBucket,
+    prefix: prefixPath(optionalEnv("SUPABASE_STORAGE_PREFIX") || defaultPrefix),
+    publicBucket: boolConfig("SUPABASE_STORAGE_PUBLIC_BUCKET", undefined, false),
+    deleteAfterPublish: boolConfig("SUPABASE_STORAGE_DELETE_AFTER_PUBLISH", undefined, true),
+    signedUrlSeconds: numberConfig(
+      "SUPABASE_STORAGE_SIGNED_URL_SECONDS",
+      undefined,
+      defaultSignedUrlSeconds
+    )
+  };
+}
+
+function emptySupabaseStats(error?: string, configured = false): SupabaseMediaStorageStats {
+  return {
+    configured,
+    bucket: optionalEnv("SUPABASE_STORAGE_BUCKET")?.trim() || defaultBucket,
+    prefix: prefixPath(optionalEnv("SUPABASE_STORAGE_PREFIX") || defaultPrefix),
+    files: 0,
+    bytes: 0,
+    publicBucket: boolConfig("SUPABASE_STORAGE_PUBLIC_BUCKET", undefined, false),
+    deleteAfterPublish: boolConfig("SUPABASE_STORAGE_DELETE_AFTER_PUBLISH", undefined, true),
+    signedUrlSeconds: numberConfig(
+      "SUPABASE_STORAGE_SIGNED_URL_SECONDS",
+      undefined,
+      defaultSignedUrlSeconds
+    ),
+    ...(error ? { error } : {})
+  };
+}
+
+function objectSize(item: SupabaseStorageObject): number {
+  return item.metadata?.size || item.metadata?.contentLength || 0;
+}
+
+async function listSupabaseMediaObjects(config: SupabaseMediaConfig): Promise<Array<{ path: string; bytes: number }>> {
+  const supabase = supabaseClient(config.baseUrl, config.serviceRoleKey);
+  const files: Array<{ path: string; bytes: number }> = [];
+
+  async function walk(folder: string): Promise<void> {
+    let offset = 0;
+
+    while (true) {
+      const page = await supabase.storage.from(config.bucket).list(folder, {
+        limit: 1000,
+        offset,
+        sortBy: { column: "name", order: "asc" }
+      });
+
+      assertStorageOk(page.error, "Supabase storage list");
+
+      const items = (page.data || []) as SupabaseStorageObject[];
+
+      if (items.length === 0) {
+        return;
+      }
+
+      for (const item of items) {
+        const itemPath = `${folder}/${item.name}`;
+
+        if (item.id) {
+          files.push({ path: itemPath, bytes: objectSize(item) });
+        } else {
+          await walk(itemPath);
+        }
+      }
+
+      if (items.length < 1000) {
+        return;
+      }
+
+      offset += items.length;
+    }
+  }
+
+  await walk(config.prefix);
+
+  return files;
 }
 
 function mediaExtension(media: NonNullable<ProviderContext["media"]>): string {
@@ -176,4 +297,64 @@ export async function deleteSupabaseHostedMedia(
   const removed = await supabase.storage.from(hosted.bucket).remove([hosted.path]);
 
   assertStorageOk(removed.error, "Supabase hosted media delete");
+}
+
+export async function getSupabaseMediaStorageStats(): Promise<SupabaseMediaStorageStats> {
+  let config: SupabaseMediaConfig | null = null;
+
+  try {
+    config = supabaseMediaConfig();
+  } catch (error) {
+    return emptySupabaseStats(
+      error instanceof Error ? error.message : "Could not read Supabase storage config.",
+      Boolean(optionalEnv("SUPABASE_URL") || optionalEnv("SUPABASE_SERVICE_ROLE_KEY"))
+    );
+  }
+
+  if (!config) {
+    return emptySupabaseStats();
+  }
+
+  try {
+    const files = await listSupabaseMediaObjects(config);
+
+    return {
+      configured: true,
+      bucket: config.bucket,
+      prefix: config.prefix,
+      files: files.length,
+      bytes: files.reduce((total, file) => total + file.bytes, 0),
+      publicBucket: config.publicBucket,
+      deleteAfterPublish: config.deleteAfterPublish,
+      signedUrlSeconds: config.signedUrlSeconds
+    };
+  } catch (error) {
+    return emptySupabaseStats(
+      error instanceof Error ? error.message : "Could not read Supabase storage.",
+      true
+    );
+  }
+}
+
+export async function clearSupabaseMediaStoragePrefix(): Promise<void> {
+  const config = supabaseMediaConfig();
+
+  if (!config) {
+    throw new Error("Add Supabase URL and service role key before clearing Supabase media.");
+  }
+
+  const files = await listSupabaseMediaObjects(config);
+
+  if (files.length === 0) {
+    return;
+  }
+
+  const supabase = supabaseClient(config.baseUrl, config.serviceRoleKey);
+
+  for (let index = 0; index < files.length; index += 100) {
+    const batch = files.slice(index, index + 100).map((file) => file.path);
+    const removed = await supabase.storage.from(config.bucket).remove(batch);
+
+    assertStorageOk(removed.error, "Supabase storage clear");
+  }
 }

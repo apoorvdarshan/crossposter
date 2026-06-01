@@ -43,6 +43,17 @@ type StorageResponse = {
     files: number;
     bytes: number;
   };
+  supabase: {
+    configured: boolean;
+    bucket: string;
+    prefix: string;
+    files: number;
+    bytes: number;
+    publicBucket: boolean;
+    deleteAfterPublish: boolean;
+    signedUrlSeconds: number;
+    error?: string;
+  };
   config: {
     draftBytes: number;
     publishedPostsBytes: number;
@@ -360,9 +371,11 @@ export default function SettingsPage() {
   const [browserStorage, setBrowserStorage] =
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
+  const [confirmClearSupabaseStorage, setConfirmClearSupabaseStorage] = useState(false);
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
+  const [isClearingSupabaseStorage, setIsClearingSupabaseStorage] = useState(false);
   const [settingsView, setSettingsView] = useState<SettingsView>("settings");
 
   useEffect(() => {
@@ -790,6 +803,36 @@ export default function SettingsPage() {
     }
   }
 
+  async function clearSupabaseStorage() {
+    if (!confirmClearSupabaseStorage) {
+      setConfirmClearSupabaseStorage(true);
+      setStatus("Confirm Supabase media clear first.");
+      return;
+    }
+
+    setIsClearingSupabaseStorage(true);
+    setStatus("");
+
+    try {
+      const response = await fetch("/api/storage?target=supabase", { method: "DELETE" });
+      const body = (await response.json()) as StorageResponse & { error?: string };
+
+      setStorage(body);
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not clear Supabase media.");
+        return;
+      }
+
+      setConfirmClearSupabaseStorage(false);
+      setStatus("Supabase temporary media cleared.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not clear Supabase media.");
+    } finally {
+      setIsClearingSupabaseStorage(false);
+    }
+  }
+
   return (
     <main className="workspace">
       <header className="masthead">
@@ -937,11 +980,15 @@ export default function SettingsPage() {
               <HardDrive size={20} />
               Supabase Storage
             </h2>
+            <button className="secondary compact-button" type="button" onClick={() => void loadStorage()}>
+              Refresh
+            </button>
           </div>
           <div className="config-panel">
             <p className="hint">
               Supabase can be cloud-hosted or self-hosted. Crossposter uses this only for
               Instagram media during Publish, after local preview, compression, or conversion.
+              Save config before refreshing or clearing Supabase media.
             </p>
             {mediaStorageFields.map((field) => (
               <label className="config-field" key={field.name}>
@@ -970,6 +1017,70 @@ export default function SettingsPage() {
                 <span className="field-hint">{field.help}</span>
               </label>
             ))}
+            <div className="storage-total">
+              <span>Supabase temporary media</span>
+              <strong>{formatBytes(storage?.supabase.bytes || 0)}</strong>
+            </div>
+            <div className="storage-breakdown">
+              <div>
+                <span>Bucket</span>
+                <strong>{storage?.supabase.bucket || values.SUPABASE_STORAGE_BUCKET || "Not set"}</strong>
+                <small>{storage?.supabase.configured ? "Connected" : "Save URL and service role key"}</small>
+              </div>
+              <div>
+                <span>Prefix</span>
+                <strong>{storage?.supabase.prefix || values.SUPABASE_STORAGE_PREFIX || "temporary-media"}</strong>
+                <small>Only this folder is cleared</small>
+              </div>
+              <div>
+                <span>Remote objects</span>
+                <strong>{storage?.supabase.files || 0}</strong>
+                <small>Temporary publish files</small>
+              </div>
+              <div>
+                <span>Cleanup mode</span>
+                <strong>{storage?.supabase.deleteAfterPublish === false ? "Manual" : "Auto"}</strong>
+                <small>
+                  {storage?.supabase.deleteAfterPublish === false
+                    ? "Kept after publish"
+                    : "Deleted after publish"}
+                </small>
+              </div>
+            </div>
+            {storage?.supabase.error ? (
+              <div className="storage-warning">
+                <AlertTriangle size={18} />
+                <span>{storage.supabase.error}</span>
+              </div>
+            ) : null}
+            {confirmClearSupabaseStorage ? (
+              <div className="storage-warning">
+                <AlertTriangle size={18} />
+                <span>
+                  This will delete Supabase objects under {storage?.supabase.bucket || "the bucket"}/
+                  {storage?.supabase.prefix || "temporary-media"}. Local config stays untouched.
+                </span>
+              </div>
+            ) : null}
+            <button
+              className={
+                confirmClearSupabaseStorage ? "danger-button compact-button" : "secondary compact-button"
+              }
+              type="button"
+              onClick={() => void clearSupabaseStorage()}
+              disabled={
+                isClearingSupabaseStorage ||
+                !storage?.supabase.configured ||
+                Boolean(storage?.supabase.error)
+              }
+            >
+              <Trash2 size={16} />
+              {isClearingSupabaseStorage
+                ? "Clearing..."
+                : confirmClearSupabaseStorage
+                  ? "Confirm clear Supabase media"
+                  : "Clear Supabase media"}
+            </button>
           </div>
         </section>
 

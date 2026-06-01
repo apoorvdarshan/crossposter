@@ -1490,6 +1490,7 @@ textarea {
 
 .storage-breakdown strong {
   font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 
 .storage-breakdown small {
