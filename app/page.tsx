@@ -59,9 +59,9 @@ const channels: Array<{
     id: "linkedin",
     label: "LinkedIn",
     note: "Profile or page post",
-    uses: ["Post"],
+    uses: ["Post", "Media"],
     target: "Uses the active LinkedIn profile from Settings.",
-    media: "Local media is ignored until LinkedIn upload is wired."
+    media: "Local image only: JPG, PNG, or GIF."
   },
   {
     id: "instagram",
@@ -198,6 +198,7 @@ const platformIds = channels.map((channel) => channel.id);
 const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const compressibleImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
@@ -508,6 +509,20 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
 
   if (!file) {
     return issues;
+  }
+
+  if (platforms.includes("linkedin")) {
+    if (kind !== "image") {
+      issues.push({
+        id: "linkedin-kind",
+        message: `LinkedIn can upload images only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (!linkedInImageTypes.has(file.type)) {
+      issues.push({
+        id: "linkedin-type",
+        message: `LinkedIn supports JPG, PNG, and GIF images; selected file is ${file.type || "unknown"}.`
+      });
+    }
   }
 
   if (platforms.includes("bluesky")) {

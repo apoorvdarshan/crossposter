@@ -9,7 +9,7 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 - Bluesky: text and media
 - Mastodon: text and media
 - Dev.to: Markdown articles
-- LinkedIn: profile or page posts through an author URN
+- LinkedIn: profile or page posts with optional images through an author URN
 - Instagram: image posts through a public image URL
 - Pinterest: pins through a public image URL
 - Twitch: chat messages to your channel
@@ -118,6 +118,9 @@ urn:li:organization:YOUR_PAGE_ORG_ID
 ```
 
 `LINKEDIN_VERSION` defaults to `202605`.
+
+LinkedIn local media upload supports JPG, PNG, and GIF images. Other local
+media types are rejected before publishing.
 
 ### Instagram
 
