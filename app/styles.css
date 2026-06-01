@@ -226,7 +226,8 @@ button:disabled {
 .panel-heading,
 .panel-heading h2,
 .status-pill,
-.health-link,
+.top-tabs,
+.top-tab,
 .actions,
 .section-line,
 .channel-actions,
@@ -313,7 +314,7 @@ h2 {
 }
 
 .status-pill,
-.health-link {
+.top-tab {
   min-height: 38px;
   border-radius: 999px;
   padding: 0 12px;
@@ -335,11 +336,26 @@ h2 {
   box-shadow: 0 0 0 4px var(--accent-ring-strong);
 }
 
-.health-link {
-  gap: 3px;
+.top-tabs {
+  flex-wrap: wrap;
+  gap: 4px;
+  border: 1px solid var(--masthead-line);
+  border-radius: 999px;
+  background: var(--masthead-soft);
+  padding: 3px;
+}
+
+.top-tab {
+  gap: 5px;
+  border: 0;
+  background: transparent;
   color: var(--masthead-ink);
   text-decoration: none;
-  border: 1px solid var(--masthead-line);
+}
+
+.top-tab.is-active {
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .theme-toggle {
@@ -370,59 +386,6 @@ h2 {
 .theme-toggle button[aria-pressed="true"] {
   background: var(--accent);
   color: var(--accent-contrast);
-}
-
-.settings-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: -4px 0 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--panel-alpha);
-  padding: 8px;
-  box-shadow: var(--shadow);
-}
-
-.settings-tabs button {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-  min-height: 58px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--muted);
-  padding: 9px 12px;
-  text-align: left;
-}
-
-.settings-tabs button:hover {
-  border-color: var(--line-hover);
-  color: var(--ink);
-}
-
-.settings-tabs button.is-active {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
-  background: var(--accent-wash);
-  color: var(--accent-dark);
-}
-
-.settings-tabs span {
-  color: inherit;
-  font-size: 0.92rem;
-  font-weight: 900;
-}
-
-.settings-tabs small {
-  min-width: 0;
-  overflow: hidden;
-  color: inherit;
-  font-size: 0.74rem;
-  font-weight: 800;
-  opacity: 0.78;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .dashboard {
@@ -1881,7 +1844,6 @@ a.history-platform.ok:hover {
   }
 
   .masthead,
-  .settings-tabs,
   .dashboard,
   .settings-grid,
   .channel-grid,

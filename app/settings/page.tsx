@@ -91,26 +91,10 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "youtube", label: "YouTube" }
 ];
 
-const settingsViews: Array<{
-  id: SettingsView;
-  label: string;
-  description: string;
-}> = [
-  {
-    id: "settings",
-    label: "Settings",
-    description: "Local app controls"
-  },
-  {
-    id: "storage",
-    label: "Storage",
-    description: "Supabase and local data"
-  },
-  {
-    id: "socials",
-    label: "Socials",
-    description: "Provider profiles"
-  }
+const settingsViews: Array<{ id: SettingsView; label: string }> = [
+  { id: "settings", label: "Settings" },
+  { id: "storage", label: "Storage" },
+  { id: "socials", label: "Socials" }
 ];
 
 const setupGuides: Partial<Record<Platform, SetupGuide>> = {
@@ -469,10 +453,6 @@ export default function SettingsPage() {
     return port && /^\d+$/.test(port) ? `http://localhost:${port}` : localUrl;
   }, [localUrl, values.POSTER_LOCAL_PORT]);
   const totalStorageBytes = (storage?.totalBytes || 0) + browserStorage.bytes;
-  const connectedProfileCount = platforms.reduce(
-    (total, platform) => total + (profiles[platform.id]?.length || 0),
-    0
-  );
   const localServiceSummary = useMemo(() => {
     if (!localService) {
       return "Checking macOS auto-start status...";
@@ -811,14 +791,27 @@ export default function SettingsPage() {
           <div className="mark">PX</div>
           <div>
             <p className="eyebrow">Configuration</p>
-            <h1>Settings</h1>
+            <h1>{settingsViews.find((view) => view.id === settingsView)?.label || "Settings"}</h1>
           </div>
         </div>
         <div className="masthead-actions">
-          <Link className="health-link" href="/">
-            <ChevronLeft size={15} />
-            Dashboard
-          </Link>
+          <nav className="top-tabs" aria-label="Primary sections">
+            <Link className="top-tab" href="/">
+              <ChevronLeft size={15} />
+              Dashboard
+            </Link>
+            {settingsViews.map((view) => (
+              <button
+                aria-current={settingsView === view.id ? "page" : undefined}
+                className={`top-tab ${settingsView === view.id ? "is-active" : ""}`}
+                key={view.id}
+                type="button"
+                onClick={() => setSettingsView(view.id)}
+              >
+                {view.label}
+              </button>
+            ))}
+          </nav>
           <ThemeToggle />
           <button
             className={`primary compact-button ${saveFeedback ? "is-saved" : ""}`}
@@ -831,27 +824,6 @@ export default function SettingsPage() {
           </button>
         </div>
       </header>
-
-      <nav className="settings-tabs" aria-label="Settings sections">
-        {settingsViews.map((view) => (
-          <button
-            aria-current={settingsView === view.id ? "page" : undefined}
-            className={settingsView === view.id ? "is-active" : ""}
-            key={view.id}
-            type="button"
-            onClick={() => setSettingsView(view.id)}
-          >
-            <span>{view.label}</span>
-            <small>
-              {view.id === "storage"
-                ? formatBytes(totalStorageBytes)
-                : view.id === "socials"
-                  ? `${connectedProfileCount} profiles`
-                  : view.description}
-            </small>
-          </button>
-        ))}
-      </nav>
 
       <section className="settings-grid">
         {settingsView === "settings" ? (
