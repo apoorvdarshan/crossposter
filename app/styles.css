@@ -330,11 +330,13 @@ h2 {
 }
 
 .dot {
+  flex: 0 0 auto;
   width: 9px;
   height: 9px;
   border-radius: 999px;
   background: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-ring-strong);
+  animation: status-beacon 2.6s ease-in-out infinite;
 }
 
 .top-tabs {
@@ -1122,6 +1124,7 @@ textarea {
 
 .masthead-action-slot {
   width: 184px;
+  border-radius: 999px;
   justify-content: center;
 }
 
@@ -1841,6 +1844,29 @@ a.history-platform.ok:hover {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes status-beacon {
+  0%,
+  100% {
+    opacity: 0.76;
+    transform: scale(0.9);
+    box-shadow: 0 0 0 3px var(--accent-ring-strong);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow:
+      0 0 0 6px var(--accent-ring-strong),
+      0 0 12px var(--accent-ring);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
   }
 }
 

@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
-  ChevronLeft,
   Copy,
   ExternalLink,
   Eye,
@@ -804,7 +803,6 @@ export default function SettingsPage() {
         <div className="masthead-actions">
           <nav className="top-tabs" aria-label="Primary sections">
             <Link className="top-tab" href="/">
-              <ChevronLeft size={15} />
               Dashboard
             </Link>
             {settingsViews.map((view) => (
