@@ -196,7 +196,6 @@ const draftStoreName = "media";
 const draftMediaKey = "compose-media";
 const platformIds = channels.map((channel) => channel.id);
 const blueskyMaxImageSize = 1_000_000;
-const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
@@ -205,7 +204,6 @@ const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const linkedInVideoTargetSize = 490 * 1024 * 1024;
 const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
-const mastodonImageTargetSize = 15 * 1024 * 1024;
 const mastodonVideoTargetSize = 95 * 1024 * 1024;
 const maxManualVideoTargetSize = 500 * 1024 * 1024;
 
@@ -600,20 +598,6 @@ function videoFileName(filename: string): string {
   const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
 
   return `${basename}-compressed.mp4`;
-}
-
-function imageTargetBytesForPlatforms(platforms: Platform[], file: File): number | undefined {
-  const targets: number[] = [];
-
-  if (platforms.includes("bluesky")) {
-    targets.push(blueskyCompressTargetSize);
-  }
-
-  if (platforms.includes("mastodon") && file.size > mastodonImageSizeLimit) {
-    targets.push(mastodonImageTargetSize);
-  }
-
-  return targets.length ? Math.min(...targets) : undefined;
 }
 
 function videoTargetBytesForPlatforms(platforms: Platform[], file: File, requestedBytes: number): number {
@@ -1375,10 +1359,6 @@ export default function Home() {
       )
     : Math.round(videoTargetMb * 1024 * 1024);
   const videoPlatformTargetMb = Math.max(1, Math.round(videoPlatformTargetBytes / 1024 / 1024));
-  const imagePlatformTargetBytes =
-    mediaFile && selectedMediaKind === "image"
-      ? imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
-      : undefined;
   const compressionProgress = isCompressingMedia ? progress : null;
   const actionProgress = progress && !isCompressingMedia ? progress : null;
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
@@ -1558,13 +1538,9 @@ export default function Home() {
                   <div className="compression-heading">
                     <div>
                       <strong>Compress / convert</strong>
-                      <span>
-                        {compressionKind === "video"
-                          ? `Output MP4 up to ${formatBytes(videoPlatformTargetBytes)}.`
-                          : imagePlatformTargetBytes
-                            ? `Output JPG under ${formatBytes(imagePlatformTargetBytes)}.`
-                            : "Output JPG with your settings."}
-                      </span>
+                      {compressionKind === "video" ? (
+                        <span>Output MP4 up to {formatBytes(videoPlatformTargetBytes)}.</span>
+                      ) : null}
                     </div>
                     <button
                       className="secondary compact-button"
