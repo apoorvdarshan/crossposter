@@ -94,10 +94,6 @@ function invalidReason(name: string, value: string): string | null {
     case "TWITCH_BROADCASTER_ID":
     case "TWITCH_SENDER_ID":
       return /^\d+$/.test(value) ? null : "must be numeric";
-    case "MEDIUM_PUBLISH_STATUS":
-      return ["public", "draft", "unlisted"].includes(value)
-        ? null
-        : "must be public, draft, or unlisted";
     default:
       return null;
   }
@@ -146,4 +142,3 @@ export function validatePlatformConfig(
     )
     .filter((issue): issue is ConfigIssue => Boolean(issue));
 }
-

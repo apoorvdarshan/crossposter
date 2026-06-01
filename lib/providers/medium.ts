@@ -28,18 +28,18 @@ export async function publishMedium(ctx: ProviderContext): Promise<PublishResult
   const profileId = ctx.target?.profileId;
   const accessToken = requireEnv("MEDIUM_ACCESS_TOKEN", profileId);
   const publicationId = optionalEnv("MEDIUM_PUBLICATION_ID", profileId);
-  const rawTitle = ctx.title || optionalEnv("MEDIUM_DEFAULT_TITLE", profileId);
+  const rawTitle = ctx.title;
 
   if (!rawTitle) {
     throw new Error("Medium requires a title");
   }
 
   const title = rawTitle.replace(/\s+/g, " ").trim().slice(0, 100);
-  const configuredPublishStatus = optionalEnv("MEDIUM_PUBLISH_STATUS", profileId) || "public";
+  const configuredPublishStatus = ctx.mediumPublishStatus || "public";
   const publishStatus = mediumPublishStatuses.has(configuredPublishStatus)
     ? configuredPublishStatus
     : "public";
-  const tags = optionalEnv("MEDIUM_TAGS", profileId)
+  const tags = ctx.mediumTags
     ?.split(",")
     .map((tag) => tag.trim())
     .filter(Boolean)

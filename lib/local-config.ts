@@ -48,6 +48,8 @@ export const emptyComposeDraft: ComposeDraft = {
   title: "",
   text: "",
   url: "",
+  mediumTags: "",
+  mediumPublishStatus: "draft",
   platforms: [],
   targets: []
 };
@@ -166,6 +168,13 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
     title: stringValue(record.title, 300),
     text: stringValue(record.text, 12000),
     url: stringValue(record.url, 2048),
+    mediumTags: stringValue(record.mediumTags, 180),
+    mediumPublishStatus:
+      record.mediumPublishStatus === "public" ||
+      record.mediumPublishStatus === "draft" ||
+      record.mediumPublishStatus === "unlisted"
+        ? record.mediumPublishStatus
+        : "draft",
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
     ...(updatedAt ? { updatedAt } : {})

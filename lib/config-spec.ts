@@ -75,25 +75,6 @@ export const configFields: ConfigField[] = [
     showFor: ["medium"]
   },
   {
-    name: "MEDIUM_TAGS",
-    label: "Medium tags",
-    help: "Optional comma-separated tags. Medium uses the first three.",
-    showFor: ["medium"]
-  },
-  {
-    name: "MEDIUM_PUBLISH_STATUS",
-    label: "Medium publish status",
-    help: "Optional: public, draft, or unlisted. Defaults to public.",
-    defaultValue: "public",
-    showFor: ["medium"]
-  },
-  {
-    name: "MEDIUM_DEFAULT_TITLE",
-    label: "Medium fallback title",
-    help: "Optional title used when the draft title is empty.",
-    showFor: ["medium"]
-  },
-  {
     name: "LINKEDIN_ACCESS_TOKEN",
     label: "LinkedIn access token",
     help: "OAuth token with posting permission.",

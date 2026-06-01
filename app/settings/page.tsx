@@ -139,8 +139,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Add a Medium profile here.",
       "Paste the token into Medium access token.",
       "Optional: set a publication ID to publish into a publication instead of your profile.",
-      "Optional: set tags and publish status. Use public, draft, or unlisted.",
-      "Save config. Medium uses Title, Post, Link, and optional local image media."
+      "Save config. Medium tags and publish status are chosen per draft on the Dashboard."
     ]
   }
 };
