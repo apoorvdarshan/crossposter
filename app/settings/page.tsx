@@ -73,7 +73,6 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
   { id: "linkedin", label: "LinkedIn" },
-  { id: "reddit", label: "Reddit" },
   { id: "instagram", label: "Instagram" },
   { id: "pinterest", label: "Pinterest" },
   { id: "youtube", label: "YouTube" },
@@ -124,6 +123,31 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Add a Dev.to profile here.",
       "Paste the key into Dev.to API key.",
       "Save config. On the Dashboard, fill Title and Post before publishing."
+    ]
+  },
+  linkedin: {
+    title: "LinkedIn setup",
+    intro:
+      "LinkedIn needs a developer app access token with posting permission and an author URN for your profile or page.",
+    links: [
+      { label: "LinkedIn apps", href: "https://www.linkedin.com/developers/apps" },
+      {
+        label: "Access docs",
+        href: "https://learn.microsoft.com/linkedin/shared/authentication/getting-access?context=linkedin%2Fcontext"
+      },
+      {
+        label: "Posts API",
+        href: "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api"
+      }
+    ],
+    steps: [
+      "Create or open a LinkedIn developer app.",
+      "Enable the LinkedIn product that grants posting permission, usually Share on LinkedIn for profile posts.",
+      "Generate an OAuth member access token with w_member_social for profile posting, or page posting permission for organization posts.",
+      "Add a LinkedIn profile here.",
+      "Paste the OAuth access token into LinkedIn access token.",
+      "Set LinkedIn profile/page to urn:li:person:YOUR_PERSON_ID or urn:li:organization:YOUR_ORG_ID.",
+      "Save config, then select that LinkedIn profile on the Dashboard."
     ]
   }
 };

@@ -75,31 +75,11 @@ export const configFields: ConfigField[] = [
     requiredFor: ["linkedin"]
   },
   {
-    name: "REDDIT_CLIENT_ID",
-    label: "Reddit client ID",
-    help: "OAuth app client ID.",
-    secret: true,
-    requiredFor: ["reddit"]
-  },
-  {
-    name: "REDDIT_CLIENT_SECRET",
-    label: "Reddit client secret",
-    help: "OAuth app client secret.",
-    secret: true,
-    requiredFor: ["reddit"]
-  },
-  {
-    name: "REDDIT_REFRESH_TOKEN",
-    label: "Reddit refresh token",
-    help: "Refresh token for your Reddit account.",
-    secret: true,
-    requiredFor: ["reddit"]
-  },
-  {
-    name: "REDDIT_SUBREDDIT",
-    label: "Reddit subreddit",
-    help: "Subreddit to post into.",
-    requiredFor: ["reddit"]
+    name: "LINKEDIN_VERSION",
+    label: "LinkedIn API version",
+    help: "Optional version header in YYYYMM format. Leave the default unless LinkedIn docs require a newer version.",
+    defaultValue: "202605",
+    showFor: ["linkedin"]
   },
   {
     name: "INSTAGRAM_ACCESS_TOKEN",
@@ -196,7 +176,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     mastodon: [],
     devto: [],
     linkedin: [],
-    reddit: [],
     instagram: [],
     pinterest: [],
     youtube: [],

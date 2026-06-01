@@ -13,9 +13,6 @@ const tokenFields = new Set([
   "MASTODON_ACCESS_TOKEN",
   "DEVTO_API_KEY",
   "LINKEDIN_ACCESS_TOKEN",
-  "REDDIT_CLIENT_ID",
-  "REDDIT_CLIENT_SECRET",
-  "REDDIT_REFRESH_TOKEN",
   "INSTAGRAM_ACCESS_TOKEN",
   "PINTEREST_ACCESS_TOKEN",
   "YOUTUBE_CLIENT_ID",
@@ -81,13 +78,8 @@ function invalidReason(name: string, value: string): string | null {
       return /^urn:li:(person|organization):[A-Za-z0-9_-]+$/.test(value)
         ? null
         : "must be a LinkedIn person or organization URN";
-    case "REDDIT_SUBREDDIT": {
-      const subreddit = value.replace(/^r\//i, "");
-
-      return /^[A-Za-z0-9_]{3,21}$/.test(subreddit)
-        ? null
-        : "must be a subreddit name like SideProject";
-    }
+    case "LINKEDIN_VERSION":
+      return /^\d{6}$/.test(value) ? null : "must be a YYYYMM API version";
     case "INSTAGRAM_USER_ID":
     case "PINTEREST_BOARD_ID":
     case "TWITCH_BROADCASTER_ID":

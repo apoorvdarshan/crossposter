@@ -29,7 +29,6 @@ const platforms: Platform[] = [
   "mastodon",
   "devto",
   "linkedin",
-  "reddit",
   "instagram",
   "pinterest",
   "youtube",

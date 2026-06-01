@@ -10,12 +10,10 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 - Mastodon: text and links
 - Dev.to: Markdown articles
 - LinkedIn: profile or page posts through an author URN
-- Reddit: self or link posts
 - Instagram: image posts through a public image URL
 - Pinterest: pins through a public image URL
 - Twitch: chat messages to your channel
 - YouTube: video uploads from a public video URL
-- Medium: profile or publication posts
 
 ## Run Locally
 
@@ -107,16 +105,7 @@ urn:li:person:YOUR_PERSON_ID
 urn:li:organization:YOUR_PAGE_ORG_ID
 ```
 
-### Reddit
-
-Reddit uses a refresh token so Vercel can mint short-lived access tokens.
-
-```text
-REDDIT_CLIENT_ID
-REDDIT_CLIENT_SECRET
-REDDIT_REFRESH_TOKEN
-REDDIT_SUBREDDIT
-```
+`LINKEDIN_VERSION` defaults to `202605`.
 
 ### Instagram
 
@@ -162,18 +151,6 @@ YOUTUBE_PRIVACY_STATUS
 YOUTUBE_NOTIFY_SUBSCRIBERS
 YOUTUBE_MADE_FOR_KIDS
 YOUTUBE_TAGS
-```
-
-### Medium
-
-Medium can publish to your profile or, if `MEDIUM_PUBLICATION_ID` is set, to a publication you can write to. Set `MEDIUM_PUBLISH_STATUS` to `public`, `draft`, or `unlisted`.
-
-```text
-MEDIUM_ACCESS_TOKEN
-MEDIUM_PUBLICATION_ID
-MEDIUM_TAGS
-MEDIUM_PUBLISH_STATUS
-MEDIUM_DEFAULT_TITLE
 ```
 
 ## Security

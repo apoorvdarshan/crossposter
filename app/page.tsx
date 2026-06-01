@@ -64,14 +64,6 @@ const channels: Array<{
     media: "Local media is ignored until LinkedIn upload is wired."
   },
   {
-    id: "reddit",
-    label: "Reddit",
-    note: "Self or link post",
-    uses: ["Title", "Post", "Link"],
-    target: "Uses the active Reddit profile from Settings.",
-    media: "Local media is ignored until Reddit upload is wired."
-  },
-  {
     id: "instagram",
     label: "Instagram",
     note: "Meta approval required",
@@ -123,10 +115,6 @@ const envLabels: Record<string, string> = {
   DEVTO_API_KEY: "API key",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "profile/page",
-  REDDIT_CLIENT_ID: "client ID",
-  REDDIT_CLIENT_SECRET: "client secret",
-  REDDIT_REFRESH_TOKEN: "refresh token",
-  REDDIT_SUBREDDIT: "subreddit",
   INSTAGRAM_ACCESS_TOKEN: "access token",
   INSTAGRAM_USER_ID: "IG user ID",
   PINTEREST_ACCESS_TOKEN: "access token",
@@ -1330,7 +1318,7 @@ export default function Home() {
                     setHasSavedDraft(true);
                     setTitle(event.target.value);
                   }}
-                  placeholder="Article, Reddit, Pinterest, YouTube"
+                  placeholder="Article, Pinterest, YouTube"
                 />
               </div>
               <div className="field">
