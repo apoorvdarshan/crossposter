@@ -633,7 +633,6 @@ textarea {
 }
 
 .compression-grid input[type="range"] {
-  --slider-thumb-halo: 18px;
   appearance: none;
   width: 100%;
   min-height: 34px;
@@ -641,11 +640,6 @@ textarea {
   border: 1px solid var(--line-muted);
   border-radius: 999px;
   background:
-    radial-gradient(
-      circle at var(--value, 50%) 50%,
-      var(--panel-soft) 0 var(--slider-thumb-halo),
-      transparent calc(var(--slider-thumb-halo) + 1px)
-    ),
     linear-gradient(90deg, var(--accent) 0 var(--value, 50%), var(--counter-bg) var(--value, 50%) 100%);
   padding: 0 3px;
   cursor: pointer;
