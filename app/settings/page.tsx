@@ -146,7 +146,9 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       }
     ],
     steps: [
-      "Create or open a LinkedIn developer app.",
+      "Open LinkedIn Developers, then create a new app if you do not already have one.",
+      "During app creation, add the app name, logo, privacy policy URL if LinkedIn asks, and the LinkedIn Page LinkedIn uses to verify app ownership.",
+      "That app Page is only for developer-app setup; personal posting still uses your LinkedIn profile through urn:li:person:...",
       "Enable Share on LinkedIn for w_member_social posting permission.",
       "Enable Sign In with LinkedIn using OpenID Connect so Crossposter can auto-fill urn:li:person:... for personal posting.",
       "In the LinkedIn Auth tab, add http://localhost:2004/api/auth/linkedin/callback as an authorized redirect URL.",
