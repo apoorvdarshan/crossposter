@@ -37,6 +37,10 @@ For a macOS auto-start service that comes back after login/restart and keeps the
 npm run local:install
 ```
 
+You can also control this from **Settings > Local Settings > Auto-start**. Turn on
+**Always restart localhost** once and macOS will keep `http://localhost:2004`
+available after login.
+
 Use a custom port by passing it once. The installer saves it into local config:
 
 ```bash

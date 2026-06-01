@@ -52,6 +52,16 @@ type StorageResponse = {
   totalBytes: number;
 };
 
+type LocalServiceResponse = {
+  supported: boolean;
+  label: string;
+  plistPath: string;
+  installed: boolean;
+  running: boolean;
+  port: string;
+  error?: string;
+};
+
 type BrowserStorageStats = {
   bytes: number;
   files: number;
@@ -302,11 +312,13 @@ export default function SettingsPage() {
   const [isClearingStorage, setIsClearingStorage] = useState(false);
   const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
   const [storage, setStorage] = useState<StorageResponse | null>(null);
+  const [localService, setLocalService] = useState<LocalServiceResponse | null>(null);
   const [browserStorage, setBrowserStorage] =
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
+  const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
 
   useEffect(() => {
     async function loadConfig() {
@@ -346,6 +358,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     void loadStorage();
+    void loadLocalService();
   }, []);
 
   const statusDismissMs = useMemo(() => {
@@ -384,6 +397,25 @@ export default function SettingsPage() {
     return port && /^\d+$/.test(port) ? `http://localhost:${port}` : localUrl;
   }, [localUrl, values.POSTER_LOCAL_PORT]);
   const totalStorageBytes = (storage?.totalBytes || 0) + browserStorage.bytes;
+  const localServiceSummary = useMemo(() => {
+    if (!localService) {
+      return "Checking macOS auto-start status...";
+    }
+
+    if (!localService.supported) {
+      return "macOS LaunchAgent controls are not available on this system.";
+    }
+
+    if (localService.installed && localService.running) {
+      return `On. macOS will start Crossposter after login and keep ${displayLocalUrl} running.`;
+    }
+
+    if (localService.installed) {
+      return `On for http://localhost:${localService.port}, but the service is not running right now.`;
+    }
+
+    return "Off. Turn this on once so macOS starts Crossposter after login and restarts it if it exits.";
+  }, [displayLocalUrl, localService]);
 
   function fieldsFor(platform: Platform): ConfigField[] {
     return fields.filter(
@@ -479,7 +511,18 @@ export default function SettingsPage() {
     } catch {}
   }
 
-  async function saveConfig() {
+  async function loadLocalService() {
+    try {
+      const response = await fetch("/api/local-service", { cache: "no-store" });
+      const body = (await response.json()) as LocalServiceResponse;
+
+      if (response.ok) {
+        setLocalService(body);
+      }
+    } catch {}
+  }
+
+  async function saveConfig(): Promise<boolean> {
     setStatus("");
     setSaveFeedback(false);
     setIsSaving(true);
@@ -494,7 +537,7 @@ export default function SettingsPage() {
 
       if (!response.ok) {
         setStatus(body.error || "Could not save config.");
-        return;
+        return false;
       }
 
       setValues(body.values || {});
@@ -505,10 +548,49 @@ export default function SettingsPage() {
       setStatus("Saved locally.");
       setSaveFeedback(true);
       window.setTimeout(() => setSaveFeedback(false), 1600);
+      return true;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not save config.");
+      return false;
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function toggleLocalService(enabled: boolean) {
+    setStatus("");
+    setIsTogglingLocalService(true);
+
+    try {
+      if (enabled) {
+        const saved = await saveConfig();
+
+        if (!saved) {
+          return;
+        }
+      }
+
+      const response = await fetch("/api/local-service", {
+        method: enabled ? "POST" : "DELETE"
+      });
+      const body = (await response.json()) as LocalServiceResponse;
+
+      setLocalService(body);
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not update local auto-start.");
+        return;
+      }
+
+      setStatus(
+        enabled
+          ? `Auto-start enabled for http://localhost:${body.port}.`
+          : "Auto-start disabled."
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not update local auto-start.");
+    } finally {
+      setIsTogglingLocalService(false);
     }
   }
 
@@ -693,6 +775,37 @@ export default function SettingsPage() {
                 </a>
               </div>
               <p>Auto-start uses this same port after the next local service restart.</p>
+            </div>
+            <div className="config-location local-service-card">
+              <div className="service-switch-row">
+                <div>
+                  <span>Auto-start</span>
+                  <strong>Always restart localhost</strong>
+                </div>
+                <button
+                  aria-pressed={Boolean(localService?.installed)}
+                  className={`service-switch ${localService?.installed ? "is-on" : ""}`}
+                  disabled={isTogglingLocalService || !localService?.supported}
+                  type="button"
+                  onClick={() => void toggleLocalService(!localService?.installed)}
+                >
+                  <span className="sr-only">
+                    {localService?.installed ? "Disable auto-start" : "Enable auto-start"}
+                  </span>
+                  <span aria-hidden="true" />
+                </button>
+              </div>
+              <p>{localServiceSummary}</p>
+              <div className="inline-actions">
+                <button
+                  className="secondary compact-button"
+                  type="button"
+                  onClick={() => void loadLocalService()}
+                >
+                  <RefreshCw size={15} />
+                  Refresh status
+                </button>
+              </div>
             </div>
             <div className="config-location">
               <div>
