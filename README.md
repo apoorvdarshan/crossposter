@@ -72,7 +72,7 @@ Then add provider tokens only for the channels you want to use.
 
 The composer can convert and compress local media before publishing:
 
-- images are converted to JPEG with a quality slider and estimated output size
+- images are converted to original, JPG, PNG, or WebP output with quality and estimated size
 - videos are transcoded to MP4 with configurable quality and target size
 - platform preflight checks offer conversion when it can fix unsupported media
   formats or size limits

@@ -216,6 +216,7 @@ type PreflightIssue = {
 };
 
 type VideoCompressionQuality = "high" | "balanced" | "small";
+type ImageCompressionFormat = "original" | "image/jpeg" | "image/png" | "image/webp";
 
 type ProgressState = {
   label: string;
@@ -588,11 +589,23 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
   return issues;
 }
 
-function imageFileName(filename: string): string {
+function imageExtension(contentType: string): string {
+  if (contentType === "image/png") {
+    return "png";
+  }
+
+  if (contentType === "image/webp") {
+    return "webp";
+  }
+
+  return "jpg";
+}
+
+function imageFileName(filename: string, contentType: string): string {
   const dotIndex = filename.lastIndexOf(".");
   const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
 
-  return `${basename}-compressed.jpg`;
+  return `${basename}-compressed.${imageExtension(contentType)}`;
 }
 
 function videoFileName(filename: string): string {
@@ -647,7 +660,31 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+function imageOutputType(file: File, format: ImageCompressionFormat): string {
+  if (format !== "original") {
+    return format;
+  }
+
+  if (file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp") {
+    return file.type;
+  }
+
+  return "image/png";
+}
+
+function imageQualityValue(contentType: string, quality: number): number | undefined {
+  if (contentType === "image/png") {
+    return undefined;
+  }
+
+  return Math.min(1, Math.max(0.01, quality / 100));
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  contentType: string,
+  quality?: number
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
@@ -658,7 +695,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
 
         resolve(blob);
       },
-      "image/jpeg",
+      contentType,
       quality
     );
   });
@@ -667,66 +704,12 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
 async function compressImageMedia(
   file: File,
   options: {
+    format: ImageCompressionFormat;
     quality: number;
-    targetBytes?: number;
   }
 ): Promise<File> {
   const image = await loadImage(file);
-  const targetBytes = options.targetBytes;
-  const baseQuality = Math.min(0.95, Math.max(0.3, options.quality / 100));
-  const scales = targetBytes ? [1, 0.85, 0.7, 0.55, 0.42, 0.32] : [1];
-  const qualities = targetBytes
-    ? Array.from(new Set([baseQuality, baseQuality * 0.86, baseQuality * 0.72, 0.56, 0.44, 0.34]))
-    : [baseQuality];
-  let bestBlob: Blob | undefined;
-
-  for (const scale of scales) {
-    const canvas = document.createElement("canvas");
-    const width = Math.max(1, Math.round(image.naturalWidth * scale));
-    const height = Math.max(1, Math.round(image.naturalHeight * scale));
-    const context = canvas.getContext("2d");
-
-    canvas.width = width;
-    canvas.height = height;
-
-    if (!context) {
-      throw new Error("Image compression is not available in this browser");
-    }
-
-    context.drawImage(image, 0, 0, width, height);
-
-    for (const quality of qualities) {
-      const blob = await canvasToBlob(canvas, quality);
-
-      if (!bestBlob || blob.size < bestBlob.size) {
-        bestBlob = blob;
-      }
-
-      if (!targetBytes || blob.size <= targetBytes) {
-        return new File([blob], imageFileName(file.name), {
-          type: "image/jpeg",
-          lastModified: Date.now()
-        });
-      }
-    }
-  }
-
-  if (!bestBlob) {
-    throw new Error("Could not compress this image.");
-  }
-
-  if (targetBytes && bestBlob.size > targetBytes) {
-    throw new Error(`Could not compress this image below ${formatBytes(targetBytes)}.`);
-  }
-
-  return new File([bestBlob], imageFileName(file.name), {
-    type: "image/jpeg",
-    lastModified: Date.now()
-  });
-}
-
-async function estimateCompressedImageSize(file: File, quality: number): Promise<number> {
-  const image = await loadImage(file);
+  const outputType = imageOutputType(file, options.format);
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
@@ -739,7 +722,34 @@ async function estimateCompressedImageSize(file: File, quality: number): Promise
 
   context.drawImage(image, 0, 0);
 
-  return (await canvasToBlob(canvas, Math.min(0.95, Math.max(0.3, quality / 100)))).size;
+  const blob = await canvasToBlob(canvas, outputType, imageQualityValue(outputType, options.quality));
+
+  return new File([blob], imageFileName(file.name, outputType), {
+    type: outputType,
+    lastModified: Date.now()
+  });
+}
+
+async function estimateCompressedImageSize(
+  file: File,
+  format: ImageCompressionFormat,
+  quality: number
+): Promise<number> {
+  const image = await loadImage(file);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  const outputType = imageOutputType(file, format);
+
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+
+  if (!context) {
+    throw new Error("Image compression is not available in this browser");
+  }
+
+  context.drawImage(image, 0, 0);
+
+  return (await canvasToBlob(canvas, outputType, imageQualityValue(outputType, quality))).size;
 }
 
 async function compressVideoMedia(
@@ -837,6 +847,7 @@ export default function Home() {
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
   const [imageQuality, setImageQuality] = useState(78);
+  const [imageFormat, setImageFormat] = useState<ImageCompressionFormat>("image/jpeg");
   const [estimatedImageSize, setEstimatedImageSize] = useState<number | null>(null);
   const [isEstimatingImageSize, setIsEstimatingImageSize] = useState(false);
   const [videoTargetMb, setVideoTargetMb] = useState(490);
@@ -1028,7 +1039,7 @@ export default function Home() {
 
     setIsEstimatingImageSize(true);
     const timer = window.setTimeout(() => {
-      estimateCompressedImageSize(mediaFile, imageQuality)
+      estimateCompressedImageSize(mediaFile, imageFormat, imageQuality)
         .then((size) => {
           if (active) {
             setEstimatedImageSize(size);
@@ -1050,7 +1061,7 @@ export default function Home() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [imageQuality, mediaFile]);
+  }, [imageFormat, imageQuality, mediaFile]);
 
   useEffect(() => {
     if (!draftHydrated || !configHydrated) {
@@ -1246,8 +1257,8 @@ export default function Home() {
         : await (async () => {
             setProgress({ label: "Reading image", value: 25 });
             const image = await compressImageMedia(mediaFile, {
-              quality: imageQuality,
-              targetBytes: imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
+              format: imageFormat,
+              quality: imageQuality
             });
 
             setProgress({ label: "Encoding compressed image", value: 82 });
@@ -1393,10 +1404,7 @@ export default function Home() {
         : selectedMediaKind === "audio"
           ? Music2
           : FileIcon;
-  const compressionKind =
-    mediaFile && (selectedMediaKind === "image" || selectedMediaKind === "video")
-      ? selectedMediaKind
-      : preflightIssues.find((issue) => issue.compress)?.compress;
+  const compressionKind = preflightIssues.find((issue) => issue.compress)?.compress;
   const canCompressMedia = Boolean(compressionKind && mediaFile);
   const videoPlatformTargetBytes = mediaFile
     ? videoTargetBytesForPlatforms(
@@ -1410,6 +1418,14 @@ export default function Home() {
     mediaFile && selectedMediaKind === "image"
       ? imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
       : undefined;
+  const selectedImageOutputType =
+    mediaFile && selectedMediaKind === "image" ? imageOutputType(mediaFile, imageFormat) : "image/jpeg";
+  const selectedImageOutputLabel =
+    selectedImageOutputType === "image/png"
+      ? "PNG"
+      : selectedImageOutputType === "image/webp"
+        ? "WebP"
+        : "JPG";
   const compressionProgress = isCompressingMedia ? progress : null;
   const actionProgress = progress && !isCompressingMedia ? progress : null;
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
@@ -1593,8 +1609,8 @@ export default function Home() {
                         {compressionKind === "video"
                           ? `Output MP4 up to ${formatBytes(videoPlatformTargetBytes)}.`
                           : imagePlatformTargetBytes
-                            ? `Output JPEG under ${formatBytes(imagePlatformTargetBytes)}.`
-                            : "Output JPEG with your quality settings."}
+                            ? `Output ${selectedImageOutputLabel} under ${formatBytes(imagePlatformTargetBytes)}.`
+                            : `Output ${selectedImageOutputLabel} with your settings.`}
                       </span>
                     </div>
                     <button
@@ -1613,10 +1629,22 @@ export default function Home() {
                   {compressionKind === "image" ? (
                     <div className="compression-grid">
                       <label>
-                        <span>JPEG quality</span>
+                        <span>Image format</span>
+                        <select
+                          onChange={(event) => setImageFormat(event.target.value as ImageCompressionFormat)}
+                          value={imageFormat}
+                        >
+                          <option value="original">Original</option>
+                          <option value="image/jpeg">JPG</option>
+                          <option value="image/png">PNG</option>
+                          <option value="image/webp">WebP</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Quality</span>
                         <input
-                          max="92"
-                          min="35"
+                          max="100"
+                          min="1"
                           onChange={(event) => setImageQuality(Number(event.target.value))}
                           type="range"
                           value={imageQuality}
