@@ -77,7 +77,7 @@ export const configFields: ConfigField[] = [
   {
     name: "LINKEDIN_OAUTH_SCOPES",
     label: "LinkedIn OAuth scopes",
-    help: "Use openid profile w_member_social to auto-fill personal profile posting.",
+    help: "Use openid profile w_member_social for personal posting. Add w_organization_social for Page posting if your app has that access.",
     defaultValue: "openid profile w_member_social",
     showFor: ["linkedin"]
   },
@@ -91,7 +91,7 @@ export const configFields: ConfigField[] = [
   {
     name: "LINKEDIN_AUTHOR_URN",
     label: "LinkedIn author URN",
-    help: "Use urn:li:person:... for personal posting or urn:li:organization:... for a company page.",
+    help: "Use urn:li:person:... for personal posting or urn:li:organization:PAGE_ORG_ID for a LinkedIn Page.",
     requiredFor: ["linkedin"]
   },
   {

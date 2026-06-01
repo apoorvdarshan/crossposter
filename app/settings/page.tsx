@@ -137,11 +137,16 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     ]
   },
   linkedin: {
-    title: "LinkedIn local OAuth setup",
+    title: "LinkedIn profile and Page setup",
     intro:
-      "Use Connect LinkedIn instead of LinkedIn's token generator. It saves the access token and personal author URN locally.",
+      "Use Connect LinkedIn to save a token locally. Personal posts use a person URN; Page posts use an organization URN.",
     links: [
       { label: "LinkedIn apps", href: "https://www.linkedin.com/developers/apps" },
+      { label: "Create a LinkedIn Page", href: "https://www.linkedin.com/help/linkedin/answer/a545752" },
+      {
+        label: "App Page verification",
+        href: "https://www.linkedin.com/help/billing/answer/a1665329"
+      },
       {
         label: "OAuth flow",
         href: "https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow"
@@ -158,14 +163,16 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     steps: [
       "Open LinkedIn Developers, then create a new app if you do not already have one.",
       "During app creation, add the app name, logo, privacy policy URL if LinkedIn asks, and the LinkedIn Page LinkedIn uses to verify app ownership.",
-      "That app Page is only for developer-app setup; personal posting still uses your LinkedIn profile through urn:li:person:...",
-      "Enable Share on LinkedIn for w_member_social posting permission.",
+      "If you do not have a Page yet, create one from LinkedIn's For Business menu, then use that Page for app verification.",
+      "Enable Share on LinkedIn for w_member_social personal posting.",
+      "For company Page posting, your app also needs LinkedIn access that grants w_organization_social.",
       "Enable Sign In with LinkedIn using OpenID Connect so Crossposter can auto-fill urn:li:person:... for personal posting.",
       "In the LinkedIn Auth tab, add http://localhost:2004/api/auth/linkedin/callback as an authorized redirect URL.",
       "Paste the app's client ID and client secret into this LinkedIn profile. They stay in poster.config.local.json.",
-      "Leave scopes as openid profile w_member_social, then click Connect LinkedIn.",
-      "After approval, Crossposter fills LinkedIn access token and LinkedIn author URN automatically.",
-      "Only replace the author URN with urn:li:organization:YOUR_ORG_ID if you want company-page posting."
+      "For personal posting, use scopes openid profile w_member_social, then click Connect LinkedIn.",
+      "For Page posting, use scopes openid profile w_member_social w_organization_social, then click Connect LinkedIn as a Page admin or content admin.",
+      "After approval, Crossposter fills the access token and a personal author URN automatically.",
+      "For Page posting, replace LinkedIn author URN with urn:li:organization:YOUR_PAGE_ORG_ID and save config."
     ]
   }
 };

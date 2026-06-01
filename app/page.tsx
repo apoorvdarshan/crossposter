@@ -60,7 +60,7 @@ const channels: Array<{
     label: "LinkedIn",
     note: "Profile or page post",
     uses: ["Post", "Media"],
-    target: "Uses the active LinkedIn profile from Settings.",
+    target: "Uses the active LinkedIn profile or Page from Settings.",
     media: "Local images and MP4 video are supported."
   },
   {

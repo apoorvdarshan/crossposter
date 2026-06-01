@@ -123,6 +123,19 @@ using OpenID Connect, then use `openid profile w_member_social` scopes. The
 local callback saves `LINKEDIN_ACCESS_TOKEN` and a personal
 `LINKEDIN_AUTHOR_URN` automatically.
 
+For LinkedIn Page posting:
+
+1. Create or choose the LinkedIn Page that owns the developer app.
+2. Make sure the signed-in member is an admin or content admin for the Page.
+3. Make sure the LinkedIn app has access to `w_organization_social`.
+4. Set scopes to `openid profile w_member_social w_organization_social`.
+5. Click **Connect LinkedIn** from Settings.
+6. Replace `LINKEDIN_AUTHOR_URN` with the Page author:
+
+```text
+urn:li:organization:YOUR_PAGE_ORG_ID
+```
+
 `LINKEDIN_AUTHOR_URN` should be one of:
 
 ```text
