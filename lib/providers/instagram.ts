@@ -26,7 +26,7 @@ export async function publishInstagram(ctx: ProviderContext): Promise<PublishRes
 
   const createBody = new URLSearchParams();
   createBody.set("image_url", ctx.mediaUrl);
-  createBody.set("caption", [ctx.text, ctx.url].filter(Boolean).join("\n\n"));
+  createBody.set("caption", ctx.text);
   createBody.set("access_token", accessToken);
 
   const container = await assertOk<InstagramContainer>(

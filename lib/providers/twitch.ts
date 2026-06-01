@@ -40,7 +40,7 @@ export async function publishTwitch(ctx: ProviderContext): Promise<PublishResult
   const senderId = requireEnv("TWITCH_SENDER_ID", profileId);
   const channelLogin = optionalEnv("TWITCH_CHANNEL_LOGIN", profileId);
   const accessToken = await getTwitchAccessToken(profileId);
-  const message = compactText([ctx.title, ctx.text, ctx.url]);
+  const message = compactText([ctx.title, ctx.text]);
 
   if (message.length > 500) {
     throw new Error("Twitch chat messages must be 500 characters or less");

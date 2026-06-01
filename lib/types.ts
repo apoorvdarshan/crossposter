@@ -11,7 +11,6 @@ export type Platform =
 export type PublishPayload = {
   title?: string;
   text: string;
-  url?: string;
   mediaId?: string;
   mediaUrl?: string;
   platforms: Platform[];
@@ -38,7 +37,6 @@ export type PublishResult = {
 export type ComposeDraft = {
   title: string;
   text: string;
-  url: string;
   platforms: Platform[];
   targets?: PublishTarget[];
   updatedAt?: string;
@@ -49,7 +47,6 @@ export type PublishedPost = {
   createdAt: string;
   title?: string;
   text: string;
-  url?: string;
   platforms: Platform[];
   targets?: PublishTarget[];
   results: PublishResult[];

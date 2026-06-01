@@ -18,7 +18,7 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
     },
     body: JSON.stringify({
       author,
-      commentary: compactText([ctx.text, ctx.url]),
+      commentary: compactText([ctx.text]),
       visibility: "PUBLIC",
       distribution: {
         feedDistribution: "MAIN_FEED",

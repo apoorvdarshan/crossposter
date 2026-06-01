@@ -69,7 +69,7 @@ export async function publishYouTube(ctx: ProviderContext): Promise<PublishResul
   const metadata = {
     snippet: {
       title,
-      description: compactText([ctx.text, ctx.url]),
+      description: compactText([ctx.text]),
       categoryId: optionalEnv("YOUTUBE_CATEGORY_ID", profileId) || "22",
       ...(tags?.length ? { tags } : {})
     },

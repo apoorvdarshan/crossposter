@@ -473,13 +473,6 @@ h2 {
   align-content: start;
 }
 
-.field-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: start;
-  gap: 12px;
-}
-
 .field-label {
   color: var(--muted);
   font-size: 0.78rem;
@@ -1355,31 +1348,6 @@ code {
   white-space: pre-wrap;
 }
 
-.history-source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  width: fit-content;
-  max-width: 100%;
-  color: var(--accent-dark);
-  font-size: 0.78rem;
-  font-weight: 900;
-  line-height: 1.25;
-  text-decoration: none;
-}
-
-.history-source-link span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.history-source-link:hover {
-  text-decoration: underline;
-}
-
 .history-media {
   display: grid;
   gap: 6px;
@@ -1607,7 +1575,6 @@ a.history-platform.ok:hover {
   .masthead,
   .dashboard,
   .settings-grid,
-  .field-row,
   .channel-grid,
   .media-picker {
     display: grid;

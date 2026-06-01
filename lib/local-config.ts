@@ -45,7 +45,6 @@ const fieldPlatform = new Map<string, Platform>(
 export const emptyComposeDraft: ComposeDraft = {
   title: "",
   text: "",
-  url: "",
   platforms: [],
   targets: []
 };
@@ -167,7 +166,6 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
   return {
     title: stringValue(record.title, 300),
     text: stringValue(record.text, 12000),
-    url: stringValue(record.url, 2048),
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
     ...(updatedAt ? { updatedAt } : {})
@@ -224,7 +222,6 @@ function normalizePublishedPost(value: unknown): PublishedPost | null {
       ? { title: record.title.slice(0, 300) }
       : {}),
     text: stringValue(record.text, 12000),
-    ...(typeof record.url === "string" && record.url ? { url: record.url.slice(0, 2048) } : {}),
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
     results,

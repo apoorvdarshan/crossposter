@@ -34,16 +34,16 @@ const channels: Array<{
   {
     id: "bluesky",
     label: "Bluesky",
-    note: "Text, links, images",
-    uses: ["Post", "Link", "Media"],
+    note: "Text and images",
+    uses: ["Post", "Media"],
     target: "Uses the active Bluesky profile from Settings.",
     media: "Local image only: JPEG, PNG, WebP, GIF up to 1 MB."
   },
   {
     id: "mastodon",
     label: "Mastodon",
-    note: "Text, links, media",
-    uses: ["Post", "Link", "Media"],
+    note: "Text and media",
+    uses: ["Post", "Media"],
     target: "Uses the active Mastodon profile from Settings.",
     media: "Local image, video, audio, or file upload is supported."
   },
@@ -51,7 +51,7 @@ const channels: Array<{
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
-    uses: ["Title", "Post", "Link"],
+    uses: ["Title", "Post"],
     target: "Uses the active Dev.to profile from Settings.",
     media: "Local media is ignored; publish without cover image."
   },
@@ -59,7 +59,7 @@ const channels: Array<{
     id: "linkedin",
     label: "LinkedIn",
     note: "Profile or page post",
-    uses: ["Post", "Link"],
+    uses: ["Post"],
     target: "Uses the active LinkedIn profile from Settings.",
     media: "Local media is ignored until LinkedIn upload is wired."
   },
@@ -67,7 +67,7 @@ const channels: Array<{
     id: "instagram",
     label: "Instagram",
     note: "Meta approval required",
-    uses: ["Post", "Link", "Media"],
+    uses: ["Post", "Media"],
     target: "Uses the active Instagram profile from Settings.",
     media: "Local file upload is not supported by Meta publishing yet."
   },
@@ -75,7 +75,7 @@ const channels: Array<{
     id: "pinterest",
     label: "Pinterest",
     note: "Image pin",
-    uses: ["Title", "Post", "Link", "Media"],
+    uses: ["Title", "Post", "Media"],
     target: "Uses the active Pinterest profile from Settings.",
     media: "Local image upload is supported."
   },
@@ -83,7 +83,7 @@ const channels: Array<{
     id: "youtube",
     label: "YouTube",
     note: "Video upload",
-    uses: ["Title", "Post", "Link", "Media"],
+    uses: ["Title", "Post", "Media"],
     target: "Uses the active YouTube profile from Settings.",
     media: "Local video upload is supported."
   },
@@ -91,7 +91,7 @@ const channels: Array<{
     id: "twitch",
     label: "Twitch",
     note: "Chat message, max 500 chars",
-    uses: ["Title", "Post", "Link"],
+    uses: ["Title", "Post"],
     target: "Uses the active Twitch profile from Settings.",
     media: "Local media is ignored for chat messages."
   }
@@ -167,7 +167,6 @@ type MediaUploadResponse = {
 type SavedDraft = {
   title?: string;
   text?: string;
-  url?: string;
   selected?: string[];
   platforms?: Platform[];
   targets?: PublishTarget[];
@@ -285,7 +284,6 @@ function readStoredDraft(): SavedDraft | null {
     return {
       title: typeof parsed.title === "string" ? parsed.title : "",
       text: typeof parsed.text === "string" ? parsed.text : "",
-      url: typeof parsed.url === "string" ? parsed.url : "",
       platforms: normalizePlatforms(parsed.platforms || parsed.selected),
       targets: normalizePublishTargets(parsed.targets),
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : undefined
@@ -316,7 +314,6 @@ function normalizeDraft(draft: ComposeDraft | SavedDraft | undefined | null): Co
   return {
     title: typeof draft?.title === "string" ? draft.title : "",
     text: typeof draft?.text === "string" ? draft.text : "",
-    url: typeof draft?.url === "string" ? draft.url : "",
     platforms: normalizePlatforms(draft?.platforms || (draft as SavedDraft | undefined)?.selected),
     targets: normalizePublishTargets(draft?.targets),
     ...(typeof draft?.updatedAt === "string" ? { updatedAt: draft.updatedAt } : {})
@@ -422,10 +419,6 @@ function formatApiError(error: unknown): string {
 
   if (error && typeof error === "object") {
     const fieldError = error as ApiFieldError;
-
-    if (fieldError.fieldErrors?.url?.length) {
-      return "Link is invalid. Use a full URL like https://example.com, or leave Link empty.";
-    }
 
     if (fieldError.fieldErrors?.mediaUrl?.length) {
       return "Media URL is invalid. Upload a local file instead.";
@@ -744,7 +737,6 @@ function ProgressBox({
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
-  const [url, setUrl] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
@@ -874,7 +866,6 @@ export default function Home() {
 
         setTitle(draft.title);
         setText(draft.text);
-        setUrl(draft.url);
         setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(hasDraft);
         setPublishedPosts(body.publishedPosts || []);
@@ -893,7 +884,6 @@ export default function Home() {
 
         setTitle(draft.title);
         setText(draft.text);
-        setUrl(draft.url);
         setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(draftTimestamp(draft) > 0);
       } finally {
@@ -930,14 +920,13 @@ export default function Home() {
       return;
     }
 
-    if (!hasSavedDraft && !title && !text && !url && selected.length === 0) {
+    if (!hasSavedDraft && !title && !text && selected.length === 0) {
       return;
     }
 
     const draft: ComposeDraft = {
       title,
       text,
-      url,
       platforms: selectedPlatforms,
       targets: selectedTargets.map(publishTargetFromCard),
       updatedAt: new Date().toISOString()
@@ -957,7 +946,6 @@ export default function Home() {
   }, [
     title,
     text,
-    url,
     selected,
     selectedPlatforms,
     selectedTargets,
@@ -1055,7 +1043,6 @@ export default function Home() {
     const draft: ComposeDraft = {
       title: "",
       text: "",
-      url: "",
       platforms: [],
       targets: [],
       updatedAt: new Date().toISOString()
@@ -1064,7 +1051,6 @@ export default function Home() {
     setHasSavedDraft(true);
     setTitle("");
     setText("");
-    setUrl("");
     setSelected([]);
     setMediaFile(null);
     setMediaInputKey((current) => current + 1);
@@ -1177,7 +1163,7 @@ export default function Home() {
 
     const isBlueskyTooLong =
       publishPlatforms.includes("bluesky") &&
-      postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n")) > 300;
+      postTextLength(text.trim()) > 300;
 
     if (isBlueskyTooLong) {
       setError("Bluesky is over 300 characters. Shorten the post or deselect Bluesky.");
@@ -1203,7 +1189,6 @@ export default function Home() {
         body: JSON.stringify({
           title: title.trim() || undefined,
           text,
-          url: url.trim() || undefined,
           mediaId: uploadedMedia?.id,
           platforms: publishPlatforms,
           targets: publishTargets
@@ -1237,7 +1222,7 @@ export default function Home() {
   }
 
   const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
-  const blueskyLength = postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n"));
+  const blueskyLength = postTextLength(text.trim());
   const showBlueskyLimit = selectedPlatforms.includes("bluesky");
   const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
   const canPublish =
@@ -1323,37 +1308,19 @@ export default function Home() {
           </div>
 
           <div className="composer">
-            <div className="field-row">
-              <div className="field">
-                <label className="field-label" htmlFor="title">
-                  Title
-                </label>
-                <input
-                  id="title"
-                  value={title}
-                  onChange={(event) => {
-                    setHasSavedDraft(true);
-                    setTitle(event.target.value);
-                  }}
-                  placeholder="Article, Pinterest, YouTube"
-                />
-              </div>
-              <div className="field">
-                <label className="field-label" htmlFor="url">
-                  Link
-                </label>
-                <input
-                  id="url"
-                  inputMode="url"
-                  value={url}
-                  onChange={(event) => {
-                    setHasSavedDraft(true);
-                    setUrl(event.target.value);
-                  }}
-                  placeholder="example.com or https://example.com"
-                />
-                <span className="field-hint">Leave empty if there is no link.</span>
-              </div>
+            <div className="field">
+              <label className="field-label" htmlFor="title">
+                Title
+              </label>
+              <input
+                id="title"
+                value={title}
+                onChange={(event) => {
+                  setHasSavedDraft(true);
+                  setTitle(event.target.value);
+                }}
+                placeholder="Article, Pinterest, YouTube"
+              />
             </div>
 
             <div className="field">
@@ -1371,7 +1338,7 @@ export default function Home() {
               />
               {showBlueskyLimit ? (
                 <span className={`field-hint ${blueskyTooLong ? "is-warning" : ""}`}>
-                  Bluesky: {blueskyLength}/300 characters including the Link field.
+                  Bluesky: {blueskyLength}/300 characters.
                 </span>
               ) : null}
             </div>
@@ -1679,12 +1646,6 @@ export default function Home() {
                         </span>
                       </div>
                       {preview ? <p className="history-preview">{preview}</p> : null}
-                      {post.url ? (
-                        <a className="history-source-link" href={post.url} target="_blank" rel="noreferrer">
-                          <span>{post.url}</span>
-                          <ExternalLink size={13} />
-                        </a>
-                      ) : null}
                       {post.media ? (
                         <div className="history-media">
                           {post.media.kind === "image" ? (

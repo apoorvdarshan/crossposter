@@ -54,7 +54,7 @@ export async function publishMastodon(ctx: ProviderContext): Promise<PublishResu
   const instance = requireEnv("MASTODON_INSTANCE", profileId).replace(/\/$/, "");
   const accessToken = requireEnv("MASTODON_ACCESS_TOKEN", profileId);
   const visibility = optionalEnv("MASTODON_VISIBILITY", profileId) || "public";
-  const status = compactText([ctx.text, ctx.url]);
+  const status = compactText([ctx.text]);
   let mediaId: string | undefined;
 
   if (ctx.media) {

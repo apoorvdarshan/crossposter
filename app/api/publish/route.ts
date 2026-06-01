@@ -67,7 +67,6 @@ const requestSchema = z
     adminPassword: z.string().optional(),
     title: z.string().max(300).optional(),
     text: z.string().min(1).max(12000),
-    url: optionalUrlSchema,
     mediaId: z.string().max(80).optional().or(z.literal("")),
     mediaUrl: optionalUrlSchema,
     platforms: z.array(platformSchema).max(30).optional(),
@@ -79,10 +78,6 @@ const requestSchema = z
 
 function validationMessage(error: z.ZodError): string {
   const fields = error.flatten().fieldErrors;
-
-  if (fields.url?.length) {
-    return "Link is invalid. Use a full URL like https://example.com, or leave Link empty.";
-  }
 
   if (fields.mediaUrl?.length) {
     return "Media URL is invalid. Upload a local file instead.";
@@ -153,7 +148,6 @@ export async function POST(request: Request) {
   const ctx: ProviderContext = {
     title: parsed.data.title?.trim() || undefined,
     text: parsed.data.text.trim(),
-    url: parsed.data.url || undefined,
     mediaId: parsed.data.mediaId || undefined,
     mediaUrl: parsed.data.mediaUrl || undefined,
     media,
@@ -209,7 +203,6 @@ export async function POST(request: Request) {
     createdAt: new Date().toISOString(),
     ...(ctx.title ? { title: ctx.title } : {}),
     text: ctx.text,
-    ...(ctx.url ? { url: ctx.url } : {}),
     platforms,
     targets,
     results,

@@ -55,7 +55,6 @@ export async function publishPinterest(ctx: ProviderContext): Promise<PublishRes
         board_id: boardId,
         title: ctx.title || ctx.text.split("\n")[0]?.slice(0, 100) || "New pin",
         description: ctx.text,
-        link: ctx.url,
         media_source: mediaSource
       })
     })
@@ -68,6 +67,6 @@ export async function publishPinterest(ctx: ProviderContext): Promise<PublishRes
     profileLabel: ctx.target?.profileLabel,
     ok: true,
     message: "Published pin",
-    url: pin.link || (pin.id ? `https://www.pinterest.com/pin/${pin.id}` : undefined)
+    url: pin.id ? `https://www.pinterest.com/pin/${pin.id}` : undefined
   };
 }

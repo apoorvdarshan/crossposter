@@ -72,7 +72,7 @@ export async function publishBluesky(ctx: ProviderContext): Promise<PublishResul
   const profileId = ctx.target?.profileId;
   const identifier = requireEnv("BLUESKY_IDENTIFIER", profileId);
   const password = requireEnv("BLUESKY_APP_PASSWORD", profileId);
-  const text = compactText([ctx.text, ctx.url]);
+  const text = compactText([ctx.text]);
   const length = textLength(text);
 
   if (length > blueskyMaxTextLength) {

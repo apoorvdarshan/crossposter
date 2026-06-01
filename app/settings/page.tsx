@@ -771,7 +771,7 @@ export default function SettingsPage() {
                 <strong>
                   {formatBytes((storage?.config.draftBytes || 0) + browserStorage.draftBytes)}
                 </strong>
-                <small>Title, post, link, selected channels</small>
+                <small>Title, post, selected channels</small>
               </div>
               <div>
                 <span>Published history</span>

@@ -25,7 +25,7 @@ export async function publishDevto(ctx: ProviderContext): Promise<PublishResult>
       body: JSON.stringify({
         article: {
           title,
-          body_markdown: compactText([ctx.text, ctx.url]),
+          body_markdown: compactText([ctx.text]),
           published: optionalEnv("DEVTO_DRAFT", profileId) !== "true",
           tags: optionalEnv("DEVTO_TAGS", profileId)?.split(",").map((tag) => tag.trim()).filter(Boolean)
         }

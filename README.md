@@ -6,8 +6,8 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 
 ## Supported in this starter
 
-- Bluesky: text and links
-- Mastodon: text and links
+- Bluesky: text and media
+- Mastodon: text and media
 - Dev.to: Markdown articles
 - LinkedIn: profile or page posts through an author URN
 - Instagram: image posts through a public image URL
