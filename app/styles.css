@@ -687,11 +687,12 @@ textarea {
 
 .media-picker {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.42fr);
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--input-bg);
+  cursor: pointer;
   outline: none;
   transition:
     border-color 160ms ease,
@@ -700,6 +701,7 @@ textarea {
 }
 
 .media-picker.has-file {
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.42fr);
   border-color: var(--line-hover);
 }
 
@@ -719,8 +721,11 @@ textarea {
   min-height: 210px;
   place-items: center;
   overflow: hidden;
-  border-right: 1px solid var(--line);
   background: var(--media-bg);
+}
+
+.media-picker.has-file .media-preview {
+  border-right: 1px solid var(--line);
 }
 
 .media-preview img,
@@ -759,12 +764,8 @@ textarea {
   align-content: center;
   gap: 10px;
   min-width: 0;
+  cursor: default;
   padding: 14px;
-}
-
-.file-button {
-  width: fit-content;
-  cursor: pointer;
 }
 
 .icon-button {
@@ -1816,7 +1817,7 @@ a.history-platform.ok:hover {
     grid-template-columns: 1fr;
   }
 
-  .media-preview {
+  .media-picker.has-file .media-preview {
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }

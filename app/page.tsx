@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -807,6 +807,7 @@ export default function Home() {
   const [text, setText] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
+  const mediaInputRef = useRef<HTMLInputElement | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
   const [imageQuality, setImageQuality] = useState(78);
   const [estimatedImageSize, setEstimatedImageSize] = useState<number | null>(null);
@@ -1097,6 +1098,31 @@ export default function Home() {
 
   function selectMedia(event: React.ChangeEvent<HTMLInputElement>) {
     setDraftMedia(event.target.files?.[0] || null);
+  }
+
+  function openMediaFilePicker() {
+    mediaInputRef.current?.click();
+  }
+
+  function shouldIgnoreMediaPickerOpen(target: EventTarget | null): boolean {
+    return target instanceof Element && Boolean(target.closest("button,input,a,video,audio"));
+  }
+
+  function clickMediaPicker(event: React.MouseEvent<HTMLDivElement>) {
+    if (shouldIgnoreMediaPickerOpen(event.target)) {
+      return;
+    }
+
+    openMediaFilePicker();
+  }
+
+  function keyMediaPicker(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) {
+      return;
+    }
+
+    event.preventDefault();
+    openMediaFilePicker();
   }
 
   function pickClipboardFile(items: DataTransferItemList): File | null {
@@ -1490,9 +1516,15 @@ export default function Home() {
                 onDragLeave={leaveMediaDrop}
                 onDrop={dropMedia}
                 onPaste={pasteMedia}
-                tabIndex={0}
               >
-                <div className="media-preview">
+                <div
+                  className="media-preview"
+                  onClick={clickMediaPicker}
+                  onKeyDown={keyMediaPicker}
+                  role="button"
+                  aria-label="Choose media file"
+                  tabIndex={0}
+                >
                   {mediaFile && mediaPreviewUrl && selectedMediaKind === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={mediaPreviewUrl} alt={mediaFile.name} />
@@ -1515,29 +1547,24 @@ export default function Home() {
                   {!mediaFile ? (
                     <div className="media-empty">
                       <Upload size={28} />
-                      <span>Drop, paste, or choose a file</span>
+                      <span>Drop, paste, or click here</span>
                     </div>
                   ) : null}
                 </div>
-                <div className="media-controls">
-                  <label className="secondary file-button" htmlFor="mediaFile">
-                    <Upload size={18} />
-                    Choose file
-                  </label>
-                  <input
-                    key={mediaInputKey}
-                    className="sr-only"
-                    id="mediaFile"
-                    type="file"
-                    onChange={selectMedia}
-                  />
-                  {mediaFile ? (
+                <input
+                  ref={mediaInputRef}
+                  key={mediaInputKey}
+                  className="sr-only"
+                  id="mediaFile"
+                  type="file"
+                  onChange={selectMedia}
+                />
+                {mediaFile ? (
+                  <div className="media-controls">
                     <button className="secondary icon-button" type="button" onClick={clearMedia}>
                       <X size={18} />
                       <span className="sr-only">Remove media file</span>
                     </button>
-                  ) : null}
-                  {mediaFile ? (
                     <div className="media-meta">
                       <span>
                         <SelectedMediaIcon size={16} />
@@ -1547,8 +1574,8 @@ export default function Home() {
                         {mediaFile.type || "file"} · {formatBytes(mediaFile.size)}
                       </span>
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
               <span className="field-hint">
                 Paste an image from the clipboard, drag and drop a file, or choose one manually.
