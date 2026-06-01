@@ -1462,13 +1462,13 @@ export default function Home() {
             <span className="top-tab is-active" aria-current="page">
               Dashboard
             </span>
-            <Link className="top-tab" href="/settings?section=settings">
+            <Link className="top-tab" href="/settings">
               Settings
             </Link>
-            <Link className="top-tab" href="/settings?section=storage">
+            <Link className="top-tab" href="/settings/storage">
               Storage
             </Link>
-            <Link className="top-tab" href="/settings?section=socials">
+            <Link className="top-tab" href="/settings/socials">
               Socials
             </Link>
           </nav>
