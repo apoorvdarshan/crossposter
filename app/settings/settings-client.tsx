@@ -501,6 +501,13 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
     return "Off. Turn this on once so macOS starts Crossposter after login and restarts it if it exits.";
   }, [displayLocalUrl, localService]);
+  const socialColumns = useMemo(
+    () => [
+      platforms.filter((_, index) => index % 2 === 0),
+      platforms.filter((_, index) => index % 2 === 1)
+    ],
+    []
+  );
 
   function fieldsFor(platform: Platform): ConfigField[] {
     return fields.filter(
@@ -843,6 +850,191 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  function renderSocialPanel(platform: (typeof platforms)[number]) {
+    const providerFields = fieldsFor(platform.id);
+    const providerProfiles = profiles[platform.id] || [];
+    const setupGuide = setupGuides[platform.id];
+
+    return (
+      <section className="info-panel" key={platform.id}>
+        <div className="panel-heading compact">
+          <h2>
+            <SocialLogo platform={platform.id} />
+            {platform.label}
+          </h2>
+          <div className="panel-actions">
+            {setupGuide ? (
+              <button
+                aria-expanded={Boolean(openGuides[platform.id])}
+                aria-label={`${platform.label} setup guide`}
+                className="secondary compact-button icon-button"
+                type="button"
+                onClick={() => toggleGuide(platform.id)}
+              >
+                <Info size={17} />
+              </button>
+            ) : null}
+            <button className="secondary compact-button" type="button" onClick={() => addProfile(platform.id)}>
+              <Plus size={16} />
+              Add profile
+            </button>
+          </div>
+        </div>
+        <div className="config-panel">
+          {setupGuide && openGuides[platform.id] ? (
+            <section className="setup-guide">
+              <div>
+                <strong>{setupGuide.title}</strong>
+                <p>{setupGuide.intro}</p>
+              </div>
+              <div className="setup-links">
+                {setupGuide.links.map((link) => (
+                  <a href={link.href} key={link.href} target="_blank" rel="noreferrer">
+                    {link.label}
+                    <ExternalLink size={14} />
+                  </a>
+                ))}
+              </div>
+              <ol>
+                {setupGuide.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+          {providerProfiles.length > 0 ? (
+            <label className="config-field">
+              <span>Active profile</span>
+              <select
+                value={activeProfiles[platform.id] || ""}
+                onChange={(event) =>
+                  setActiveProfiles((current) => ({
+                    ...current,
+                    [platform.id]: event.target.value
+                  }))
+                }
+              >
+                {providerProfiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.label}
+                  </option>
+                ))}
+              </select>
+              <span className="field-hint">
+                Publishing uses the active profile for this provider.
+              </span>
+            </label>
+          ) : (
+            <p className="hint">No profiles yet. Add one to connect this social locally.</p>
+          )}
+
+          {providerProfiles.map((profile) => (
+            <section className="config-group" key={profile.id}>
+              <div className="config-group-title">
+                <strong>{profile.label || "Untitled profile"}</strong>
+                <div className="profile-actions">
+                  {platform.id === "linkedin" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void connectLinkedIn(profile)}
+                    >
+                      <RefreshCw size={15} />
+                      Connect LinkedIn
+                    </button>
+                  ) : null}
+                  <button
+                    className={
+                      confirmDeleteProfile === `${platform.id}:${profile.id}`
+                        ? "danger-button compact-button"
+                        : "secondary compact-button"
+                    }
+                    type="button"
+                    onClick={() => deleteProfile(platform.id, profile.id)}
+                  >
+                    <Trash2 size={15} />
+                    {confirmDeleteProfile === `${platform.id}:${profile.id}`
+                      ? "Confirm delete"
+                      : "Delete profile"}
+                  </button>
+                </div>
+              </div>
+              <label className="config-field">
+                <span>Profile name</span>
+                <input
+                  value={profile.label}
+                  onChange={(event) =>
+                    updateProfile(platform.id, profile.id, {
+                      ...profile,
+                      label: event.target.value
+                    })
+                  }
+                />
+              </label>
+              {providerFields.map((field) => {
+                const fieldValue = profile.values[field.name] || field.defaultValue || "";
+                const issue = validateConfigField(
+                  field,
+                  fieldValue,
+                  Boolean(field.requiredFor?.includes(platform.id))
+                );
+
+                return (
+                  <label
+                    className={`config-field ${issue ? "is-invalid" : ""}`}
+                    key={field.name}
+                  >
+                    <span>{field.label}</span>
+                    <span className="secret-input">
+                      <input
+                        type={
+                          field.secret && !isSecretVisible(`${profile.id}:${field.name}`)
+                            ? "password"
+                            : "text"
+                        }
+                        value={fieldValue}
+                        onChange={(event) =>
+                          updateProfile(platform.id, profile.id, {
+                            ...profile,
+                            values: {
+                              ...profile.values,
+                              [field.name]: event.target.value
+                            }
+                          })
+                        }
+                        placeholder={field.name}
+                      />
+                      {field.secret ? (
+                        <button
+                          aria-label={
+                            isSecretVisible(`${profile.id}:${field.name}`)
+                              ? "Hide secret"
+                              : "Show secret"
+                          }
+                          type="button"
+                          onClick={() => toggleSecret(`${profile.id}:${field.name}`)}
+                        >
+                          {isSecretVisible(`${profile.id}:${field.name}`) ? (
+                            <EyeOff size={17} />
+                          ) : (
+                            <Eye size={17} />
+                          )}
+                        </button>
+                      ) : null}
+                    </span>
+                    <span className={`field-hint ${issue ? "is-warning" : ""}`}>
+                      {issue?.message || field.help}
+                    </span>
+                  </label>
+                );
+              })}
+            </section>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <main className="workspace">
       <header className="masthead">
@@ -1178,190 +1370,15 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
         </>
         ) : null}
 
-        {settingsView === "socials" ? platforms.map((platform) => {
-          const providerFields = fieldsFor(platform.id);
-          const providerProfiles = profiles[platform.id] || [];
-          const setupGuide = setupGuides[platform.id];
-
-          return (
-            <section className="info-panel" key={platform.id}>
-              <div className="panel-heading compact">
-                <h2>
-                  <SocialLogo platform={platform.id} />
-                  {platform.label}
-                </h2>
-                <div className="panel-actions">
-                  {setupGuide ? (
-                    <button
-                      aria-expanded={Boolean(openGuides[platform.id])}
-                      aria-label={`${platform.label} setup guide`}
-                      className="secondary compact-button icon-button"
-                      type="button"
-                      onClick={() => toggleGuide(platform.id)}
-                    >
-                      <Info size={17} />
-                    </button>
-                  ) : null}
-                  <button className="secondary compact-button" type="button" onClick={() => addProfile(platform.id)}>
-                    <Plus size={16} />
-                    Add profile
-                  </button>
-                </div>
+        {settingsView === "socials" ? (
+          <div className="socials-masonry">
+            {socialColumns.map((column, index) => (
+              <div className="socials-column" key={index === 0 ? "primary" : "secondary"}>
+                {column.map((platform) => renderSocialPanel(platform))}
               </div>
-              <div className="config-panel">
-                {setupGuide && openGuides[platform.id] ? (
-                  <section className="setup-guide">
-                    <div>
-                      <strong>{setupGuide.title}</strong>
-                      <p>{setupGuide.intro}</p>
-                    </div>
-                    <div className="setup-links">
-                      {setupGuide.links.map((link) => (
-                        <a href={link.href} key={link.href} target="_blank" rel="noreferrer">
-                          {link.label}
-                          <ExternalLink size={14} />
-                        </a>
-                      ))}
-                    </div>
-                    <ol>
-                      {setupGuide.steps.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ol>
-                  </section>
-                ) : null}
-                {providerProfiles.length > 0 ? (
-                  <label className="config-field">
-                    <span>Active profile</span>
-                    <select
-                      value={activeProfiles[platform.id] || ""}
-                      onChange={(event) =>
-                        setActiveProfiles((current) => ({
-                          ...current,
-                          [platform.id]: event.target.value
-                        }))
-                      }
-                    >
-                      {providerProfiles.map((profile) => (
-                        <option key={profile.id} value={profile.id}>
-                          {profile.label}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="field-hint">
-                      Publishing uses the active profile for this provider.
-                    </span>
-                  </label>
-                ) : (
-                  <p className="hint">No profiles yet. Add one to connect this social locally.</p>
-                )}
-
-                {providerProfiles.map((profile) => (
-                  <section className="config-group" key={profile.id}>
-                    <div className="config-group-title">
-                      <strong>{profile.label || "Untitled profile"}</strong>
-                      <div className="profile-actions">
-                        {platform.id === "linkedin" ? (
-                          <button
-                            className="secondary compact-button"
-                            type="button"
-                            onClick={() => void connectLinkedIn(profile)}
-                          >
-                            <RefreshCw size={15} />
-                            Connect LinkedIn
-                          </button>
-                        ) : null}
-                        <button
-                          className={
-                            confirmDeleteProfile === `${platform.id}:${profile.id}`
-                              ? "danger-button compact-button"
-                              : "secondary compact-button"
-                          }
-                          type="button"
-                          onClick={() => deleteProfile(platform.id, profile.id)}
-                        >
-                          <Trash2 size={15} />
-                          {confirmDeleteProfile === `${platform.id}:${profile.id}`
-                            ? "Confirm delete"
-                            : "Delete profile"}
-                        </button>
-                      </div>
-                    </div>
-                    <label className="config-field">
-                      <span>Profile name</span>
-                      <input
-                        value={profile.label}
-                        onChange={(event) =>
-                          updateProfile(platform.id, profile.id, {
-                            ...profile,
-                            label: event.target.value
-                          })
-                        }
-                      />
-                    </label>
-                    {providerFields.map((field) => {
-                      const fieldValue = profile.values[field.name] || field.defaultValue || "";
-                      const issue = validateConfigField(
-                        field,
-                        fieldValue,
-                        Boolean(field.requiredFor?.includes(platform.id))
-                      );
-
-                      return (
-                        <label
-                          className={`config-field ${issue ? "is-invalid" : ""}`}
-                          key={field.name}
-                        >
-                          <span>{field.label}</span>
-                          <span className="secret-input">
-                            <input
-                              type={
-                                field.secret && !isSecretVisible(`${profile.id}:${field.name}`)
-                                  ? "password"
-                                  : "text"
-                              }
-                              value={fieldValue}
-                              onChange={(event) =>
-                                updateProfile(platform.id, profile.id, {
-                                  ...profile,
-                                  values: {
-                                    ...profile.values,
-                                    [field.name]: event.target.value
-                                  }
-                                })
-                              }
-                              placeholder={field.name}
-                            />
-                            {field.secret ? (
-                              <button
-                                aria-label={
-                                  isSecretVisible(`${profile.id}:${field.name}`)
-                                    ? "Hide secret"
-                                    : "Show secret"
-                                }
-                                type="button"
-                                onClick={() => toggleSecret(`${profile.id}:${field.name}`)}
-                              >
-                                {isSecretVisible(`${profile.id}:${field.name}`) ? (
-                                  <EyeOff size={17} />
-                                ) : (
-                                  <Eye size={17} />
-                                )}
-                              </button>
-                            ) : null}
-                          </span>
-                          <span className={`field-hint ${issue ? "is-warning" : ""}`}>
-                            {issue?.message || field.help}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </section>
-                ))}
-              </div>
-            </section>
-          );
-        }) : null}
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {status ? (

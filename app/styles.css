@@ -406,6 +406,20 @@ h2 {
   align-items: start;
 }
 
+.socials-masonry {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.socials-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
 .compose-panel,
 .publish-panel,
 .info-panel {
@@ -1880,6 +1894,7 @@ a.history-platform.ok:hover {
   .masthead,
   .dashboard,
   .settings-grid,
+  .socials-masonry,
   .channel-grid,
   .compression-grid,
   .media-picker {
