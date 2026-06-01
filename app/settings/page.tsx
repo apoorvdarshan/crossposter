@@ -69,6 +69,8 @@ type BrowserStorageStats = {
   mediaBytes: number;
 };
 
+type SettingsView = "settings" | "storage" | "socials";
+
 type SetupGuide = {
   title: string;
   intro: string;
@@ -87,6 +89,28 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "instagram", label: "Instagram" },
   { id: "pinterest", label: "Pinterest" },
   { id: "youtube", label: "YouTube" }
+];
+
+const settingsViews: Array<{
+  id: SettingsView;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: "settings",
+    label: "Settings",
+    description: "Local app controls"
+  },
+  {
+    id: "storage",
+    label: "Storage",
+    description: "Supabase and local data"
+  },
+  {
+    id: "socials",
+    label: "Socials",
+    description: "Provider profiles"
+  }
 ];
 
 const setupGuides: Partial<Record<Platform, SetupGuide>> = {
@@ -356,6 +380,7 @@ export default function SettingsPage() {
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
+  const [settingsView, setSettingsView] = useState<SettingsView>("settings");
 
   useEffect(() => {
     async function loadConfig() {
@@ -444,6 +469,10 @@ export default function SettingsPage() {
     return port && /^\d+$/.test(port) ? `http://localhost:${port}` : localUrl;
   }, [localUrl, values.POSTER_LOCAL_PORT]);
   const totalStorageBytes = (storage?.totalBytes || 0) + browserStorage.bytes;
+  const connectedProfileCount = platforms.reduce(
+    (total, platform) => total + (profiles[platform.id]?.length || 0),
+    0
+  );
   const localServiceSummary = useMemo(() => {
     if (!localService) {
       return "Checking macOS auto-start status...";
@@ -781,8 +810,8 @@ export default function SettingsPage() {
         <div className="brand-lockup">
           <div className="mark">PX</div>
           <div>
-            <p className="eyebrow">Local config</p>
-            <h1>Connect Socials</h1>
+            <p className="eyebrow">Configuration</p>
+            <h1>Settings</h1>
           </div>
         </div>
         <div className="masthead-actions">
@@ -803,10 +832,32 @@ export default function SettingsPage() {
         </div>
       </header>
 
+      <nav className="settings-tabs" aria-label="Settings sections">
+        {settingsViews.map((view) => (
+          <button
+            aria-current={settingsView === view.id ? "page" : undefined}
+            className={settingsView === view.id ? "is-active" : ""}
+            key={view.id}
+            type="button"
+            onClick={() => setSettingsView(view.id)}
+          >
+            <span>{view.label}</span>
+            <small>
+              {view.id === "storage"
+                ? formatBytes(totalStorageBytes)
+                : view.id === "socials"
+                  ? `${connectedProfileCount} profiles`
+                  : view.description}
+            </small>
+          </button>
+        ))}
+      </nav>
+
       <section className="settings-grid">
+        {settingsView === "settings" ? (
         <section className="info-panel">
           <div className="panel-heading compact">
-            <h2>Local Settings</h2>
+            <h2>Local App Settings</h2>
           </div>
           <div className="config-panel">
             <p className="hint">
@@ -899,19 +950,21 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+        ) : null}
 
+        {settingsView === "storage" ? (
+        <>
         <section className="info-panel">
           <div className="panel-heading compact">
             <h2>
               <HardDrive size={20} />
-              Media Storage
+              Supabase Storage
             </h2>
           </div>
           <div className="config-panel">
             <p className="hint">
-              Supabase can be cloud-hosted or self-hosted. Crossposter uploads media here only
-              during Publish for providers that need a fetchable media URL, after any compression
-              or conversion is done.
+              Supabase can be cloud-hosted or self-hosted. Crossposter uses this only for
+              Instagram media during Publish, after local preview, compression, or conversion.
             </p>
             {mediaStorageFields.map((field) => (
               <label className="config-field" key={field.name}>
@@ -947,7 +1000,7 @@ export default function SettingsPage() {
           <div className="panel-heading compact">
             <h2>
               <HardDrive size={20} />
-              Storage
+              Local Storage
             </h2>
             <button className="secondary compact-button" type="button" onClick={() => void loadStorage()}>
               Refresh
@@ -960,12 +1013,12 @@ export default function SettingsPage() {
             </div>
             <div className="storage-breakdown">
               <div>
-                <span>Uploaded files</span>
+                <span>Local uploaded files</span>
                 <strong>{formatBytes(storage?.uploads.bytes || 0)}</strong>
                 <small>{storage?.uploads.files || 0} files</small>
               </div>
               <div>
-                <span>Browser media</span>
+                <span>Browser draft media</span>
                 <strong>{formatBytes(browserStorage.mediaBytes)}</strong>
                 <small>{browserStorage.files} draft/history files</small>
               </div>
@@ -985,7 +1038,7 @@ export default function SettingsPage() {
             {storage?.uploads.path ? (
               <div className="config-location">
                 <div>
-                  <span>Upload folder</span>
+                  <span>Local upload folder</span>
                   <code>{storage.uploads.path}</code>
                 </div>
                 <div className="inline-actions">
@@ -1001,8 +1054,8 @@ export default function SettingsPage() {
               </div>
             ) : null}
             <p className="hint">
-              Storage clear removes current draft, draft media, uploaded media, and published history.
-              It does not delete config keys, profiles, or provider setup.
+              Clear storage removes current draft, browser draft media, local uploaded files,
+              and published history. It does not delete config keys, profiles, or provider setup.
             </p>
             {confirmClearStorage ? (
               <div className="storage-warning">
@@ -1025,8 +1078,10 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
+        </>
+        ) : null}
 
-        {platforms.map((platform) => {
+        {settingsView === "socials" ? platforms.map((platform) => {
           const providerFields = fieldsFor(platform.id);
           const providerProfiles = profiles[platform.id] || [];
           const setupGuide = setupGuides[platform.id];
@@ -1209,7 +1264,7 @@ export default function SettingsPage() {
               </div>
             </section>
           );
-        })}
+        }) : null}
       </section>
 
       {status ? (
