@@ -1319,7 +1319,7 @@ export default function Home() {
                   setHasSavedDraft(true);
                   setTitle(event.target.value);
                 }}
-                placeholder="Article, Pinterest, YouTube"
+                placeholder="Write title here"
               />
             </div>
 

@@ -25,10 +25,14 @@
   --accent-wash: rgba(32, 177, 90, 0.08);
   --accent-ring: rgba(32, 177, 90, 0.14);
   --accent-ring-strong: rgba(32, 177, 90, 0.18);
+  --selected-card-bg: #eaf6ed;
+  --selected-card-line: #20b15a;
   --danger: #c74435;
   --danger-soft: rgba(199, 68, 53, 0.11);
   --danger-wash: rgba(199, 68, 53, 0.08);
   --danger-line: rgba(199, 68, 53, 0.3);
+  --missing-card-bg: #fff0ee;
+  --missing-card-line: #c74435;
   --warning: #d69224;
   --masthead-bg: #11140f;
   --masthead-ink: #f7f8f3;
@@ -72,10 +76,14 @@
   --accent-wash: rgba(49, 183, 102, 0.07);
   --accent-ring: rgba(49, 183, 102, 0.16);
   --accent-ring-strong: rgba(49, 183, 102, 0.2);
+  --selected-card-bg: #1d3826;
+  --selected-card-line: #31b766;
   --danger: #ff8172;
   --danger-soft: rgba(255, 129, 114, 0.16);
   --danger-wash: rgba(255, 129, 114, 0.11);
   --danger-line: rgba(255, 129, 114, 0.34);
+  --missing-card-bg: #3a2422;
+  --missing-card-line: #ff8172;
   --warning: #f1bd55;
   --masthead-bg: #151816;
   --masthead-ink: #f3f8ee;
@@ -119,10 +127,14 @@
     --accent-wash: rgba(49, 183, 102, 0.07);
     --accent-ring: rgba(49, 183, 102, 0.16);
     --accent-ring-strong: rgba(49, 183, 102, 0.2);
+    --selected-card-bg: #1d3826;
+    --selected-card-line: #31b766;
     --danger: #ff8172;
     --danger-soft: rgba(255, 129, 114, 0.16);
     --danger-wash: rgba(255, 129, 114, 0.11);
     --danger-line: rgba(255, 129, 114, 0.34);
+    --missing-card-bg: #3a2422;
+    --missing-card-line: #ff8172;
     --warning: #f1bd55;
     --masthead-bg: #151816;
     --masthead-ink: #f3f8ee;
@@ -726,15 +738,33 @@ textarea {
   border-radius: 7px;
   background: var(--panel-soft);
   cursor: pointer;
+  overflow: hidden;
   transition:
     border-color 160ms ease,
     background 160ms ease,
+    box-shadow 160ms ease,
     transform 160ms ease;
 }
 
 .channel:hover {
   transform: translateY(-1px);
   border-color: var(--line-hover);
+}
+
+.channel:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.channel:has(input:checked) {
+  border-color: var(--selected-card-line);
+  background: var(--selected-card-bg);
+  box-shadow: none;
+}
+
+.channel.is-missing:has(input:checked) {
+  border-color: var(--missing-card-line);
+  background: var(--missing-card-bg);
 }
 
 .channel input {
@@ -744,6 +774,7 @@ textarea {
 }
 
 .channel-body {
+  position: relative;
   display: grid;
   gap: 8px;
   height: 100%;
@@ -821,35 +852,65 @@ textarea {
   color: var(--danger);
 }
 
+:root[data-theme="dark"] .readiness-pill.ready {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .readiness-pill.ready {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: 0 0 0 2px var(--accent-ring);
+  }
+}
+
 .channel-check {
   flex: 0 0 auto;
+  position: relative;
+  display: grid;
+  place-items: center;
   width: 18px;
   height: 18px;
   border: 2px solid var(--check-line);
   border-radius: 999px;
   background: var(--chip-bg);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .channel input:checked + .channel-body {
-  background: linear-gradient(135deg, var(--accent-soft), transparent);
+  background: transparent;
 }
 
 .channel.is-missing input:checked + .channel-body {
-  background: linear-gradient(135deg, var(--danger-soft), transparent);
+  background: transparent;
 }
 
 .channel input:checked + .channel-body .channel-check {
-  border-color: var(--accent-dark);
-  background:
-    radial-gradient(circle at center, var(--accent-dark) 0 38%, transparent 42%),
-    var(--chip-bg);
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.channel input:checked + .channel-body .channel-check::after {
+  content: "";
+  width: 5px;
+  height: 9px;
+  border: solid var(--accent-contrast);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
 }
 
 .channel.is-missing input:checked + .channel-body .channel-check {
   border-color: var(--danger);
-  background:
-    radial-gradient(circle at center, var(--danger) 0 38%, transparent 42%),
-    var(--chip-bg);
+  background: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
 }
 
 .actions {
