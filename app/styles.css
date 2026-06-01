@@ -351,6 +351,7 @@ h2 {
   background: transparent;
   color: var(--masthead-ink);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .top-tab.is-active {

@@ -383,10 +383,12 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    const message = new URLSearchParams(window.location.search).get("linkedin");
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get("section");
+    const message = params.get("linkedin");
 
-    if (!message) {
-      return;
+    if (section === "settings" || section === "storage" || section === "socials") {
+      setSettingsView(section);
     }
 
     const labels: Record<string, string> = {
@@ -398,8 +400,13 @@ export default function SettingsPage() {
       bad_state: "LinkedIn authorization expired. Try Connect LinkedIn again."
     };
 
-    setStatus(labels[message] || "LinkedIn authorization finished.");
-    window.history.replaceState(null, "", window.location.pathname);
+    if (message) {
+      setStatus(labels[message] || "LinkedIn authorization finished.");
+    }
+
+    if (section || message) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
   }, []);
 
   useEffect(() => {

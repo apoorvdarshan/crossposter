@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
-  ChevronRight,
   Clock3,
   ExternalLink,
   File as FileIcon,
@@ -1465,10 +1464,20 @@ export default function Home() {
               {selectedLabel} · {readyCount} ready
             </span>
           </div>
-          <Link className="health-link" href="/settings">
-            Settings
-            <ChevronRight size={15} />
-          </Link>
+          <nav className="top-tabs" aria-label="Primary sections">
+            <span className="top-tab is-active" aria-current="page">
+              Dashboard
+            </span>
+            <Link className="top-tab" href="/settings?section=settings">
+              Settings
+            </Link>
+            <Link className="top-tab" href="/settings?section=storage">
+              Storage
+            </Link>
+            <Link className="top-tab" href="/settings?section=socials">
+              Socials
+            </Link>
+          </nav>
           <ThemeToggle />
         </div>
       </header>
