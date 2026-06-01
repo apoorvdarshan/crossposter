@@ -107,6 +107,25 @@ const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = 
   { id: "socials", label: "Socials", href: "/settings/socials" }
 ];
 
+const supabaseSetupGuide: SetupGuide = {
+  title: "Supabase Storage setup",
+  intro:
+    "Use Supabase only for temporary Instagram media hosting. Crossposter uploads after Publish, gives Meta a fetchable URL, then deletes the object when cleanup is enabled.",
+  links: [
+    { label: "Supabase dashboard", href: "https://supabase.com/dashboard" },
+    { label: "Storage docs", href: "https://supabase.com/docs/guides/storage" }
+  ],
+  steps: [
+    "Create a Supabase project in the region closest to where this app runs, or use your own self-hosted Supabase endpoint.",
+    "Create a private Storage bucket named crossposter-media.",
+    "Copy the project URL and service role key. Do not use the anon or publishable key here.",
+    "Set bucket to crossposter-media and prefix to temporary-media, then save config.",
+    "Keep public bucket false so Crossposter uses signed URLs for private media.",
+    "Keep delete after publish true unless you want to inspect uploaded files.",
+    "Use Clear Supabase media to remove leftover objects under the configured bucket and prefix."
+  ]
+};
+
 const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   bluesky: {
     title: "Bluesky setup",
@@ -372,6 +391,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
   const [confirmClearSupabaseStorage, setConfirmClearSupabaseStorage] = useState(false);
+  const [isSupabaseGuideOpen, setIsSupabaseGuideOpen] = useState(false);
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
@@ -1181,9 +1201,20 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               <HardDrive size={20} />
               Supabase Storage
             </h2>
-            <button className="secondary compact-button" type="button" onClick={() => void loadStorage()}>
-              Refresh
-            </button>
+            <div className="panel-actions">
+              <button
+                aria-expanded={isSupabaseGuideOpen}
+                aria-label="Supabase setup guide"
+                className="secondary compact-button icon-button"
+                type="button"
+                onClick={() => setIsSupabaseGuideOpen((current) => !current)}
+              >
+                <Info size={17} />
+              </button>
+              <button className="secondary compact-button" type="button" onClick={() => void loadStorage()}>
+                Refresh
+              </button>
+            </div>
           </div>
           <div className="config-panel">
             <p className="hint">
@@ -1191,6 +1222,27 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               Instagram media during Publish, after local preview, compression, or conversion.
               Save config before refreshing or clearing Supabase media.
             </p>
+            {isSupabaseGuideOpen ? (
+              <section className="setup-guide">
+                <div>
+                  <strong>{supabaseSetupGuide.title}</strong>
+                  <p>{supabaseSetupGuide.intro}</p>
+                </div>
+                <div className="setup-links">
+                  {supabaseSetupGuide.links.map((link) => (
+                    <a href={link.href} key={link.href} target="_blank" rel="noreferrer">
+                      {link.label}
+                      <ExternalLink size={14} />
+                    </a>
+                  ))}
+                </div>
+                <ol>
+                  {supabaseSetupGuide.steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </section>
+            ) : null}
             {mediaStorageFields.map((field) => (
               <label className="config-field" key={field.name}>
                 <span>{field.label}</span>
