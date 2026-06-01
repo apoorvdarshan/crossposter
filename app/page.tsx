@@ -216,7 +216,6 @@ type PreflightIssue = {
 };
 
 type VideoCompressionQuality = "high" | "balanced" | "small";
-type ImageCompressionFormat = "original" | "image/jpeg" | "image/png" | "image/webp";
 
 type ProgressState = {
   label: string;
@@ -589,23 +588,11 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
   return issues;
 }
 
-function imageExtension(contentType: string): string {
-  if (contentType === "image/png") {
-    return "png";
-  }
-
-  if (contentType === "image/webp") {
-    return "webp";
-  }
-
-  return "jpg";
-}
-
-function imageFileName(filename: string, contentType: string): string {
+function imageFileName(filename: string): string {
   const dotIndex = filename.lastIndexOf(".");
   const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
 
-  return `${basename}-compressed.${imageExtension(contentType)}`;
+  return `${basename}-compressed.jpg`;
 }
 
 function videoFileName(filename: string): string {
@@ -660,30 +647,9 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-function imageOutputType(file: File, format: ImageCompressionFormat): string {
-  if (format !== "original") {
-    return format;
-  }
-
-  if (file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp") {
-    return file.type;
-  }
-
-  return "image/png";
-}
-
-function imageQualityValue(contentType: string, quality: number): number | undefined {
-  if (contentType === "image/png") {
-    return undefined;
-  }
-
-  return Math.min(1, Math.max(0.01, quality / 100));
-}
-
 function canvasToBlob(
   canvas: HTMLCanvasElement,
-  contentType: string,
-  quality?: number
+  quality: number
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -695,7 +661,7 @@ function canvasToBlob(
 
         resolve(blob);
       },
-      contentType,
+      "image/jpeg",
       quality
     );
   });
@@ -704,12 +670,10 @@ function canvasToBlob(
 async function compressImageMedia(
   file: File,
   options: {
-    format: ImageCompressionFormat;
     quality: number;
   }
 ): Promise<File> {
   const image = await loadImage(file);
-  const outputType = imageOutputType(file, options.format);
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
@@ -722,23 +686,21 @@ async function compressImageMedia(
 
   context.drawImage(image, 0, 0);
 
-  const blob = await canvasToBlob(canvas, outputType, imageQualityValue(outputType, options.quality));
+  const blob = await canvasToBlob(canvas, Math.min(1, Math.max(0.01, options.quality / 100)));
 
-  return new File([blob], imageFileName(file.name, outputType), {
-    type: outputType,
+  return new File([blob], imageFileName(file.name), {
+    type: "image/jpeg",
     lastModified: Date.now()
   });
 }
 
 async function estimateCompressedImageSize(
   file: File,
-  format: ImageCompressionFormat,
   quality: number
 ): Promise<number> {
   const image = await loadImage(file);
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  const outputType = imageOutputType(file, format);
 
   canvas.width = image.naturalWidth;
   canvas.height = image.naturalHeight;
@@ -749,7 +711,7 @@ async function estimateCompressedImageSize(
 
   context.drawImage(image, 0, 0);
 
-  return (await canvasToBlob(canvas, outputType, imageQualityValue(outputType, quality))).size;
+  return (await canvasToBlob(canvas, Math.min(1, Math.max(0.01, quality / 100)))).size;
 }
 
 async function compressVideoMedia(
@@ -847,7 +809,6 @@ export default function Home() {
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
   const [imageQuality, setImageQuality] = useState(78);
-  const [imageFormat, setImageFormat] = useState<ImageCompressionFormat>("image/jpeg");
   const [estimatedImageSize, setEstimatedImageSize] = useState<number | null>(null);
   const [isEstimatingImageSize, setIsEstimatingImageSize] = useState(false);
   const [videoTargetMb, setVideoTargetMb] = useState(490);
@@ -1039,7 +1000,7 @@ export default function Home() {
 
     setIsEstimatingImageSize(true);
     const timer = window.setTimeout(() => {
-      estimateCompressedImageSize(mediaFile, imageFormat, imageQuality)
+      estimateCompressedImageSize(mediaFile, imageQuality)
         .then((size) => {
           if (active) {
             setEstimatedImageSize(size);
@@ -1061,7 +1022,7 @@ export default function Home() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [imageFormat, imageQuality, mediaFile]);
+  }, [imageQuality, mediaFile]);
 
   useEffect(() => {
     if (!draftHydrated || !configHydrated) {
@@ -1257,7 +1218,6 @@ export default function Home() {
         : await (async () => {
             setProgress({ label: "Reading image", value: 25 });
             const image = await compressImageMedia(mediaFile, {
-              format: imageFormat,
               quality: imageQuality
             });
 
@@ -1406,6 +1366,7 @@ export default function Home() {
           : FileIcon;
   const compressionKind = preflightIssues.find((issue) => issue.compress)?.compress;
   const canCompressMedia = Boolean(compressionKind && mediaFile);
+  const maxManualVideoTargetMb = Math.round(maxManualVideoTargetSize / 1024 / 1024);
   const videoPlatformTargetBytes = mediaFile
     ? videoTargetBytesForPlatforms(
         selectedPlatforms,
@@ -1418,14 +1379,6 @@ export default function Home() {
     mediaFile && selectedMediaKind === "image"
       ? imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
       : undefined;
-  const selectedImageOutputType =
-    mediaFile && selectedMediaKind === "image" ? imageOutputType(mediaFile, imageFormat) : "image/jpeg";
-  const selectedImageOutputLabel =
-    selectedImageOutputType === "image/png"
-      ? "PNG"
-      : selectedImageOutputType === "image/webp"
-        ? "WebP"
-        : "JPG";
   const compressionProgress = isCompressingMedia ? progress : null;
   const actionProgress = progress && !isCompressingMedia ? progress : null;
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
@@ -1609,8 +1562,8 @@ export default function Home() {
                         {compressionKind === "video"
                           ? `Output MP4 up to ${formatBytes(videoPlatformTargetBytes)}.`
                           : imagePlatformTargetBytes
-                            ? `Output ${selectedImageOutputLabel} under ${formatBytes(imagePlatformTargetBytes)}.`
-                            : `Output ${selectedImageOutputLabel} with your settings.`}
+                            ? `Output JPG under ${formatBytes(imagePlatformTargetBytes)}.`
+                            : "Output JPG with your settings."}
                       </span>
                     </div>
                     <button
@@ -1629,23 +1582,13 @@ export default function Home() {
                   {compressionKind === "image" ? (
                     <div className="compression-grid">
                       <label>
-                        <span>Image format</span>
-                        <select
-                          onChange={(event) => setImageFormat(event.target.value as ImageCompressionFormat)}
-                          value={imageFormat}
-                        >
-                          <option value="original">Original</option>
-                          <option value="image/jpeg">JPG</option>
-                          <option value="image/png">PNG</option>
-                          <option value="image/webp">WebP</option>
-                        </select>
-                      </label>
-                      <label>
                         <span>Quality</span>
                         <input
+                          className="quality-slider"
                           max="100"
                           min="1"
                           onChange={(event) => setImageQuality(Number(event.target.value))}
+                          style={{ "--value": `${imageQuality}%` } as React.CSSProperties}
                           type="range"
                           value={imageQuality}
                         />
@@ -1658,6 +1601,11 @@ export default function Home() {
                               : "size unavailable"}
                         </small>
                       </label>
+                      <label className="target-readout">
+                        <span>Target size</span>
+                        <strong>{imagePlatformTargetBytes ? formatBytes(imagePlatformTargetBytes) : "No target"}</strong>
+                        <small>{imagePlatformTargetBytes ? "Selected channel limit" : "No size target"}</small>
+                      </label>
                     </div>
                   ) : null}
                   {compressionKind === "video" ? (
@@ -1665,23 +1613,25 @@ export default function Home() {
                       <label>
                         <span>Target size</span>
                         <input
-                          max={Math.round(maxManualVideoTargetSize / 1024 / 1024)}
+                          className="quality-slider"
+                          max={maxManualVideoTargetMb}
                           min="1"
                           onChange={(event) =>
                             setVideoTargetMb(
                               Math.max(
                                 1,
                                 Math.min(
-                                  Math.round(maxManualVideoTargetSize / 1024 / 1024),
+                                  maxManualVideoTargetMb,
                                   Number(event.target.value) || 1
                                 )
                               )
                             )
                           }
-                          type="number"
+                          style={{ "--value": `${(videoTargetMb / maxManualVideoTargetMb) * 100}%` } as React.CSSProperties}
+                          type="range"
                           value={videoTargetMb}
                         />
-                        <small>Using {videoPlatformTargetMb} MB for selected channels</small>
+                        <small>{videoTargetMb} MB requested · using {videoPlatformTargetMb} MB</small>
                       </label>
                       <label>
                         <span>Video quality</span>

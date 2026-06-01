@@ -629,7 +629,55 @@ textarea {
 }
 
 .compression-grid input[type="range"] {
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  border: 1px solid var(--line-muted);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--accent) 0 var(--value, 50%), var(--counter-bg) var(--value, 50%) 100%);
   padding-inline: 0;
+  cursor: pointer;
+}
+
+.compression-grid input[type="range"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.compression-grid input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--panel);
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.compression-grid input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--panel);
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.target-readout strong {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--heading-ink);
+  padding: 8px 10px;
+  font-size: 0.9rem;
 }
 
 .sr-only {
