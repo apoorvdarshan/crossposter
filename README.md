@@ -68,6 +68,15 @@ POSTER_REQUIRE_ADMIN_PASSWORD=true
 
 Then add provider tokens only for the channels you want to use.
 
+## Local Media Conversion
+
+The composer can convert and compress local media before publishing:
+
+- images are converted to JPEG with configurable quality and max edge size
+- videos are transcoded to MP4 with configurable quality and target size
+- platform preflight checks offer conversion when it can fix unsupported media
+  formats or size limits
+
 ## Provider Notes
 
 ### Bluesky

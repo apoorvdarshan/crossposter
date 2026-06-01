@@ -12,7 +12,7 @@ export const maxDuration = 300;
 
 const tempDir = path.join(process.cwd(), ".poster-uploads", "tmp");
 const maxInputSize = 1024 * 1024 * 1024;
-const mastodonTargetSize = 95 * 1024 * 1024;
+const defaultTargetSize = 95 * 1024 * 1024;
 const ffmpegTimeoutMs = 10 * 60 * 1000;
 
 type CompressionProfile = {
@@ -20,11 +20,23 @@ type CompressionProfile = {
   crf: number;
 };
 
-const profiles: CompressionProfile[] = [
-  { height: 720, crf: 30 },
-  { height: 540, crf: 34 },
-  { height: 480, crf: 36 }
-];
+const profileSets: Record<string, CompressionProfile[]> = {
+  high: [
+    { height: 1080, crf: 24 },
+    { height: 720, crf: 28 },
+    { height: 540, crf: 32 }
+  ],
+  balanced: [
+    { height: 720, crf: 30 },
+    { height: 540, crf: 34 },
+    { height: 480, crf: 36 }
+  ],
+  small: [
+    { height: 540, crf: 36 },
+    { height: 480, crf: 39 },
+    { height: 360, crf: 42 }
+  ]
+};
 
 function cleanFilename(filename: string): string {
   const cleaned = filename.replace(/[^\w.\- ]+/g, "").trim();
@@ -54,6 +66,28 @@ function contentDisposition(filename: string): string {
   const safeFilename = filename.replace(/["\\]/g, "").slice(0, 180) || "video-compressed.mp4";
 
   return `attachment; filename="${safeFilename}"`;
+}
+
+function parseTargetBytes(value: FormDataEntryValue | null): number {
+  if (typeof value !== "string") {
+    return defaultTargetSize;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > maxInputSize) {
+    return defaultTargetSize;
+  }
+
+  return Math.floor(parsed);
+}
+
+function parseQuality(value: FormDataEntryValue | null): CompressionProfile[] {
+  if (typeof value === "string" && value in profileSets) {
+    return profileSets[value];
+  }
+
+  return profileSets.balanced;
 }
 
 async function findFfmpeg(): Promise<string> {
@@ -138,6 +172,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Video file is larger than 1 GB" }, { status: 400 });
     }
 
+    const targetSize = parseTargetBytes(formData.get("targetBytes"));
+    const profiles = parseQuality(formData.get("quality"));
+
     await mkdir(tempDir, { recursive: true });
 
     const filename = cleanFilename(file.name);
@@ -182,24 +219,17 @@ export async function POST(request: Request) {
 
       outputSize = (await stat(outputPath)).size;
 
-      if (outputSize <= mastodonTargetSize) {
+      if (outputSize <= targetSize) {
         break;
       }
     }
 
-    if (outputSize >= file.size) {
-      return NextResponse.json(
-        { error: "Compression did not make this video smaller" },
-        { status: 400 }
-      );
-    }
-
-    if (outputSize > mastodonTargetSize) {
+    if (outputSize > targetSize) {
       return NextResponse.json(
         {
-          error: `Compressed video is still too large for mastodon.social (${Math.round(
+          error: `Compressed video is still too large (${Math.round(
             outputSize / 1024 / 1024
-          )} MB).`
+          )} MB; target is ${Math.round(targetSize / 1024 / 1024)} MB).`
         },
         { status: 400 }
       );

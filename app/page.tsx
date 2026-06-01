@@ -202,15 +202,20 @@ const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const linkedInMinVideoSize = 75 * 1024;
 const linkedInMaxVideoSize = 500 * 1024 * 1024;
-const compressibleImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const linkedInVideoTargetSize = 490 * 1024 * 1024;
 const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
+const mastodonImageTargetSize = 15 * 1024 * 1024;
+const mastodonVideoTargetSize = 95 * 1024 * 1024;
+const maxManualVideoTargetSize = 500 * 1024 * 1024;
 
 type PreflightIssue = {
   id: string;
   message: string;
   compress?: "image" | "video";
 };
+
+type VideoCompressionQuality = "high" | "balanced" | "small";
 
 type ProgressState = {
   label: string;
@@ -518,17 +523,20 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
     if (kind === "image" && !linkedInImageTypes.has(file.type)) {
       issues.push({
         id: "linkedin-image-type",
-        message: `LinkedIn supports JPG, PNG, and GIF images; selected file is ${file.type || "unknown"}.`
+        message: `LinkedIn supports JPG, PNG, and GIF images; selected file is ${file.type || "unknown"}.`,
+        compress: "image"
       });
     } else if (kind === "video" && !linkedInVideoTypes.has(file.type)) {
       issues.push({
         id: "linkedin-video-type",
-        message: `LinkedIn supports MP4 videos; selected file is ${file.type || "unknown"}.`
+        message: `LinkedIn supports MP4 videos; selected file is ${file.type || "unknown"}.`,
+        compress: "video"
       });
     } else if (kind === "video" && (file.size < linkedInMinVideoSize || file.size > linkedInMaxVideoSize)) {
       issues.push({
         id: "linkedin-video-size",
-        message: `LinkedIn video size must be between 75 KB and 500 MB; selected file is ${formatBytes(file.size)}.`
+        message: `LinkedIn video size must be between 75 KB and 500 MB; selected file is ${formatBytes(file.size)}.`,
+        compress: file.size > linkedInMaxVideoSize ? "video" : undefined
       });
     } else if (kind !== "image" && kind !== "video") {
       issues.push({
@@ -547,13 +555,14 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
     } else if (!blueskyImageTypes.has(file.type)) {
       issues.push({
         id: "bluesky-type",
-        message: `Bluesky supports JPEG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`
+        message: `Bluesky supports JPEG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`,
+        compress: "image"
       });
     } else if (file.size > blueskyMaxImageSize) {
       issues.push({
         id: "bluesky-size",
         message: `Bluesky image limit is 1 MB; selected file is ${formatBytes(file.size)}.`,
-        compress: compressibleImageTypes.has(file.type) ? "image" : undefined
+        compress: "image"
       });
     }
   }
@@ -563,7 +572,7 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
       issues.push({
         id: "mastodon-image-size",
         message: `Mastodon image limit on mastodon.social is 16 MB; selected file is ${formatBytes(file.size)}.`,
-        compress: compressibleImageTypes.has(file.type) ? "image" : undefined
+        compress: "image"
       });
     }
 
@@ -591,6 +600,34 @@ function videoFileName(filename: string): string {
   const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
 
   return `${basename}-compressed.mp4`;
+}
+
+function imageTargetBytesForPlatforms(platforms: Platform[], file: File): number | undefined {
+  const targets: number[] = [];
+
+  if (platforms.includes("bluesky")) {
+    targets.push(blueskyCompressTargetSize);
+  }
+
+  if (platforms.includes("mastodon") && file.size > mastodonImageSizeLimit) {
+    targets.push(mastodonImageTargetSize);
+  }
+
+  return targets.length ? Math.min(...targets) : undefined;
+}
+
+function videoTargetBytesForPlatforms(platforms: Platform[], file: File, requestedBytes: number): number {
+  const targets = [requestedBytes];
+
+  if (platforms.includes("mastodon")) {
+    targets.push(mastodonVideoTargetSize);
+  }
+
+  if (platforms.includes("linkedin") && file.size > linkedInMaxVideoSize) {
+    targets.push(linkedInVideoTargetSize);
+  }
+
+  return Math.min(...targets);
 }
 
 function loadImage(file: File): Promise<HTMLImageElement> {
@@ -627,16 +664,25 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
   });
 }
 
-async function compressImageForBluesky(file: File): Promise<File> {
-  if (!compressibleImageTypes.has(file.type)) {
-    throw new Error("Compression is available for JPEG, PNG, and WebP images.");
+async function compressImageMedia(
+  file: File,
+  options: {
+    quality: number;
+    maxEdge: number;
+    targetBytes?: number;
   }
-
+): Promise<File> {
   const image = await loadImage(file);
-  const maxDimension = 2048;
+  const maxDimension = options.maxEdge;
   const initialScale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
-  const scales = [1, 0.85, 0.7, 0.55, 0.42].map((scale) => scale * initialScale);
-  const qualities = [0.86, 0.76, 0.66, 0.56, 0.46, 0.36];
+  const targetBytes = options.targetBytes;
+  const baseQuality = Math.min(0.95, Math.max(0.3, options.quality / 100));
+  const scales = (targetBytes ? [1, 0.85, 0.7, 0.55, 0.42, 0.32] : [1]).map(
+    (scale) => scale * initialScale
+  );
+  const qualities = targetBytes
+    ? Array.from(new Set([baseQuality, baseQuality * 0.86, baseQuality * 0.72, 0.56, 0.44, 0.34]))
+    : [baseQuality];
   let bestBlob: Blob | undefined;
 
   for (const scale of scales) {
@@ -661,7 +707,7 @@ async function compressImageForBluesky(file: File): Promise<File> {
         bestBlob = blob;
       }
 
-      if (blob.size <= blueskyCompressTargetSize) {
+      if (!targetBytes || blob.size <= targetBytes) {
         return new File([blob], imageFileName(file.name), {
           type: "image/jpeg",
           lastModified: Date.now()
@@ -670,8 +716,12 @@ async function compressImageForBluesky(file: File): Promise<File> {
     }
   }
 
-  if (!bestBlob || bestBlob.size >= file.size) {
-    throw new Error("Could not compress this image enough for Bluesky");
+  if (!bestBlob) {
+    throw new Error("Could not compress this image.");
+  }
+
+  if (targetBytes && bestBlob.size > targetBytes) {
+    throw new Error(`Could not compress this image below ${formatBytes(targetBytes)}.`);
   }
 
   return new File([bestBlob], imageFileName(file.name), {
@@ -680,14 +730,20 @@ async function compressImageForBluesky(file: File): Promise<File> {
   });
 }
 
-async function compressVideoForMastodon(
+async function compressVideoMedia(
   file: File,
+  options: {
+    targetBytes: number;
+    quality: VideoCompressionQuality;
+  },
   onProgress: (progress: ProgressState) => void
 ): Promise<File> {
   const formData = new FormData();
 
   onProgress({ label: "Preparing video", value: 8 });
   formData.set("file", file);
+  formData.set("targetBytes", String(options.targetBytes));
+  formData.set("quality", options.quality);
   onProgress({ label: "Uploading to local compressor", value: 22 });
 
   const response = await fetch("/api/media/compress-video", {
@@ -768,6 +824,10 @@ export default function Home() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
+  const [imageQuality, setImageQuality] = useState(78);
+  const [imageMaxEdge, setImageMaxEdge] = useState(2048);
+  const [videoTargetMb, setVideoTargetMb] = useState(490);
+  const [videoQuality, setVideoQuality] = useState<VideoCompressionQuality>("balanced");
   const [selected, setSelected] = useState<string[]>([]);
   const [results, setResults] = useState<PublishResult[]>([]);
   const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
@@ -1106,9 +1166,8 @@ export default function Home() {
       return;
     }
 
-    const compression = mediaPreflightIssues(selectedPlatforms, mediaFile).find(
-      (issue) => issue.compress
-    )?.compress;
+    const mediaKind = fileKind(mediaFile);
+    const compression = mediaKind === "video" ? "video" : mediaKind === "image" ? "image" : undefined;
 
     if (!compression) {
       return;
@@ -1123,10 +1182,25 @@ export default function Home() {
 
     try {
       const compressed = compression === "video"
-        ? await compressVideoForMastodon(mediaFile, setProgress)
+        ? await compressVideoMedia(
+            mediaFile,
+            {
+              targetBytes: videoTargetBytesForPlatforms(
+                selectedPlatforms,
+                mediaFile,
+                Math.round(videoTargetMb * 1024 * 1024)
+              ),
+              quality: videoQuality
+            },
+            setProgress
+          )
         : await (async () => {
             setProgress({ label: "Reading image", value: 25 });
-            const image = await compressImageForBluesky(mediaFile);
+            const image = await compressImageMedia(mediaFile, {
+              quality: imageQuality,
+              maxEdge: imageMaxEdge,
+              targetBytes: imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
+            });
 
             setProgress({ label: "Encoding compressed image", value: 82 });
             return image;
@@ -1271,8 +1345,23 @@ export default function Home() {
         : selectedMediaKind === "audio"
           ? Music2
           : FileIcon;
-  const compressionKind = preflightIssues.find((issue) => issue.compress)?.compress;
+  const compressionKind =
+    mediaFile && (selectedMediaKind === "image" || selectedMediaKind === "video")
+      ? selectedMediaKind
+      : preflightIssues.find((issue) => issue.compress)?.compress;
   const canCompressMedia = Boolean(compressionKind && mediaFile);
+  const videoPlatformTargetBytes = mediaFile
+    ? videoTargetBytesForPlatforms(
+        selectedPlatforms,
+        mediaFile,
+        Math.round(videoTargetMb * 1024 * 1024)
+      )
+    : Math.round(videoTargetMb * 1024 * 1024);
+  const videoPlatformTargetMb = Math.max(1, Math.round(videoPlatformTargetBytes / 1024 / 1024));
+  const imagePlatformTargetBytes =
+    mediaFile && selectedMediaKind === "image"
+      ? imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
+      : undefined;
   const compressionProgress = isCompressingMedia ? progress : null;
   const actionProgress = progress && !isCompressingMedia ? progress : null;
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
@@ -1447,15 +1536,19 @@ export default function Home() {
               <span className="field-hint">
                 Paste an image from the clipboard, drag and drop a file, or choose one manually.
               </span>
-              {preflightIssues.length > 0 ? (
-                <div className="preflight-list" role="alert">
-                  {preflightIssues.map((issue) => (
-                    <p className="preflight-item" key={issue.id}>
-                      <AlertTriangle size={16} />
-                      <span>{issue.message}</span>
-                    </p>
-                  ))}
-                  {canCompressMedia ? (
+              {canCompressMedia ? (
+                <div className="compression-panel">
+                  <div className="compression-heading">
+                    <div>
+                      <strong>Compress / convert</strong>
+                      <span>
+                        {compressionKind === "video"
+                          ? `Output MP4 up to ${formatBytes(videoPlatformTargetBytes)}.`
+                          : imagePlatformTargetBytes
+                            ? `Output JPEG under ${formatBytes(imagePlatformTargetBytes)}.`
+                            : "Output JPEG with your quality settings."}
+                      </span>
+                    </div>
                     <button
                       className="secondary compact-button"
                       disabled={isCompressingMedia}
@@ -1468,7 +1561,80 @@ export default function Home() {
                           ? "Compress video"
                           : "Compress image"}
                     </button>
+                  </div>
+                  {compressionKind === "image" ? (
+                    <div className="compression-grid">
+                      <label>
+                        <span>JPEG quality</span>
+                        <input
+                          max="92"
+                          min="35"
+                          onChange={(event) => setImageQuality(Number(event.target.value))}
+                          type="range"
+                          value={imageQuality}
+                        />
+                        <small>{imageQuality}%</small>
+                      </label>
+                      <label>
+                        <span>Max edge</span>
+                        <select
+                          onChange={(event) => setImageMaxEdge(Number(event.target.value))}
+                          value={imageMaxEdge}
+                        >
+                          <option value={1024}>1024 px</option>
+                          <option value={1600}>1600 px</option>
+                          <option value={2048}>2048 px</option>
+                          <option value={4096}>4096 px</option>
+                        </select>
+                      </label>
+                    </div>
                   ) : null}
+                  {compressionKind === "video" ? (
+                    <div className="compression-grid">
+                      <label>
+                        <span>Target size</span>
+                        <input
+                          max={Math.round(maxManualVideoTargetSize / 1024 / 1024)}
+                          min="1"
+                          onChange={(event) =>
+                            setVideoTargetMb(
+                              Math.max(
+                                1,
+                                Math.min(
+                                  Math.round(maxManualVideoTargetSize / 1024 / 1024),
+                                  Number(event.target.value) || 1
+                                )
+                              )
+                            )
+                          }
+                          type="number"
+                          value={videoTargetMb}
+                        />
+                        <small>Using {videoPlatformTargetMb} MB for selected channels</small>
+                      </label>
+                      <label>
+                        <span>Video quality</span>
+                        <select
+                          onChange={(event) => setVideoQuality(event.target.value as VideoCompressionQuality)}
+                          value={videoQuality}
+                        >
+                          <option value="high">Higher quality</option>
+                          <option value="balanced">Balanced</option>
+                          <option value="small">Smaller file</option>
+                        </select>
+                      </label>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {preflightIssues.length > 0 ? (
+                <div className="preflight-list" role="alert">
+                  {preflightIssues.map((issue) => (
+                    <p className="preflight-item" key={issue.id}>
+                      <AlertTriangle size={16} />
+                      <span>{issue.message}</span>
+                    </p>
+                  ))}
                 </div>
               ) : null}
               {compressionProgress ? (

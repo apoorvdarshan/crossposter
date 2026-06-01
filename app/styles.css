@@ -569,6 +569,69 @@ textarea {
   margin-top: 1px;
 }
 
+.compression-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 12px;
+}
+
+.compression-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.compression-heading div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.compression-heading strong {
+  color: var(--heading-ink);
+  font-size: 0.9rem;
+}
+
+.compression-heading span,
+.compression-grid small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.compression-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.compression-grid label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.compression-grid label > span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.compression-grid input,
+.compression-grid select {
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.compression-grid input[type="range"] {
+  padding-inline: 0;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1637,6 +1700,7 @@ a.history-platform.ok:hover {
   .dashboard,
   .settings-grid,
   .channel-grid,
+  .compression-grid,
   .media-picker {
     display: grid;
     grid-template-columns: 1fr;
