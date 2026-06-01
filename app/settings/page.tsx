@@ -178,6 +178,33 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "After approval, Crossposter fills the access token and a personal author URN automatically.",
       "For Page posting, replace LinkedIn author URN with urn:li:organization:YOUR_PAGE_ORG_ID and save config."
     ]
+  },
+  instagram: {
+    title: "Instagram setup with Supabase media hosting",
+    intro:
+      "Instagram needs a professional account and a public fetchable media URL. Crossposter can create that URL through Supabase Storage and remove it after publishing.",
+    links: [
+      {
+        label: "Instagram API setup",
+        href: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/get-started"
+      },
+      {
+        label: "Instagram publishing",
+        href: "https://developers.facebook.com/docs/instagram-platform/content-publishing"
+      },
+      { label: "Supabase Storage", href: "https://supabase.com/docs/guides/storage" }
+    ],
+    steps: [
+      "Switch the Instagram account to Business or Creator, then connect it to a Facebook Page.",
+      "Create a Meta developer app and add yourself as an app admin, developer, or tester while using development mode.",
+      "Get a Meta token with instagram_basic, pages_show_list, and instagram_content_publish for your own connected account.",
+      "Paste the token and Instagram professional account ID into this Instagram profile.",
+      "Create a Supabase Storage bucket such as crossposter-media. A private bucket is fine.",
+      "Paste the Supabase project URL and service role key. The service role key stays in poster.config.local.json on this machine.",
+      "Keep Delete hosted media after publish set to true unless you want to inspect uploaded files.",
+      "On the Dashboard, choose a local JPG image or MP4/MOV video. Crossposter uploads it to Supabase, publishes the image post or Reel, then deletes it.",
+      "Use Compress / convert first when an image is not JPG, an image is over 8 MB, a video is not MP4/MOV, or a video is over 300 MB."
+    ]
   }
 };
 
@@ -1069,9 +1096,10 @@ export default function SettingsPage() {
                       />
                     </label>
                     {providerFields.map((field) => {
+                      const fieldValue = profile.values[field.name] || field.defaultValue || "";
                       const issue = validateConfigField(
                         field,
-                        profile.values[field.name],
+                        fieldValue,
                         Boolean(field.requiredFor?.includes(platform.id))
                       );
 
@@ -1088,7 +1116,7 @@ export default function SettingsPage() {
                                   ? "password"
                                   : "text"
                               }
-                              value={profile.values[field.name] || ""}
+                              value={fieldValue}
                               onChange={(event) =>
                                 updateProfile(platform.id, profile.id, {
                                   ...profile,

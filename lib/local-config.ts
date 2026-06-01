@@ -24,6 +24,11 @@ export type LocalConfigFile = {
 
 export const localConfigPath = path.join(process.cwd(), "poster.config.local.json");
 const allowedFields = new Set(configFields.map((field) => field.name));
+const fieldDefaults = new Map(
+  configFields
+    .filter((field) => field.defaultValue)
+    .map((field) => [field.name, field.defaultValue as string])
+);
 const platforms: Platform[] = [
   "bluesky",
   "mastodon",
@@ -325,13 +330,14 @@ export function getConfigValue(name: string, profileId?: string): string | undef
     : undefined;
 
   if (platform && profileId) {
-    return activeProfile?.values[name] || undefined;
+    return activeProfile?.values[name] || fieldDefaults.get(name) || undefined;
   }
 
   return (
     activeProfile?.values[name] ||
     localConfig.values[name] ||
     process.env[name] ||
+    fieldDefaults.get(name) ||
     undefined
   );
 }

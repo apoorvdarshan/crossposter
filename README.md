@@ -151,12 +151,23 @@ publishing.
 
 ### Instagram
 
-Instagram requires an Instagram professional account connected through Meta and a public image URL.
+Instagram requires an Instagram professional account connected through Meta. For local
+media files, Crossposter can temporarily upload selected JPG images or MP4/MOV
+Reels videos to Supabase Storage, give Meta a signed URL, then delete the object
+after publishing.
 
 ```text
 INSTAGRAM_ACCESS_TOKEN
 INSTAGRAM_USER_ID
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_STORAGE_BUCKET=crossposter-media
+SUPABASE_STORAGE_DELETE_AFTER_PUBLISH=true
 ```
+
+Create the Supabase bucket first. A private bucket is fine; Crossposter uses a
+server-side service role key to upload, create signed URLs, and delete temporary
+objects. Keep the service role key local and never expose it in browser code.
 
 ### Pinterest
 

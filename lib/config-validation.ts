@@ -16,6 +16,7 @@ const tokenFields = new Set([
   "LINKEDIN_CLIENT_SECRET",
   "LINKEDIN_ACCESS_TOKEN",
   "INSTAGRAM_ACCESS_TOKEN",
+  "SUPABASE_SERVICE_ROLE_KEY",
   "PINTEREST_ACCESS_TOKEN",
   "YOUTUBE_CLIENT_ID",
   "YOUTUBE_CLIENT_SECRET",
@@ -48,6 +49,16 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
+function isHttpsUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+
+    return parsed.protocol === "https:" && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function invalidReason(name: string, value: string): string | null {
   if (tokenFields.has(name)) {
     return value.length >= 8 && !hasWhitespace(value) ? null : "must be a token/key with no spaces";
@@ -55,6 +66,8 @@ function invalidReason(name: string, value: string): string | null {
 
   switch (name) {
     case "POSTER_REQUIRE_ADMIN_PASSWORD":
+    case "SUPABASE_STORAGE_PUBLIC_BUCKET":
+    case "SUPABASE_STORAGE_DELETE_AFTER_PUBLISH":
       return value === "true" || value === "false" ? null : "must be true or false";
     case "POSTER_LOCAL_PORT": {
       if (!/^\d+$/.test(value)) {
@@ -91,6 +104,25 @@ function invalidReason(name: string, value: string): string | null {
     case "TWITCH_BROADCASTER_ID":
     case "TWITCH_SENDER_ID":
       return /^\d+$/.test(value) ? null : "must be numeric";
+    case "SUPABASE_URL":
+      return isHttpsUrl(value) ? null : "must be a Supabase https URL";
+    case "SUPABASE_STORAGE_BUCKET":
+      return /^[A-Za-z0-9._-]{1,100}$/.test(value)
+        ? null
+        : "must be a valid bucket name";
+    case "SUPABASE_STORAGE_PREFIX":
+      return /^[A-Za-z0-9._/-]{1,180}$/.test(value)
+        ? null
+        : "must be a simple storage folder path";
+    case "SUPABASE_STORAGE_SIGNED_URL_SECONDS": {
+      if (!/^\d+$/.test(value)) {
+        return "must be seconds";
+      }
+
+      const seconds = Number(value);
+
+      return seconds >= 60 && seconds <= 86400 ? null : "must be between 60 and 86400";
+    }
     default:
       return null;
   }
@@ -135,7 +167,11 @@ export function validatePlatformConfig(
   return configFields
     .filter((field) => field.requiredFor?.includes(platform) || field.showFor?.includes(platform))
     .map((field) =>
-      validateConfigField(field, values[field.name], Boolean(field.requiredFor?.includes(platform)))
+      validateConfigField(
+        field,
+        values[field.name] || field.defaultValue,
+        Boolean(field.requiredFor?.includes(platform))
+      )
     )
     .filter((issue): issue is ConfigIssue => Boolean(issue));
 }

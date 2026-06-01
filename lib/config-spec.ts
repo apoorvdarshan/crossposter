@@ -115,6 +115,54 @@ export const configFields: ConfigField[] = [
     requiredFor: ["instagram"]
   },
   {
+    name: "SUPABASE_URL",
+    label: "Supabase project URL",
+    help: "Project URL used to temporarily host Instagram media, for example https://your-project.supabase.co.",
+    requiredFor: ["instagram"]
+  },
+  {
+    name: "SUPABASE_SERVICE_ROLE_KEY",
+    label: "Supabase service role key",
+    help: "Server-only key used locally to upload and delete temporary Instagram media.",
+    secret: true,
+    requiredFor: ["instagram"]
+  },
+  {
+    name: "SUPABASE_STORAGE_BUCKET",
+    label: "Supabase storage bucket",
+    help: "Storage bucket for temporary hosted media. Private buckets use signed URLs.",
+    defaultValue: "crossposter-media",
+    requiredFor: ["instagram"]
+  },
+  {
+    name: "SUPABASE_STORAGE_PREFIX",
+    label: "Supabase storage prefix",
+    help: "Folder prefix inside the bucket for temporary Instagram media.",
+    defaultValue: "instagram",
+    showFor: ["instagram"]
+  },
+  {
+    name: "SUPABASE_STORAGE_PUBLIC_BUCKET",
+    label: "Supabase bucket is public",
+    help: "Set true only if this bucket is public. Keep false to use signed temporary URLs.",
+    defaultValue: "false",
+    showFor: ["instagram"]
+  },
+  {
+    name: "SUPABASE_STORAGE_SIGNED_URL_SECONDS",
+    label: "Supabase signed URL seconds",
+    help: "How long private-bucket media URLs stay fetchable for Instagram.",
+    defaultValue: "1200",
+    showFor: ["instagram"]
+  },
+  {
+    name: "SUPABASE_STORAGE_DELETE_AFTER_PUBLISH",
+    label: "Delete hosted media after publish",
+    help: "Keep true to remove temporary Supabase media after Instagram publishing finishes.",
+    defaultValue: "true",
+    showFor: ["instagram"]
+  },
+  {
     name: "PINTEREST_ACCESS_TOKEN",
     label: "Pinterest access token",
     help: "Pinterest API token.",
