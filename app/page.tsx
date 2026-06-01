@@ -61,7 +61,7 @@ const channels: Array<{
     note: "Profile or page post",
     uses: ["Post", "Media"],
     target: "Uses the active LinkedIn profile from Settings.",
-    media: "Local image only: JPG, PNG, or GIF."
+    media: "Local images and MP4 video are supported."
   },
   {
     id: "instagram",
@@ -199,6 +199,9 @@ const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
+const linkedInVideoTypes = new Set(["video/mp4"]);
+const linkedInMinVideoSize = 75 * 1024;
+const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const compressibleImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
@@ -512,15 +515,25 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
   }
 
   if (platforms.includes("linkedin")) {
-    if (kind !== "image") {
+    if (kind === "image" && !linkedInImageTypes.has(file.type)) {
+      issues.push({
+        id: "linkedin-image-type",
+        message: `LinkedIn supports JPG, PNG, and GIF images; selected file is ${file.type || "unknown"}.`
+      });
+    } else if (kind === "video" && !linkedInVideoTypes.has(file.type)) {
+      issues.push({
+        id: "linkedin-video-type",
+        message: `LinkedIn supports MP4 videos; selected file is ${file.type || "unknown"}.`
+      });
+    } else if (kind === "video" && (file.size < linkedInMinVideoSize || file.size > linkedInMaxVideoSize)) {
+      issues.push({
+        id: "linkedin-video-size",
+        message: `LinkedIn video size must be between 75 KB and 500 MB; selected file is ${formatBytes(file.size)}.`
+      });
+    } else if (kind !== "image" && kind !== "video") {
       issues.push({
         id: "linkedin-kind",
-        message: `LinkedIn can upload images only; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    } else if (!linkedInImageTypes.has(file.type)) {
-      issues.push({
-        id: "linkedin-type",
-        message: `LinkedIn supports JPG, PNG, and GIF images; selected file is ${file.type || "unknown"}.`
+        message: `LinkedIn can upload images and MP4 videos only; selected media is a ${mediaKindLabel(kind)}.`
       });
     }
   }

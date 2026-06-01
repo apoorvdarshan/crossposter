@@ -10,8 +10,28 @@ type LinkedInImageUpload = {
   };
 };
 
+type LinkedInVideoUpload = {
+  value?: {
+    video?: string;
+    uploadToken?: string;
+    uploadInstructions?: Array<{
+      uploadUrl?: string;
+      firstByte?: number;
+      lastByte?: number;
+    }>;
+  };
+};
+
+type LinkedInMedia = {
+  id: string;
+  kind: "image" | "video";
+};
+
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
+const linkedInVideoTypes = new Set(["video/mp4"]);
 const linkedInMaxImagePixels = 36_152_320;
+const linkedInMinVideoSize = 75 * 1024;
+const linkedInMaxVideoSize = 500 * 1024 * 1024;
 
 function linkedInHeaders(accessToken: string, version: string, contentType?: string) {
   return {
@@ -22,22 +42,19 @@ function linkedInHeaders(accessToken: string, version: string, contentType?: str
   };
 }
 
-async function uploadLinkedInImage(ctx: ProviderContext, accessToken: string, author: string, version: string) {
-  if (!ctx.media) {
-    return undefined;
-  }
-
-  if (ctx.media.kind !== "image") {
-    throw new Error("LinkedIn local upload supports image files only");
-  }
-
-  if (!linkedInImageTypes.has(ctx.media.contentType)) {
+async function uploadLinkedInImage(
+  media: NonNullable<ProviderContext["media"]>,
+  accessToken: string,
+  author: string,
+  version: string
+): Promise<LinkedInMedia> {
+  if (!linkedInImageTypes.has(media.contentType)) {
     throw new Error(
-      `LinkedIn supports JPG, PNG, and GIF images; selected file is ${ctx.media.contentType}.`
+      `LinkedIn supports JPG, PNG, and GIF images; selected file is ${media.contentType}.`
     );
   }
 
-  if (ctx.media.width && ctx.media.height && ctx.media.width * ctx.media.height >= linkedInMaxImagePixels) {
+  if (media.width && media.height && media.width * media.height >= linkedInMaxImagePixels) {
     throw new Error("LinkedIn images must be smaller than 36,152,320 pixels.");
   }
 
@@ -65,13 +82,123 @@ async function uploadLinkedInImage(ctx: ProviderContext, accessToken: string, au
       method: "PUT",
       headers: {
         authorization: `Bearer ${accessToken}`,
-        "content-type": ctx.media.contentType
+        "content-type": media.contentType
       },
-      body: await readFile(ctx.media.path)
+      body: await readFile(media.path)
     })
   );
 
-  return image;
+  return {
+    id: image,
+    kind: "image"
+  };
+}
+
+async function uploadLinkedInVideo(
+  media: NonNullable<ProviderContext["media"]>,
+  accessToken: string,
+  author: string,
+  version: string
+): Promise<LinkedInMedia> {
+  if (!linkedInVideoTypes.has(media.contentType)) {
+    throw new Error(`LinkedIn supports MP4 videos; selected file is ${media.contentType}.`);
+  }
+
+  if (media.size < linkedInMinVideoSize || media.size > linkedInMaxVideoSize) {
+    throw new Error("LinkedIn videos must be between 75 KB and 500 MB.");
+  }
+
+  const initialized = await assertOk<LinkedInVideoUpload>(
+    await fetch("https://api.linkedin.com/rest/videos?action=initializeUpload", {
+      method: "POST",
+      headers: linkedInHeaders(accessToken, version, "application/json"),
+      body: JSON.stringify({
+        initializeUploadRequest: {
+          owner: author,
+          fileSizeBytes: media.size,
+          uploadCaptions: false,
+          uploadThumbnail: false
+        }
+      })
+    })
+  );
+
+  const video = initialized.value?.video;
+  const uploadInstructions = initialized.value?.uploadInstructions || [];
+
+  if (!video || uploadInstructions.length === 0) {
+    throw new Error("LinkedIn did not return video upload instructions.");
+  }
+
+  const file = await readFile(media.path);
+  const uploadedPartIds: string[] = [];
+
+  for (const instruction of uploadInstructions.sort((a, b) => (a.firstByte || 0) - (b.firstByte || 0))) {
+    if (
+      !instruction.uploadUrl ||
+      typeof instruction.firstByte !== "number" ||
+      typeof instruction.lastByte !== "number"
+    ) {
+      throw new Error("LinkedIn returned invalid video upload instructions.");
+    }
+
+    const uploadResponse = await fetch(instruction.uploadUrl, {
+      method: "PUT",
+      headers: {
+        "content-type": "application/octet-stream"
+      },
+      body: file.subarray(instruction.firstByte, instruction.lastByte + 1)
+    });
+    const partId = uploadResponse.headers.get("etag");
+
+    await assertOk<Record<string, never>>(uploadResponse);
+
+    if (!partId) {
+      throw new Error("LinkedIn did not return a video upload part ID.");
+    }
+
+    uploadedPartIds.push(partId);
+  }
+
+  await assertOk<Record<string, never>>(
+    await fetch("https://api.linkedin.com/rest/videos?action=finalizeUpload", {
+      method: "POST",
+      headers: linkedInHeaders(accessToken, version, "application/json"),
+      body: JSON.stringify({
+        finalizeUploadRequest: {
+          video,
+          uploadToken: initialized.value?.uploadToken || "",
+          uploadedPartIds
+        }
+      })
+    })
+  );
+
+  return {
+    id: video,
+    kind: "video"
+  };
+}
+
+async function uploadLinkedInMedia(
+  ctx: ProviderContext,
+  accessToken: string,
+  author: string,
+  version: string
+): Promise<LinkedInMedia | undefined> {
+  if (!ctx.media) {
+    return undefined;
+  }
+
+  if (ctx.media.kind === "image") {
+    return uploadLinkedInImage(ctx.media, accessToken, author, version);
+  }
+
+  if (ctx.media.kind === "video") {
+    return uploadLinkedInVideo(ctx.media, accessToken, author, version);
+  }
+
+  throw new Error("LinkedIn local upload supports image and MP4 video files only");
 }
 
 export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResult> {
@@ -79,7 +206,7 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
   const accessToken = requireEnv("LINKEDIN_ACCESS_TOKEN", profileId);
   const author = requireEnv("LINKEDIN_AUTHOR_URN", profileId);
   const version = optionalEnv("LINKEDIN_VERSION", profileId) || "202605";
-  const image = await uploadLinkedInImage(ctx, accessToken, author, version);
+  const media = await uploadLinkedInMedia(ctx, accessToken, author, version);
 
   const response = await fetch("https://api.linkedin.com/rest/posts", {
     method: "POST",
@@ -88,12 +215,12 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
       author,
       commentary: compactText([ctx.text]),
       visibility: "PUBLIC",
-      ...(image
+      ...(media
         ? {
             content: {
               media: {
                 ...(ctx.title ? { title: ctx.title } : {}),
-                id: image
+                id: media.id
               }
             }
           }
@@ -117,7 +244,7 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
     profileId,
     profileLabel: ctx.target?.profileLabel,
     ok: true,
-    message: image ? "Published with image" : "Published",
+    message: media ? `Published with ${media.kind}` : "Published",
     url: postId ? `https://www.linkedin.com/feed/update/${postId}` : undefined
   };
 }
