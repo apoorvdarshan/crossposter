@@ -1458,12 +1458,6 @@ export default function Home() {
           </div>
         </div>
         <div className="masthead-actions">
-          <div className="status-pill">
-            <span className="dot" />
-            <span>
-              {selectedLabel} · {readyCount} ready
-            </span>
-          </div>
           <nav className="top-tabs" aria-label="Primary sections">
             <span className="top-tab is-active" aria-current="page">
               Dashboard
@@ -1479,6 +1473,12 @@ export default function Home() {
             </Link>
           </nav>
           <ThemeToggle />
+          <div className="status-pill masthead-action-slot">
+            <span className="dot" />
+            <span>
+              {selectedLabel} · {readyCount} ready
+            </span>
+          </div>
         </div>
       </header>
 

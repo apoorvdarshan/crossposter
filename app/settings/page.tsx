@@ -821,7 +821,7 @@ export default function SettingsPage() {
           </nav>
           <ThemeToggle />
           <button
-            className={`primary compact-button ${saveFeedback ? "is-saved" : ""}`}
+            className={`primary compact-button masthead-action-slot ${saveFeedback ? "is-saved" : ""}`}
             type="button"
             onClick={saveConfig}
             disabled={isSaving}

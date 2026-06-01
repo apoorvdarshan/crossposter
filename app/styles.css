@@ -326,6 +326,7 @@ h2 {
   gap: 8px;
   background: var(--masthead-soft);
   color: var(--masthead-ink);
+  white-space: nowrap;
 }
 
 .dot {
@@ -1119,6 +1120,11 @@ textarea {
   min-height: 38px;
 }
 
+.masthead-action-slot {
+  width: 184px;
+  justify-content: center;
+}
+
 .primary {
   border: 1px solid var(--accent-dark);
   background: var(--accent);
@@ -1861,6 +1867,10 @@ a.history-platform.ok:hover {
 
   .masthead-actions {
     justify-content: flex-start;
+  }
+
+  .masthead-action-slot {
+    width: auto;
   }
 
   .publish-panel {
