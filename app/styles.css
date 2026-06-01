@@ -609,6 +609,10 @@ textarea {
   gap: 10px;
 }
 
+.compression-grid-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .compression-grid label {
   display: grid;
   gap: 6px;
@@ -666,18 +670,6 @@ textarea {
   box-shadow:
     0 0 0 1px var(--accent),
     0 4px 12px rgba(0, 0, 0, 0.18);
-}
-
-.target-readout strong {
-  display: flex;
-  align-items: center;
-  min-height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--input-bg);
-  color: var(--heading-ink);
-  padding: 8px 10px;
-  font-size: 0.9rem;
 }
 
 .sr-only {

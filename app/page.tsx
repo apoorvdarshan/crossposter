@@ -1580,7 +1580,7 @@ export default function Home() {
                     </button>
                   </div>
                   {compressionKind === "image" ? (
-                    <div className="compression-grid">
+                    <div className="compression-grid compression-grid-single">
                       <label>
                         <span>Quality</span>
                         <input
@@ -1600,11 +1600,6 @@ export default function Home() {
                               ? formatBytes(estimatedImageSize)
                               : "size unavailable"}
                         </small>
-                      </label>
-                      <label className="target-readout">
-                        <span>Target size</span>
-                        <strong>{imagePlatformTargetBytes ? formatBytes(imagePlatformTargetBytes) : "No target"}</strong>
-                        <small>{imagePlatformTargetBytes ? "Selected channel limit" : "No size target"}</small>
                       </label>
                     </div>
                   ) : null}
