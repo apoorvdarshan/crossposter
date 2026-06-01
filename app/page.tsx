@@ -56,14 +56,6 @@ const channels: Array<{
     media: "Local media is ignored; publish without cover image."
   },
   {
-    id: "medium",
-    label: "Medium",
-    note: "Profile or publication article",
-    uses: ["Title", "Post", "Link", "Media"],
-    target: "Uses the active Medium profile from Settings.",
-    media: "Local image uploads are inserted at the top of the article."
-  },
-  {
     id: "linkedin",
     label: "LinkedIn",
     note: "Profile or page post",
@@ -129,7 +121,6 @@ const envLabels: Record<string, string> = {
   MASTODON_INSTANCE: "instance",
   MASTODON_ACCESS_TOKEN: "access token",
   DEVTO_API_KEY: "API key",
-  MEDIUM_ACCESS_TOKEN: "access token",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "profile/page",
   REDDIT_CLIENT_ID: "client ID",
@@ -189,15 +180,11 @@ type SavedDraft = {
   title?: string;
   text?: string;
   url?: string;
-  mediumTags?: string;
-  mediumPublishStatus?: MediumPublishStatus;
   selected?: string[];
   platforms?: Platform[];
   targets?: PublishTarget[];
   updatedAt?: string;
 };
-
-type MediumPublishStatus = NonNullable<ComposeDraft["mediumPublishStatus"]>;
 
 type StoredDraftMedia = {
   id: string;
@@ -218,12 +205,10 @@ const draftDbVersion = 1;
 const draftStoreName = "media";
 const draftMediaKey = "compose-media";
 const platformIds = channels.map((channel) => channel.id);
-const mediumPublishStatusOptions: MediumPublishStatus[] = ["draft", "public", "unlisted"];
 const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const compressibleImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-const mediumImageTypes = new Set(["image/jpeg", "image/png", "image/gif", "image/tiff"]);
 const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
 
@@ -246,12 +231,6 @@ function normalizePlatforms(value: unknown): Platform[] {
   }
 
   return value.filter((item): item is Platform => platformIds.includes(item as Platform));
-}
-
-function normalizeMediumPublishStatus(value: unknown): MediumPublishStatus {
-  return mediumPublishStatusOptions.includes(value as MediumPublishStatus)
-    ? (value as MediumPublishStatus)
-    : "draft";
 }
 
 function normalizePublishTargets(value: unknown): PublishTarget[] {
@@ -310,8 +289,6 @@ function readStoredDraft(): SavedDraft | null {
       title: typeof parsed.title === "string" ? parsed.title : "",
       text: typeof parsed.text === "string" ? parsed.text : "",
       url: typeof parsed.url === "string" ? parsed.url : "",
-      mediumTags: typeof parsed.mediumTags === "string" ? parsed.mediumTags : "",
-      mediumPublishStatus: normalizeMediumPublishStatus(parsed.mediumPublishStatus),
       platforms: normalizePlatforms(parsed.platforms || parsed.selected),
       targets: normalizePublishTargets(parsed.targets),
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : undefined
@@ -342,8 +319,6 @@ function normalizeDraft(draft: ComposeDraft | SavedDraft | undefined | null): Co
     title: typeof draft?.title === "string" ? draft.title : "",
     text: typeof draft?.text === "string" ? draft.text : "",
     url: typeof draft?.url === "string" ? draft.url : "",
-    mediumTags: typeof draft?.mediumTags === "string" ? draft.mediumTags : "",
-    mediumPublishStatus: normalizeMediumPublishStatus(draft?.mediumPublishStatus),
     platforms: normalizePlatforms(draft?.platforms || (draft as SavedDraft | undefined)?.selected),
     targets: normalizePublishTargets(draft?.targets),
     ...(typeof draft?.updatedAt === "string" ? { updatedAt: draft.updatedAt } : {})
@@ -575,20 +550,6 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
     }
   }
 
-  if (platforms.includes("medium")) {
-    if (kind !== "image") {
-      issues.push({
-        id: "medium-kind",
-        message: `Medium can upload images only; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    } else if (!mediumImageTypes.has(file.type)) {
-      issues.push({
-        id: "medium-type",
-        message: `Medium supports JPEG, PNG, GIF, and TIFF images; selected file is ${file.type || "unknown"}.`
-      });
-    }
-  }
-
   return issues;
 }
 
@@ -779,9 +740,6 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
-  const [mediumTags, setMediumTags] = useState("");
-  const [mediumPublishStatus, setMediumPublishStatus] =
-    useState<MediumPublishStatus>("draft");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
@@ -912,8 +870,6 @@ export default function Home() {
         setTitle(draft.title);
         setText(draft.text);
         setUrl(draft.url);
-        setMediumTags(draft.mediumTags || "");
-        setMediumPublishStatus(draft.mediumPublishStatus || "draft");
         setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(hasDraft);
         setPublishedPosts(body.publishedPosts || []);
@@ -933,8 +889,6 @@ export default function Home() {
         setTitle(draft.title);
         setText(draft.text);
         setUrl(draft.url);
-        setMediumTags(draft.mediumTags || "");
-        setMediumPublishStatus(draft.mediumPublishStatus || "draft");
         setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(draftTimestamp(draft) > 0);
       } finally {
@@ -971,7 +925,7 @@ export default function Home() {
       return;
     }
 
-    if (!hasSavedDraft && !title && !text && !url && !mediumTags && selected.length === 0) {
+    if (!hasSavedDraft && !title && !text && !url && selected.length === 0) {
       return;
     }
 
@@ -979,8 +933,6 @@ export default function Home() {
       title,
       text,
       url,
-      mediumTags,
-      mediumPublishStatus,
       platforms: selectedPlatforms,
       targets: selectedTargets.map(publishTargetFromCard),
       updatedAt: new Date().toISOString()
@@ -1001,8 +953,6 @@ export default function Home() {
     title,
     text,
     url,
-    mediumTags,
-    mediumPublishStatus,
     selected,
     selectedPlatforms,
     selectedTargets,
@@ -1101,8 +1051,6 @@ export default function Home() {
       title: "",
       text: "",
       url: "",
-      mediumTags: "",
-      mediumPublishStatus: "draft",
       platforms: [],
       targets: [],
       updatedAt: new Date().toISOString()
@@ -1112,8 +1060,6 @@ export default function Home() {
     setTitle("");
     setText("");
     setUrl("");
-    setMediumTags("");
-    setMediumPublishStatus("draft");
     setSelected([]);
     setMediaFile(null);
     setMediaInputKey((current) => current + 1);
@@ -1233,11 +1179,6 @@ export default function Home() {
       return;
     }
 
-    if (publishPlatforms.includes("medium") && !title.trim()) {
-      setError("Medium requires the Title field.");
-      return;
-    }
-
     const preflightIssues = mediaPreflightIssues(publishPlatforms, mediaFile);
 
     if (preflightIssues.length > 0) {
@@ -1258,8 +1199,6 @@ export default function Home() {
           title: title.trim() || undefined,
           text,
           url: url.trim() || undefined,
-          mediumTags: mediumTags.trim() || undefined,
-          mediumPublishStatus,
           mediaId: uploadedMedia?.id,
           platforms: publishPlatforms,
           targets: publishTargets
@@ -1296,14 +1235,11 @@ export default function Home() {
   const blueskyLength = postTextLength([text.trim(), url.trim()].filter(Boolean).join("\n\n"));
   const showBlueskyLimit = selectedPlatforms.includes("bluesky");
   const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
-  const showMediumOptions = selectedPlatforms.includes("medium");
-  const mediumTitleMissing = showMediumOptions && !title.trim();
   const canPublish =
     text.trim() &&
     selectedTargets.length > 0 &&
     preflightIssues.length === 0 &&
     !blueskyTooLong &&
-    !mediumTitleMissing &&
     !isPublishing &&
     !isUploadingMedia &&
     !isCompressingMedia;
@@ -1396,9 +1332,6 @@ export default function Home() {
                   }}
                   placeholder="Article, Reddit, Pinterest, YouTube"
                 />
-                {mediumTitleMissing ? (
-                  <span className="field-hint is-warning">Medium requires a title.</span>
-                ) : null}
               </div>
               <div className="field">
                 <label className="field-label" htmlFor="url">
@@ -1417,46 +1350,6 @@ export default function Home() {
                 <span className="field-hint">Leave empty if there is no link.</span>
               </div>
             </div>
-
-            {showMediumOptions ? (
-              <div className="field-row medium-options">
-                <div className="field">
-                  <label className="field-label" htmlFor="mediumTags">
-                    Medium tags
-                  </label>
-                  <input
-                    id="mediumTags"
-                    value={mediumTags}
-                    onChange={(event) => {
-                      setHasSavedDraft(true);
-                      setMediumTags(event.target.value);
-                    }}
-                    placeholder="AI, iOS, Startup"
-                  />
-                  <span className="field-hint">Comma-separated. Medium uses the first three.</span>
-                </div>
-                <div className="field">
-                  <label className="field-label" htmlFor="mediumPublishStatus">
-                    Medium publish status
-                  </label>
-                  <select
-                    id="mediumPublishStatus"
-                    value={mediumPublishStatus}
-                    onChange={(event) => {
-                      setHasSavedDraft(true);
-                      setMediumPublishStatus(
-                        normalizeMediumPublishStatus(event.target.value)
-                      );
-                    }}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="public">Public</option>
-                    <option value="unlisted">Unlisted</option>
-                  </select>
-                  <span className="field-hint">Saved per draft, not in Settings.</span>
-                </div>
-              </div>
-            ) : null}
 
             <div className="field">
               <label className="field-label" htmlFor="text">

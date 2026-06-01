@@ -62,19 +62,6 @@ export const configFields: ConfigField[] = [
     requiredFor: ["devto"]
   },
   {
-    name: "MEDIUM_ACCESS_TOKEN",
-    label: "Medium access token",
-    help: "Medium integration token. Medium's API is archived, so this works only for accounts that still have tokens.",
-    secret: true,
-    requiredFor: ["medium"]
-  },
-  {
-    name: "MEDIUM_PUBLICATION_ID",
-    label: "Medium publication ID",
-    help: "Optional. Leave blank to publish to your own profile instead of a publication.",
-    showFor: ["medium"]
-  },
-  {
     name: "LINKEDIN_ACCESS_TOKEN",
     label: "LinkedIn access token",
     help: "OAuth token with posting permission.",
@@ -208,7 +195,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     bluesky: [],
     mastodon: [],
     devto: [],
-    medium: [],
     linkedin: [],
     reddit: [],
     instagram: [],

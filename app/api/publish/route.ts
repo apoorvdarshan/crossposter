@@ -18,8 +18,7 @@ const platformSchema = z.enum([
   "instagram",
   "pinterest",
   "twitch",
-  "youtube",
-  "medium"
+  "youtube"
 ]);
 const targetSchema = z.object({
   id: z.string().min(1).max(180),
@@ -27,8 +26,6 @@ const targetSchema = z.object({
   profileId: z.string().max(120).optional(),
   profileLabel: z.string().max(180).optional()
 });
-const mediumPublishStatusSchema = z.enum(["public", "draft", "unlisted"]);
-
 function normalizeOptionalUrl(value: unknown): unknown {
   if (typeof value !== "string") {
     return value;
@@ -74,8 +71,6 @@ const requestSchema = z
     url: optionalUrlSchema,
     mediaId: z.string().max(80).optional().or(z.literal("")),
     mediaUrl: optionalUrlSchema,
-    mediumTags: z.string().max(180).optional(),
-    mediumPublishStatus: mediumPublishStatusSchema.optional(),
     platforms: z.array(platformSchema).max(30).optional(),
     targets: z.array(targetSchema).max(30).optional()
   })
@@ -162,8 +157,6 @@ export async function POST(request: Request) {
     url: parsed.data.url || undefined,
     mediaId: parsed.data.mediaId || undefined,
     mediaUrl: parsed.data.mediaUrl || undefined,
-    mediumTags: parsed.data.mediumTags?.trim() || undefined,
-    mediumPublishStatus: parsed.data.mediumPublishStatus || "public",
     media,
     platforms,
     targets,

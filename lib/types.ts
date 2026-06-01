@@ -7,8 +7,7 @@ export type Platform =
   | "instagram"
   | "pinterest"
   | "twitch"
-  | "youtube"
-  | "medium";
+  | "youtube";
 
 export type PublishPayload = {
   title?: string;
@@ -16,8 +15,6 @@ export type PublishPayload = {
   url?: string;
   mediaId?: string;
   mediaUrl?: string;
-  mediumTags?: string;
-  mediumPublishStatus?: "public" | "draft" | "unlisted";
   platforms: Platform[];
   targets?: PublishTarget[];
 };
@@ -43,8 +40,6 @@ export type ComposeDraft = {
   title: string;
   text: string;
   url: string;
-  mediumTags?: string;
-  mediumPublishStatus?: "public" | "draft" | "unlisted";
   platforms: Platform[];
   targets?: PublishTarget[];
   updatedAt?: string;

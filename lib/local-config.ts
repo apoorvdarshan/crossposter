@@ -28,7 +28,6 @@ const platforms: Platform[] = [
   "bluesky",
   "mastodon",
   "devto",
-  "medium",
   "linkedin",
   "reddit",
   "instagram",
@@ -48,8 +47,6 @@ export const emptyComposeDraft: ComposeDraft = {
   title: "",
   text: "",
   url: "",
-  mediumTags: "",
-  mediumPublishStatus: "draft",
   platforms: [],
   targets: []
 };
@@ -118,6 +115,10 @@ function normalizeProfiles(value: unknown): Partial<Record<Platform, ProviderPro
   return Object.fromEntries(
     Object.entries(value)
       .map(([platform, profiles]) => {
+        if (!platforms.includes(platform as Platform)) {
+          return [platform, []];
+        }
+
         if (!Array.isArray(profiles)) {
           return [platform, []];
         }
@@ -151,7 +152,7 @@ function normalizeActiveProfiles(value: unknown): Partial<Record<Platform, strin
 
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([, item]) => typeof item === "string")
+      .filter(([platform, item]) => platforms.includes(platform as Platform) && typeof item === "string")
       .map(([key, item]) => [key, item.trim()])
   ) as Partial<Record<Platform, string>>;
 }
@@ -168,13 +169,6 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
     title: stringValue(record.title, 300),
     text: stringValue(record.text, 12000),
     url: stringValue(record.url, 2048),
-    mediumTags: stringValue(record.mediumTags, 180),
-    mediumPublishStatus:
-      record.mediumPublishStatus === "public" ||
-      record.mediumPublishStatus === "draft" ||
-      record.mediumPublishStatus === "unlisted"
-        ? record.mediumPublishStatus
-        : "draft",
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
     ...(updatedAt ? { updatedAt } : {})

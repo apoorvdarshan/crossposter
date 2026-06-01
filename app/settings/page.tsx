@@ -72,7 +72,6 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
-  { id: "medium", label: "Medium" },
   { id: "linkedin", label: "LinkedIn" },
   { id: "reddit", label: "Reddit" },
   { id: "instagram", label: "Instagram" },
@@ -125,21 +124,6 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Add a Dev.to profile here.",
       "Paste the key into Dev.to API key.",
       "Save config. On the Dashboard, fill Title and Post before publishing."
-    ]
-  },
-  medium: {
-    title: "Medium setup",
-    intro: "Medium API posting uses integration tokens. Medium has archived the API, so this works only if your account still has token access.",
-    links: [
-      { label: "Medium API docs", href: "https://github.com/Medium/medium-api-docs" },
-      { label: "Medium settings", href: "https://medium.com/me/settings" }
-    ],
-    steps: [
-      "Open Medium settings and create or copy an integration token if your account shows that option.",
-      "Add a Medium profile here.",
-      "Paste the token into Medium access token.",
-      "Optional: set a publication ID to publish into a publication instead of your profile.",
-      "Save config. Medium tags and publish status are chosen per draft on the Dashboard."
     ]
   }
 };
