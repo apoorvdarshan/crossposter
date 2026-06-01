@@ -12,6 +12,8 @@ const tokenFields = new Set([
   "BLUESKY_APP_PASSWORD",
   "MASTODON_ACCESS_TOKEN",
   "DEVTO_API_KEY",
+  "LINKEDIN_CLIENT_ID",
+  "LINKEDIN_CLIENT_SECRET",
   "LINKEDIN_ACCESS_TOKEN",
   "INSTAGRAM_ACCESS_TOKEN",
   "PINTEREST_ACCESS_TOKEN",
@@ -80,6 +82,10 @@ function invalidReason(name: string, value: string): string | null {
         : "must be a LinkedIn person or organization URN";
     case "LINKEDIN_VERSION":
       return /^\d{6}$/.test(value) ? null : "must be a YYYYMM API version";
+    case "LINKEDIN_OAUTH_SCOPES":
+      return value.split(/\s+/).includes("w_member_social")
+        ? null
+        : "must include w_member_social";
     case "INSTAGRAM_USER_ID":
     case "PINTEREST_BOARD_ID":
     case "TWITCH_BROADCASTER_ID":

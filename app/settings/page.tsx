@@ -13,6 +13,7 @@ import {
   HardDrive,
   Info,
   Plus,
+  RefreshCw,
   Save,
   Trash2
 } from "lucide-react";
@@ -128,7 +129,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   linkedin: {
     title: "LinkedIn setup",
     intro:
-      "LinkedIn needs a developer app access token with posting permission and an author URN for your profile or page.",
+      "LinkedIn can connect locally through your developer app, then save the token and personal profile URN here.",
     links: [
       { label: "LinkedIn apps", href: "https://www.linkedin.com/developers/apps" },
       {
@@ -143,10 +144,11 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     steps: [
       "Create or open a LinkedIn developer app.",
       "Enable the LinkedIn product that grants posting permission, usually Share on LinkedIn for profile posts.",
-      "Generate an OAuth member access token with w_member_social for profile posting, or page posting permission for organization posts.",
+      "For personal profiles, also enable Sign In with LinkedIn using OpenID Connect so this app can auto-fill your person URN.",
+      "Add this redirect URL in LinkedIn Auth: http://localhost:2004/api/auth/linkedin/callback.",
       "Add a LinkedIn profile here.",
-      "Paste the OAuth access token into LinkedIn access token.",
-      "Set LinkedIn profile/page to urn:li:person:YOUR_PERSON_ID or urn:li:organization:YOUR_ORG_ID.",
+      "Paste the LinkedIn client ID and client secret, then click Connect LinkedIn.",
+      "If you post as a company page, replace the author field with urn:li:organization:YOUR_ORG_ID after connecting.",
       "Save config, then select that LinkedIn profile on the Dashboard."
     ]
   }
@@ -317,6 +319,26 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    const message = new URLSearchParams(window.location.search).get("linkedin");
+
+    if (!message) {
+      return;
+    }
+
+    const labels: Record<string, string> = {
+      connected: "LinkedIn connected and saved locally.",
+      token_only:
+        "LinkedIn token saved. Add Sign In with LinkedIn using OpenID Connect to auto-fill the profile URN.",
+      denied: "LinkedIn authorization was cancelled.",
+      failed: "LinkedIn authorization failed.",
+      bad_state: "LinkedIn authorization expired. Try Connect LinkedIn again."
+    };
+
+    setStatus(labels[message] || "LinkedIn authorization finished.");
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
+  useEffect(() => {
     void loadStorage();
   }, []);
 
@@ -479,6 +501,41 @@ export default function SettingsPage() {
       window.setTimeout(() => setSaveFeedback(false), 1600);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not save config.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function connectLinkedIn(profile: ProviderProfile) {
+    const clientId = profile.values.LINKEDIN_CLIENT_ID?.trim();
+    const clientSecret = profile.values.LINKEDIN_CLIENT_SECRET?.trim();
+
+    if (!clientId || !clientSecret) {
+      setStatus("Add LinkedIn client ID and client secret first.");
+      return;
+    }
+
+    setStatus("");
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ values, profiles, activeProfiles })
+      });
+      const body = (await response.json()) as ConfigResponse & { error?: string };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not save config before connecting LinkedIn.");
+        return;
+      }
+
+      const startUrl = new URL("/api/auth/linkedin/start", window.location.origin);
+      startUrl.searchParams.set("profileId", profile.id);
+      window.location.assign(startUrl.toString());
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not connect LinkedIn.");
     } finally {
       setIsSaving(false);
     }
@@ -842,20 +899,32 @@ export default function SettingsPage() {
                   <section className="config-group" key={profile.id}>
                     <div className="config-group-title">
                       <strong>{profile.label || "Untitled profile"}</strong>
-                      <button
-                        className={
-                          confirmDeleteProfile === `${platform.id}:${profile.id}`
-                            ? "danger-button compact-button"
-                            : "secondary compact-button"
-                        }
-                        type="button"
-                        onClick={() => deleteProfile(platform.id, profile.id)}
-                      >
-                        <Trash2 size={15} />
-                        {confirmDeleteProfile === `${platform.id}:${profile.id}`
-                          ? "Confirm delete"
-                          : "Delete profile"}
-                      </button>
+                      <div className="profile-actions">
+                        {platform.id === "linkedin" ? (
+                          <button
+                            className="secondary compact-button"
+                            type="button"
+                            onClick={() => void connectLinkedIn(profile)}
+                          >
+                            <RefreshCw size={15} />
+                            Connect LinkedIn
+                          </button>
+                        ) : null}
+                        <button
+                          className={
+                            confirmDeleteProfile === `${platform.id}:${profile.id}`
+                              ? "danger-button compact-button"
+                              : "secondary compact-button"
+                          }
+                          type="button"
+                          onClick={() => deleteProfile(platform.id, profile.id)}
+                        >
+                          <Trash2 size={15} />
+                          {confirmDeleteProfile === `${platform.id}:${profile.id}`
+                            ? "Confirm delete"
+                            : "Delete profile"}
+                        </button>
+                      </div>
                     </div>
                     <label className="config-field">
                       <span>Profile name</span>

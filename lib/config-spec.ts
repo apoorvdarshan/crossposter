@@ -62,6 +62,26 @@ export const configFields: ConfigField[] = [
     requiredFor: ["devto"]
   },
   {
+    name: "LINKEDIN_CLIENT_ID",
+    label: "LinkedIn client ID",
+    help: "Client ID from your LinkedIn developer app. Used only to connect this profile locally.",
+    showFor: ["linkedin"]
+  },
+  {
+    name: "LINKEDIN_CLIENT_SECRET",
+    label: "LinkedIn client secret",
+    help: "Client secret from your LinkedIn developer app. Saved locally and used only during OAuth.",
+    secret: true,
+    showFor: ["linkedin"]
+  },
+  {
+    name: "LINKEDIN_OAUTH_SCOPES",
+    label: "LinkedIn OAuth scopes",
+    help: "Use openid profile w_member_social to auto-fill personal profile posting.",
+    defaultValue: "openid profile w_member_social",
+    showFor: ["linkedin"]
+  },
+  {
     name: "LINKEDIN_ACCESS_TOKEN",
     label: "LinkedIn access token",
     help: "OAuth token with posting permission.",
@@ -70,8 +90,8 @@ export const configFields: ConfigField[] = [
   },
   {
     name: "LINKEDIN_AUTHOR_URN",
-    label: "LinkedIn profile/page",
-    help: "Author URN for a profile or page.",
+    label: "LinkedIn author URN",
+    help: "Use urn:li:person:... for personal posting or urn:li:organization:... for a company page.",
     requiredFor: ["linkedin"]
   },
   {

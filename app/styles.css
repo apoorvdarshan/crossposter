@@ -1503,6 +1503,13 @@ a.history-platform.ok:hover {
   overflow-wrap: anywhere;
 }
 
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .config-field {
   display: grid;
   gap: 6px;

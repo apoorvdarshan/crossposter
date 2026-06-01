@@ -114,7 +114,7 @@ const envLabels: Record<string, string> = {
   MASTODON_ACCESS_TOKEN: "access token",
   DEVTO_API_KEY: "API key",
   LINKEDIN_ACCESS_TOKEN: "access token",
-  LINKEDIN_AUTHOR_URN: "profile/page",
+  LINKEDIN_AUTHOR_URN: "author URN",
   INSTAGRAM_ACCESS_TOKEN: "access token",
   INSTAGRAM_USER_ID: "IG user ID",
   PINTEREST_ACCESS_TOKEN: "access token",

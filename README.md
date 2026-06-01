@@ -98,7 +98,19 @@ DEVTO_API_KEY
 
 ### LinkedIn
 
-LinkedIn needs an OAuth access token with posting permission. `LINKEDIN_AUTHOR_URN` should be one of:
+LinkedIn can be connected from the local Settings page. Add this callback URL in
+your LinkedIn app Auth tab:
+
+```text
+http://localhost:2004/api/auth/linkedin/callback
+```
+
+For personal profile posting, enable Share on LinkedIn and Sign In with LinkedIn
+using OpenID Connect, then use `openid profile w_member_social` scopes. The
+local callback saves `LINKEDIN_ACCESS_TOKEN` and a personal
+`LINKEDIN_AUTHOR_URN` automatically.
+
+`LINKEDIN_AUTHOR_URN` should be one of:
 
 ```text
 urn:li:person:YOUR_PERSON_ID
