@@ -668,18 +668,13 @@ async function compressImageMedia(
   file: File,
   options: {
     quality: number;
-    maxEdge: number;
     targetBytes?: number;
   }
 ): Promise<File> {
   const image = await loadImage(file);
-  const maxDimension = options.maxEdge;
-  const initialScale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
   const targetBytes = options.targetBytes;
   const baseQuality = Math.min(0.95, Math.max(0.3, options.quality / 100));
-  const scales = (targetBytes ? [1, 0.85, 0.7, 0.55, 0.42, 0.32] : [1]).map(
-    (scale) => scale * initialScale
-  );
+  const scales = targetBytes ? [1, 0.85, 0.7, 0.55, 0.42, 0.32] : [1];
   const qualities = targetBytes
     ? Array.from(new Set([baseQuality, baseQuality * 0.86, baseQuality * 0.72, 0.56, 0.44, 0.34]))
     : [baseQuality];
@@ -728,6 +723,23 @@ async function compressImageMedia(
     type: "image/jpeg",
     lastModified: Date.now()
   });
+}
+
+async function estimateCompressedImageSize(file: File, quality: number): Promise<number> {
+  const image = await loadImage(file);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+
+  if (!context) {
+    throw new Error("Image compression is not available in this browser");
+  }
+
+  context.drawImage(image, 0, 0);
+
+  return (await canvasToBlob(canvas, Math.min(0.95, Math.max(0.3, quality / 100)))).size;
 }
 
 async function compressVideoMedia(
@@ -825,7 +837,8 @@ export default function Home() {
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
   const [imageQuality, setImageQuality] = useState(78);
-  const [imageMaxEdge, setImageMaxEdge] = useState(2048);
+  const [estimatedImageSize, setEstimatedImageSize] = useState<number | null>(null);
+  const [isEstimatingImageSize, setIsEstimatingImageSize] = useState(false);
   const [videoTargetMb, setVideoTargetMb] = useState(490);
   const [videoQuality, setVideoQuality] = useState<VideoCompressionQuality>("balanced");
   const [selected, setSelected] = useState<string[]>([]);
@@ -991,6 +1004,7 @@ export default function Home() {
   useEffect(() => {
     if (!mediaFile) {
       setMediaPreviewUrl("");
+      setEstimatedImageSize(null);
       return;
     }
 
@@ -1002,6 +1016,41 @@ export default function Home() {
       URL.revokeObjectURL(objectUrl);
     };
   }, [mediaFile]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!mediaFile || fileKind(mediaFile) !== "image") {
+      setEstimatedImageSize(null);
+      setIsEstimatingImageSize(false);
+      return;
+    }
+
+    setIsEstimatingImageSize(true);
+    const timer = window.setTimeout(() => {
+      estimateCompressedImageSize(mediaFile, imageQuality)
+        .then((size) => {
+          if (active) {
+            setEstimatedImageSize(size);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setEstimatedImageSize(null);
+          }
+        })
+        .finally(() => {
+          if (active) {
+            setIsEstimatingImageSize(false);
+          }
+        });
+    }, 120);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [imageQuality, mediaFile]);
 
   useEffect(() => {
     if (!draftHydrated || !configHydrated) {
@@ -1198,7 +1247,6 @@ export default function Home() {
             setProgress({ label: "Reading image", value: 25 });
             const image = await compressImageMedia(mediaFile, {
               quality: imageQuality,
-              maxEdge: imageMaxEdge,
               targetBytes: imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
             });
 
@@ -1573,19 +1621,14 @@ export default function Home() {
                           type="range"
                           value={imageQuality}
                         />
-                        <small>{imageQuality}%</small>
-                      </label>
-                      <label>
-                        <span>Max edge</span>
-                        <select
-                          onChange={(event) => setImageMaxEdge(Number(event.target.value))}
-                          value={imageMaxEdge}
-                        >
-                          <option value={1024}>1024 px</option>
-                          <option value={1600}>1600 px</option>
-                          <option value={2048}>2048 px</option>
-                          <option value={4096}>4096 px</option>
-                        </select>
+                        <small>
+                          {imageQuality}% ·{" "}
+                          {isEstimatingImageSize
+                            ? "calculating..."
+                            : estimatedImageSize
+                              ? formatBytes(estimatedImageSize)
+                              : "size unavailable"}
+                        </small>
                       </label>
                     </div>
                   ) : null}
