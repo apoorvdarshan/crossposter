@@ -295,6 +295,32 @@ export default function SettingsPage() {
     void loadStorage();
   }, []);
 
+  const statusDismissMs = useMemo(() => {
+    if (!status) {
+      return 0;
+    }
+
+    if (/could not|not loaded|failed|error/i.test(status)) {
+      return 7000;
+    }
+
+    if (/confirm/i.test(status)) {
+      return 5000;
+    }
+
+    return 2600;
+  }, [status]);
+
+  useEffect(() => {
+    if (!status) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setStatus(""), statusDismissMs);
+
+    return () => window.clearTimeout(timer);
+  }, [status, statusDismissMs]);
+
   const baseFields = useMemo(
     () => fields.filter((field) => !field.requiredFor?.length && !field.showFor?.length),
     [fields]
@@ -882,7 +908,11 @@ export default function SettingsPage() {
         })}
       </section>
 
-      {status ? <p className="floating-status">{status}</p> : null}
+      {status ? (
+        <p className="floating-status" role="status" aria-live="polite">
+          {status}
+        </p>
+      ) : null}
     </main>
   );
 }
