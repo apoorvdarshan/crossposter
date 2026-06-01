@@ -20,10 +20,7 @@ const tokenFields = new Set([
   "PINTEREST_ACCESS_TOKEN",
   "YOUTUBE_CLIENT_ID",
   "YOUTUBE_CLIENT_SECRET",
-  "YOUTUBE_REFRESH_TOKEN",
-  "TWITCH_CLIENT_ID",
-  "TWITCH_CLIENT_SECRET",
-  "TWITCH_REFRESH_TOKEN"
+  "YOUTUBE_REFRESH_TOKEN"
 ]);
 
 export function isPlaceholderValue(value: string | undefined): boolean {
@@ -44,16 +41,6 @@ function isHttpUrl(value: string): boolean {
       (parsed.protocol === "http:" || parsed.protocol === "https:") &&
       Boolean(parsed.hostname)
     );
-  } catch {
-    return false;
-  }
-}
-
-function isHttpsUrl(value: string): boolean {
-  try {
-    const parsed = new URL(value);
-
-    return parsed.protocol === "https:" && Boolean(parsed.hostname);
   } catch {
     return false;
   }
@@ -101,11 +88,9 @@ function invalidReason(name: string, value: string): string | null {
         : "must include w_member_social";
     case "INSTAGRAM_USER_ID":
     case "PINTEREST_BOARD_ID":
-    case "TWITCH_BROADCASTER_ID":
-    case "TWITCH_SENDER_ID":
       return /^\d+$/.test(value) ? null : "must be numeric";
     case "SUPABASE_URL":
-      return isHttpsUrl(value) ? null : "must be a Supabase https URL";
+      return isHttpUrl(value) ? null : "must be a Supabase http or https URL";
     case "SUPABASE_STORAGE_BUCKET":
       return /^[A-Za-z0-9._-]{1,100}$/.test(value)
         ? null

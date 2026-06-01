@@ -4,7 +4,6 @@ import {
   siInstagram,
   siMastodon,
   siPinterest,
-  siTwitch,
   siYoutube,
   type SimpleIcon
 } from "simple-icons";
@@ -17,8 +16,7 @@ const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   devto: siDevdotto,
   instagram: siInstagram,
   pinterest: siPinterest,
-  youtube: siYoutube,
-  twitch: siTwitch
+  youtube: siYoutube
 };
 
 const socialNames: Record<Platform, string> = {
@@ -28,8 +26,7 @@ const socialNames: Record<Platform, string> = {
   linkedin: "LinkedIn",
   instagram: "Instagram",
   pinterest: "Pinterest",
-  youtube: "YouTube",
-  twitch: "Twitch"
+  youtube: "YouTube"
 };
 
 const brandColors: Record<Platform, string> = {
@@ -39,8 +36,7 @@ const brandColors: Record<Platform, string> = {
   linkedin: "#0a66c2",
   instagram: `#${siInstagram.hex}`,
   pinterest: `#${siPinterest.hex}`,
-  youtube: `#${siYoutube.hex}`,
-  twitch: `#${siTwitch.hex}`
+  youtube: `#${siYoutube.hex}`
 };
 
 type SocialLogoProps = {

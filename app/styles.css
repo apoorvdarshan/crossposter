@@ -569,6 +569,26 @@ textarea {
   margin-top: 1px;
 }
 
+.media-storage-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--chip-bg);
+  color: var(--muted);
+  padding: 10px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.media-storage-notice svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--accent);
+}
+
 .compression-panel {
   display: grid;
   gap: 12px;

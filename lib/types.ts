@@ -5,7 +5,6 @@ export type Platform =
   | "linkedin"
   | "instagram"
   | "pinterest"
-  | "twitch"
   | "youtube";
 
 export type PublishPayload = {

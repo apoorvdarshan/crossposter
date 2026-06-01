@@ -10,6 +10,7 @@ import {
   ExternalLink,
   File as FileIcon,
   ImageIcon,
+  Info,
   Music2,
   Radio,
   Send,
@@ -69,7 +70,7 @@ const channels: Array<{
     note: "Meta approval required",
     uses: ["Post", "Media"],
     target: "Uses the active Instagram profile from Settings.",
-    media: "Local JPG images and MP4/MOV Reels are temporarily hosted through Supabase Storage."
+    media: "JPG images and MP4/MOV Reels are hosted through Supabase only when publishing."
   },
   {
     id: "pinterest",
@@ -86,14 +87,6 @@ const channels: Array<{
     uses: ["Title", "Post", "Media"],
     target: "Uses the active YouTube profile from Settings.",
     media: "Local video upload is supported."
-  },
-  {
-    id: "twitch",
-    label: "Twitch",
-    note: "Chat message, max 500 chars",
-    uses: ["Title", "Post"],
-    target: "Uses the active Twitch profile from Settings.",
-    media: "Local media is ignored for chat messages."
   }
 ];
 
@@ -121,12 +114,7 @@ const envLabels: Record<string, string> = {
   PINTEREST_BOARD_ID: "board",
   YOUTUBE_CLIENT_ID: "client ID",
   YOUTUBE_CLIENT_SECRET: "client secret",
-  YOUTUBE_REFRESH_TOKEN: "refresh token",
-  TWITCH_CLIENT_ID: "client ID",
-  TWITCH_CLIENT_SECRET: "client secret",
-  TWITCH_REFRESH_TOKEN: "refresh token",
-  TWITCH_BROADCASTER_ID: "broadcaster",
-  TWITCH_SENDER_ID: "sender"
+  YOUTUBE_REFRESH_TOKEN: "refresh token"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -1417,6 +1405,7 @@ export default function Home() {
   }
 
   const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
+  const showSupabasePublishNotice = selectedPlatforms.includes("instagram") && Boolean(mediaFile);
   const blueskyLength = postTextLength(text.trim());
   const showBlueskyLimit = selectedPlatforms.includes("bluesky");
   const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
@@ -1628,6 +1617,15 @@ export default function Home() {
               <span className="field-hint">
                 Paste an image from the clipboard, drag and drop a file, or choose one manually.
               </span>
+              {showSupabasePublishNotice ? (
+                <div className="media-storage-notice">
+                  <Info size={16} />
+                  <span>
+                    Supabase upload happens only after you click Publish. This draft file stays
+                    local while you choose, preview, and compress it.
+                  </span>
+                </div>
+              ) : null}
               {canCompressMedia ? (
                 <div className="compression-panel">
                   <div className="compression-heading">

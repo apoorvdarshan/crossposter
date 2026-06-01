@@ -14,7 +14,7 @@ type HostedMedia = {
 };
 
 const defaultBucket = "crossposter-media";
-const defaultPrefix = "instagram";
+const defaultPrefix = "temporary-media";
 const defaultSignedUrlSeconds = 20 * 60;
 
 function trimSlash(value: string): string {
@@ -25,8 +25,8 @@ function normalizeSupabaseUrl(value: string): string {
   const trimmed = trimSlash(value.trim());
   const parsed = new URL(trimmed);
 
-  if (parsed.protocol !== "https:") {
-    throw new Error("SUPABASE_URL must use https");
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("SUPABASE_URL must use http or https");
   }
 
   return parsed.toString().replace(/\/$/, "");

@@ -16,7 +16,6 @@ const platformSchema = z.enum([
   "linkedin",
   "instagram",
   "pinterest",
-  "twitch",
   "youtube"
 ]);
 const targetSchema = z.object({

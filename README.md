@@ -1,6 +1,6 @@
 # Crossposter
 
-Private Vercel-hosted publish-now dashboard for your own social accounts.
+Private publish-now dashboard for your own social accounts.
 
 This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis, Postgres, Temporal, and always-running workers. This project is the Vercel-safe version: no scheduling, no background workers, no database, just direct API posting when you click **Publish now**.
 
@@ -10,10 +10,9 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 - Mastodon: text and media
 - Dev.to: Markdown articles
 - LinkedIn: profile or page posts with optional images or MP4 video through an author URN
-- Instagram: image posts through a public image URL
-- Pinterest: pins through a public image URL
-- Twitch: chat messages to your channel
-- YouTube: video uploads from a public video URL
+- Instagram: JPG image posts and MP4/MOV Reels through temporary Supabase media URLs
+- Pinterest: local image pins
+- YouTube: local video uploads
 
 ## Run Locally
 
@@ -71,6 +70,17 @@ POSTER_REQUIRE_ADMIN_PASSWORD=true
 ```
 
 Then add provider tokens only for the channels you want to use.
+
+Supabase Storage is optional infrastructure for Instagram media publishing only.
+Media is still selected, previewed, and compressed locally in the browser first;
+Crossposter uploads to Supabase only after you click **Publish now**.
+
+## Deploy To Render Or Self-Hosted
+
+Render and a self-hosted Node server can run the same app. With persistent disk,
+non-Instagram uploaded media and local history can survive restarts. Instagram
+still uses the separate Supabase Media Storage settings because Meta must fetch
+image/Reel media from a public URL.
 
 ## Local Media Conversion
 
@@ -159,41 +169,35 @@ after publishing.
 ```text
 INSTAGRAM_ACCESS_TOKEN
 INSTAGRAM_USER_ID
+```
+
+Create the Supabase bucket first if you plan to publish Instagram media. A private
+bucket is fine; Crossposter uses a server-side service role key to upload, create
+signed URLs, and delete temporary objects. Supabase can be cloud-hosted or
+self-hosted.
+
+```text
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_STORAGE_BUCKET=crossposter-media
+SUPABASE_STORAGE_PREFIX=temporary-media
 SUPABASE_STORAGE_DELETE_AFTER_PUBLISH=true
 ```
 
-Create the Supabase bucket first. A private bucket is fine; Crossposter uses a
-server-side service role key to upload, create signed URLs, and delete temporary
-objects. Keep the service role key local and never expose it in browser code.
+Keep the service role key on the server only and never expose it in browser code.
 
 ### Pinterest
 
-Pinterest public pins require an approved app/access tier and a public image URL.
+Pinterest image pins use a local image file encoded directly into the create-pin request. Public Pinterest API access can still require the right app/access tier.
 
 ```text
 PINTEREST_ACCESS_TOKEN
 PINTEREST_BOARD_ID
 ```
 
-### Twitch
-
-Twitch does not have a normal feed-post API. This provider sends a message to your channel chat. The user token needs `user:write:chat`.
-
-```text
-TWITCH_CLIENT_ID
-TWITCH_CLIENT_SECRET
-TWITCH_REFRESH_TOKEN
-TWITCH_BROADCASTER_ID
-TWITCH_SENDER_ID
-TWITCH_CHANNEL_LOGIN
-```
-
 ### YouTube
 
-YouTube uploads need OAuth with the `https://www.googleapis.com/auth/youtube.upload` scope and a public video URL in the Media URL field. New or unaudited Google API projects may be forced to upload videos as private.
+YouTube uploads need OAuth with the `https://www.googleapis.com/auth/youtube.upload` scope and a local video file. New or unaudited Google API projects may be forced to upload videos as private.
 
 ```text
 YOUTUBE_CLIENT_ID

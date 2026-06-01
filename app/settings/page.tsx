@@ -86,8 +86,7 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "linkedin", label: "LinkedIn" },
   { id: "instagram", label: "Instagram" },
   { id: "pinterest", label: "Pinterest" },
-  { id: "youtube", label: "YouTube" },
-  { id: "twitch", label: "Twitch" }
+  { id: "youtube", label: "YouTube" }
 ];
 
 const setupGuides: Partial<Record<Platform, SetupGuide>> = {
@@ -200,9 +199,9 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Get a Meta token with instagram_basic, pages_show_list, and instagram_content_publish for your own connected account.",
       "Paste the token and Instagram professional account ID into this Instagram profile.",
       "Create a Supabase Storage bucket such as crossposter-media. A private bucket is fine.",
-      "Paste the Supabase project URL and service role key. The service role key stays in poster.config.local.json on this machine.",
+      "Paste the Supabase project URL and service role key in the Media Storage section. Supabase Cloud and self-hosted Supabase endpoints both work.",
       "Keep Delete hosted media after publish set to true unless you want to inspect uploaded files.",
-      "On the Dashboard, choose a local JPG image or MP4/MOV video. Crossposter uploads it to Supabase, publishes the image post or Reel, then deletes it.",
+      "On the Dashboard, choose a local JPG image or MP4/MOV video. Crossposter uploads it to Supabase only after Publish is clicked, publishes the image post or Reel, then deletes it.",
       "Use Compress / convert first when an image is not JPG, an image is over 8 MB, a video is not MP4/MOV, or a video is over 300 MB."
     ]
   }
@@ -425,8 +424,18 @@ export default function SettingsPage() {
     return () => window.clearTimeout(timer);
   }, [status, statusDismissMs]);
 
-  const baseFields = useMemo(
-    () => fields.filter((field) => !field.requiredFor?.length && !field.showFor?.length),
+  const mediaStorageFields = useMemo(
+    () => fields.filter((field) => field.name.startsWith("SUPABASE_")),
+    [fields]
+  );
+  const localFields = useMemo(
+    () =>
+      fields.filter(
+        (field) =>
+          !field.requiredFor?.length &&
+          !field.showFor?.length &&
+          !field.name.startsWith("SUPABASE_")
+      ),
     [fields]
   );
   const displayLocalUrl = useMemo(() => {
@@ -861,7 +870,50 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
-            {baseFields.map((field) => (
+            {localFields.map((field) => (
+              <label className="config-field" key={field.name}>
+                <span>{field.label}</span>
+                <span className="secret-input">
+                  <input
+                    type={field.secret && !isSecretVisible(`base:${field.name}`) ? "password" : "text"}
+                    value={values[field.name] || ""}
+                    onChange={(event) =>
+                      setValues((current) => ({ ...current, [field.name]: event.target.value }))
+                    }
+                    placeholder={field.name}
+                  />
+                  {field.secret ? (
+                    <button
+                      aria-label={
+                        isSecretVisible(`base:${field.name}`) ? "Hide secret" : "Show secret"
+                      }
+                      type="button"
+                      onClick={() => toggleSecret(`base:${field.name}`)}
+                    >
+                      {isSecretVisible(`base:${field.name}`) ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  ) : null}
+                </span>
+                <span className="field-hint">{field.help}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <section className="info-panel">
+          <div className="panel-heading compact">
+            <h2>
+              <HardDrive size={20} />
+              Media Storage
+            </h2>
+          </div>
+          <div className="config-panel">
+            <p className="hint">
+              Supabase can be cloud-hosted or self-hosted. Crossposter uploads media here only
+              during Publish for providers that need a fetchable media URL, after any compression
+              or conversion is done.
+            </p>
+            {mediaStorageFields.map((field) => (
               <label className="config-field" key={field.name}>
                 <span>{field.label}</span>
                 <span className="secret-input">

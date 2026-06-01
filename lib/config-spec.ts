@@ -117,50 +117,43 @@ export const configFields: ConfigField[] = [
   {
     name: "SUPABASE_URL",
     label: "Supabase project URL",
-    help: "Project URL used to temporarily host Instagram media, for example https://your-project.supabase.co.",
-    requiredFor: ["instagram"]
+    help: "Project URL used for temporary media hosting, for example https://your-project.supabase.co."
   },
   {
     name: "SUPABASE_SERVICE_ROLE_KEY",
     label: "Supabase service role key",
-    help: "Server-only key used locally to upload and delete temporary Instagram media.",
-    secret: true,
-    requiredFor: ["instagram"]
+    help: "Server-only key used locally to upload and delete temporary hosted media.",
+    secret: true
   },
   {
     name: "SUPABASE_STORAGE_BUCKET",
     label: "Supabase storage bucket",
     help: "Storage bucket for temporary hosted media. Private buckets use signed URLs.",
-    defaultValue: "crossposter-media",
-    requiredFor: ["instagram"]
+    defaultValue: "crossposter-media"
   },
   {
     name: "SUPABASE_STORAGE_PREFIX",
     label: "Supabase storage prefix",
-    help: "Folder prefix inside the bucket for temporary Instagram media.",
-    defaultValue: "instagram",
-    showFor: ["instagram"]
+    help: "Folder prefix inside the bucket for temporary hosted media.",
+    defaultValue: "temporary-media"
   },
   {
     name: "SUPABASE_STORAGE_PUBLIC_BUCKET",
     label: "Supabase bucket is public",
     help: "Set true only if this bucket is public. Keep false to use signed temporary URLs.",
-    defaultValue: "false",
-    showFor: ["instagram"]
+    defaultValue: "false"
   },
   {
     name: "SUPABASE_STORAGE_SIGNED_URL_SECONDS",
     label: "Supabase signed URL seconds",
-    help: "How long private-bucket media URLs stay fetchable for Instagram.",
-    defaultValue: "1200",
-    showFor: ["instagram"]
+    help: "How long private-bucket media URLs stay fetchable for platforms that need them.",
+    defaultValue: "1200"
   },
   {
     name: "SUPABASE_STORAGE_DELETE_AFTER_PUBLISH",
     label: "Delete hosted media after publish",
-    help: "Keep true to remove temporary Supabase media after Instagram publishing finishes.",
-    defaultValue: "true",
-    showFor: ["instagram"]
+    help: "Keep true to remove temporary Supabase media after publishing finishes.",
+    defaultValue: "true"
   },
   {
     name: "PINTEREST_ACCESS_TOKEN",
@@ -195,39 +188,6 @@ export const configFields: ConfigField[] = [
     help: "Refresh token with youtube.upload scope.",
     secret: true,
     requiredFor: ["youtube"]
-  },
-  {
-    name: "TWITCH_CLIENT_ID",
-    label: "Twitch client ID",
-    help: "Twitch app client ID.",
-    secret: true,
-    requiredFor: ["twitch"]
-  },
-  {
-    name: "TWITCH_CLIENT_SECRET",
-    label: "Twitch client secret",
-    help: "Twitch app client secret.",
-    secret: true,
-    requiredFor: ["twitch"]
-  },
-  {
-    name: "TWITCH_REFRESH_TOKEN",
-    label: "Twitch refresh token",
-    help: "Refresh token with user:write:chat.",
-    secret: true,
-    requiredFor: ["twitch"]
-  },
-  {
-    name: "TWITCH_BROADCASTER_ID",
-    label: "Twitch broadcaster",
-    help: "Channel broadcaster user ID.",
-    requiredFor: ["twitch"]
-  },
-  {
-    name: "TWITCH_SENDER_ID",
-    label: "Twitch sender",
-    help: "User ID that sends the chat message.",
-    requiredFor: ["twitch"]
   }
 ];
 
@@ -246,7 +206,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     linkedin: [],
     instagram: [],
     pinterest: [],
-    youtube: [],
-    twitch: []
+    youtube: []
   } as Record<Platform, string[]>
 );
