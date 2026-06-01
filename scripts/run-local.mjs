@@ -82,7 +82,7 @@ const child = spawn(command, ["dev", "--port", port], {
   shell: process.platform === "win32"
 });
 
-console.log(`Personal Crossposter local URL: http://localhost:${port}`);
+console.log(`Crossposter local URL: http://localhost:${port}`);
 
 child.on("exit", (code, signal) => {
   if (signal) {

@@ -1,4 +1,4 @@
-# Personal Crossposter
+# Crossposter
 
 Private Vercel-hosted publish-now dashboard for your own social accounts.
 

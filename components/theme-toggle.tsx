@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 
 type ThemeMode = "system" | "light" | "dark";
 
-const themeStorageKey = "personal-crossposter:theme";
+const legacyStoragePrefix = ["personal", "crossposter"].join("-");
+const themeStorageKey = "crossposter:theme";
+const legacyThemeStorageKey = `${legacyStoragePrefix}:theme`;
 const modes: Array<{
   id: ThemeMode;
   label: string;
@@ -27,7 +29,13 @@ function applyTheme(mode: ThemeMode) {
 
 function readSavedTheme(): ThemeMode {
   try {
-    const saved = window.localStorage.getItem(themeStorageKey);
+    const saved =
+      window.localStorage.getItem(themeStorageKey) ||
+      window.localStorage.getItem(legacyThemeStorageKey);
+
+    if (saved && !window.localStorage.getItem(themeStorageKey)) {
+      window.localStorage.setItem(themeStorageKey, saved);
+    }
 
     return saved === "light" || saved === "dark" || saved === "system" ? saved : "system";
   } catch {
@@ -51,6 +59,7 @@ export function ThemeToggle() {
 
     try {
       window.localStorage.setItem(themeStorageKey, nextMode);
+      window.localStorage.removeItem(legacyThemeStorageKey);
     } catch {}
   }
 

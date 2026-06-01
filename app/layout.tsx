@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./styles.css";
 
 export const metadata: Metadata = {
-  title: "Personal Crossposter",
+  title: "Crossposter",
   description: "Private publish-now dashboard for your own social accounts."
 };
 
@@ -14,7 +14,11 @@ export default function RootLayout({
   const themeScript = `
     (function() {
       try {
-        var mode = window.localStorage.getItem('personal-crossposter:theme') || 'system';
+        var legacyMode = window.localStorage.getItem('personal-' + 'crossposter:theme');
+        var mode = window.localStorage.getItem('crossposter:theme') || legacyMode || 'system';
+        if (legacyMode && !window.localStorage.getItem('crossposter:theme')) {
+          window.localStorage.setItem('crossposter:theme', legacyMode);
+        }
         if (mode === 'light' || mode === 'dark') {
           document.documentElement.dataset.theme = mode;
         } else {

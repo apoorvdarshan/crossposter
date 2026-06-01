@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-LABEL="com.apoorvdarshan.personal-crossposter"
+LABEL="com.apoorvdarshan.crossposter"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PLIST_PATH="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG_DIR="$HOME/Library/Logs"
@@ -53,9 +53,9 @@ cat > "$PLIST_PATH" <<PLIST
   <key>WorkingDirectory</key>
   <string>$REPO_DIR</string>
   <key>StandardOutPath</key>
-  <string>$LOG_DIR/personal-crossposter.out.log</string>
+  <string>$LOG_DIR/crossposter.out.log</string>
   <key>StandardErrorPath</key>
-  <string>$LOG_DIR/personal-crossposter.err.log</string>
+  <string>$LOG_DIR/crossposter.err.log</string>
 </dict>
 </plist>
 PLIST
@@ -66,5 +66,5 @@ launchctl bootstrap "gui/$(id -u)" "$PLIST_PATH"
 launchctl enable "gui/$(id -u)/$LABEL"
 launchctl kickstart -k "gui/$(id -u)/$LABEL"
 
-echo "Personal Crossposter will start after login and stay running at http://localhost:$PORT_VALUE"
+echo "Crossposter will start after login and stay running at http://localhost:$PORT_VALUE"
 echo "Config file: $REPO_DIR/poster.config.local.json"

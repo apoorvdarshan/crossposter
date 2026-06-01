@@ -187,8 +187,11 @@ type ApiFieldError = {
   fieldErrors?: Record<string, string[]>;
 };
 
-const draftStorageKey = "personal-crossposter:compose-draft:v1";
-const draftDbName = "personal-crossposter-drafts";
+const legacyStoragePrefix = ["personal", "crossposter"].join("-");
+const draftStorageKey = "crossposter:compose-draft:v1";
+const legacyDraftStorageKey = `${legacyStoragePrefix}:compose-draft:v1`;
+const draftDbName = "crossposter-drafts";
+const legacyDraftDbName = `${legacyStoragePrefix}-drafts`;
 const draftDbVersion = 1;
 const draftStoreName = "media";
 const draftMediaKey = "compose-media";
@@ -265,10 +268,16 @@ function publishTargetFromCard(target: ChannelTarget): PublishTarget {
 
 function readStoredDraft(): SavedDraft | null {
   try {
-    const stored = window.localStorage.getItem(draftStorageKey);
+    const stored =
+      window.localStorage.getItem(draftStorageKey) ||
+      window.localStorage.getItem(legacyDraftStorageKey);
 
     if (!stored) {
       return null;
+    }
+
+    if (!window.localStorage.getItem(draftStorageKey)) {
+      window.localStorage.setItem(draftStorageKey, stored);
     }
 
     const parsed = JSON.parse(stored) as SavedDraft;
@@ -289,6 +298,7 @@ function readStoredDraft(): SavedDraft | null {
 function writeStoredDraft(draft: ComposeDraft) {
   try {
     window.localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+    window.localStorage.removeItem(legacyDraftStorageKey);
   } catch {}
 }
 
@@ -322,9 +332,9 @@ function newestDraft(
     : normalizeDraft(configDraft);
 }
 
-function openDraftDb(): Promise<IDBDatabase> {
+function openDraftDb(dbName = draftDbName): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = window.indexedDB.open(draftDbName, draftDbVersion);
+    const request = window.indexedDB.open(dbName, draftDbVersion);
 
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(draftStoreName)) {
@@ -339,9 +349,10 @@ function openDraftDb(): Promise<IDBDatabase> {
 
 async function withDraftStore<T>(
   mode: IDBTransactionMode,
-  run: (store: IDBObjectStore) => IDBRequest<T>
+  run: (store: IDBObjectStore) => IDBRequest<T>,
+  dbName = draftDbName
 ): Promise<T> {
-  const db = await openDraftDb();
+  const db = await openDraftDb(dbName);
 
   try {
     return await new Promise<T>((resolve, reject) => {
@@ -363,9 +374,13 @@ async function readStoredDraftMedia(): Promise<File | null> {
     return null;
   }
 
-  const stored = (await withDraftStore("readonly", (store) =>
-    store.get(draftMediaKey)
-  )) as StoredDraftMedia | undefined;
+  const stored =
+    ((await withDraftStore("readonly", (store) =>
+      store.get(draftMediaKey)
+    )) as StoredDraftMedia | undefined) ||
+    ((await withDraftStore("readonly", (store) => store.get(draftMediaKey), legacyDraftDbName)) as
+      | StoredDraftMedia
+      | undefined);
 
   if (!stored?.blob) {
     return null;
@@ -384,6 +399,7 @@ async function saveStoredDraftMedia(file: File | null): Promise<void> {
 
   if (!file) {
     await withDraftStore("readwrite", (store) => store.delete(draftMediaKey));
+    await withDraftStore("readwrite", (store) => store.delete(draftMediaKey), legacyDraftDbName);
     return;
   }
 
@@ -396,6 +412,7 @@ async function saveStoredDraftMedia(file: File | null): Promise<void> {
       lastModified: file.lastModified
     } satisfies StoredDraftMedia)
   );
+  await withDraftStore("readwrite", (store) => store.delete(draftMediaKey), legacyDraftDbName);
 }
 
 function formatApiError(error: unknown): string {
@@ -1256,7 +1273,7 @@ export default function Home() {
           <div className="mark">PX</div>
           <div>
             <p className="eyebrow">Private console</p>
-            <h1>Personal Crossposter</h1>
+            <h1>Crossposter</h1>
           </div>
         </div>
         <div className="masthead-actions">

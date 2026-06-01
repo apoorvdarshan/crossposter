@@ -61,7 +61,7 @@ export async function publishYouTube(ctx: ProviderContext): Promise<PublishResul
   }
 
   const accessToken = await getYouTubeAccessToken(profileId);
-  const boundary = `personal-crossposter-${randomUUID()}`;
+  const boundary = `crossposter-${randomUUID()}`;
   const tags = optionalEnv("YOUTUBE_TAGS", profileId)
     ?.split(",")
     .map((tag) => tag.trim())
