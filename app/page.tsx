@@ -1863,26 +1863,24 @@ export default function Home() {
               ) : null}
             </div>
 
-            {showHackerNewsLink ? (
-              <div className="field">
-                <label className="field-label" htmlFor="linkUrl">
-                  Link
-                </label>
-                <input
-                  id="linkUrl"
-                  inputMode="url"
-                  value={linkUrl}
-                  onChange={(event) => {
-                    setHasSavedDraft(true);
-                    setLinkUrl(event.target.value);
-                  }}
-                  placeholder="https://example.com"
-                />
-                <span className="field-hint">
-                  Hacker News uses this as the URL field. Leave empty for a text post.
-                </span>
-              </div>
-            ) : null}
+            <div className="field">
+              <label className="field-label" htmlFor="linkUrl">
+                Link
+              </label>
+              <input
+                id="linkUrl"
+                inputMode="url"
+                value={linkUrl}
+                onChange={(event) => {
+                  setHasSavedDraft(true);
+                  setLinkUrl(event.target.value);
+                }}
+                placeholder="https://example.com"
+              />
+              <span className="field-hint">
+                Optional. Hacker News uses this as the submitted URL.
+              </span>
+            </div>
 
             <div className="field">
               <label className="field-label" htmlFor="text">
