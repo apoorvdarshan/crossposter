@@ -46,7 +46,7 @@ the current app.
 ## Features
 
 - Dashboard composer for title, body text, channel selection, and media upload
-- Local scheduler page for queued posts, rescheduling, cancellation, and results
+- Inline Schedule draft control for local timed posting
 - Per-platform profile configuration from the UI
 - Local config saved to `poster.config.local.json`
 - Local publish history
@@ -57,18 +57,10 @@ the current app.
 - Light/dark/system theme controls
 - macOS auto-start service for `http://localhost:2004`
 
-## Scheduler
+## Scheduled Posting
 
-Use **Schedule draft** from the Dashboard to save a post for a specific local
-date/time. Scheduled posts are stored in `poster.config.local.json` and can be
-managed from:
-
-```text
-http://localhost:2004/scheduled
-```
-
-You can reschedule or cancel queued posts before they begin publishing. Failed
-scheduled posts can also be rescheduled.
+Use **Schedule draft** next to **Publish now** on the Dashboard. It opens the
+local date/time picker, then saves the post to `poster.config.local.json`.
 
 The scheduler is local/self-hosted. The Crossposter server must be running at
 the scheduled time:

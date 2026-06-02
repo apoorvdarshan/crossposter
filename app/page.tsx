@@ -734,6 +734,36 @@ function datetimeLocalToIso(value: string): string {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
+function datetimeDatePart(value: string): string {
+  return value.split("T")[0] || "";
+}
+
+function datetimeTimePart(value: string): string {
+  return value.split("T")[1] || "";
+}
+
+function mergeDateTimeParts(current: string, part: "date" | "time", value: string): string {
+  const date = part === "date" ? value : datetimeDatePart(current) || datetimeDatePart(datetimeLocalValue());
+  const time = part === "time" ? value : datetimeTimePart(current) || datetimeTimePart(datetimeLocalValue());
+
+  return `${date}T${time}`;
+}
+
+function tomorrowMorning(): Date {
+  const date = new Date();
+
+  date.setDate(date.getDate() + 1);
+  date.setHours(9, 0, 0, 0);
+
+  return date;
+}
+
+function futureScheduleValue(value: string): string {
+  const iso = datetimeLocalToIso(value);
+
+  return iso && Date.parse(iso) >= Date.now() - 60_000 ? value : datetimeLocalValue();
+}
+
 function ProgressBox({
   progress,
   className = ""
@@ -781,6 +811,7 @@ export default function Home() {
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [configHydrated, setConfigHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [showSchedulePanel, setShowSchedulePanel] = useState(false);
   const [scheduledForInput, setScheduledForInput] = useState(() => datetimeLocalValue());
   const [configProfiles, setConfigProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
 
@@ -1396,6 +1427,7 @@ export default function Home() {
       setProgress({ label: "Scheduled", value: 100 });
       setScheduleStatus(`Scheduled for ${formatDateTime(body.scheduledPost?.scheduledFor || scheduledFor)}.`);
       setScheduledForInput(datetimeLocalValue());
+      setShowSchedulePanel(false);
     } catch (scheduleError) {
       setError(scheduleError instanceof Error ? scheduleError.message : "Scheduling failed");
     } finally {
@@ -1409,6 +1441,15 @@ export default function Home() {
   const showBlueskyLimit = selectedPlatforms.includes("bluesky");
   const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
   const canPublish =
+    text.trim() &&
+    selectedTargets.length > 0 &&
+    preflightIssues.length === 0 &&
+    !blueskyTooLong &&
+    !isPublishing &&
+    !isScheduling &&
+    !isUploadingMedia &&
+    !isCompressingMedia;
+  const canOpenSchedule =
     text.trim() &&
     selectedTargets.length > 0 &&
     preflightIssues.length === 0 &&
@@ -1481,9 +1522,6 @@ export default function Home() {
             <span className="top-tab is-active" aria-current="page">
               Dashboard
             </span>
-            <Link className="top-tab" href="/scheduled">
-              Scheduler
-            </Link>
             <Link className="top-tab" href="/settings">
               Settings
             </Link>
@@ -1825,40 +1863,6 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="schedule-strip">
-              <label>
-                <span>Schedule for</span>
-                <input
-                  min={datetimeLocalValue(new Date())}
-                  onChange={(event) => {
-                    setScheduledForInput(event.target.value);
-                    setScheduleStatus("");
-                  }}
-                  type="datetime-local"
-                  value={scheduledForInput}
-                />
-              </label>
-              <button
-                className="secondary compact-button"
-                disabled={!canSchedule}
-                onClick={() => void scheduleDraft("bottom")}
-                type="button"
-              >
-                <CalendarClock size={17} />
-                {isScheduling ? "Scheduling..." : "Schedule draft"}
-              </button>
-              <Link className="secondary compact-button" href="/scheduled">
-                <Clock3 size={17} />
-                Scheduler
-              </Link>
-            </div>
-            {scheduleStatus ? (
-              <p className="schedule-status" role="status">
-                <CheckCircle2 size={16} />
-                {scheduleStatus}
-              </p>
-            ) : null}
-
             <div className="actions">
               <button className="primary" disabled={!canPublish} onClick={() => void publish("bottom")}>
                 <Send size={18} />
@@ -1872,12 +1876,90 @@ export default function Home() {
               </button>
               <button
                 className="secondary"
+                disabled={!canOpenSchedule}
+                onClick={() => {
+                  setScheduledForInput((current) => futureScheduleValue(current));
+                  setShowSchedulePanel((current) => !current);
+                  setScheduleStatus("");
+                }}
+                type="button"
+              >
+                <CalendarClock size={18} />
+                Schedule draft
+              </button>
+              <button
+                className="secondary"
                 type="button"
                 onClick={() => void clearDraft()}
               >
                 Clear draft
               </button>
             </div>
+            {showSchedulePanel ? (
+              <div className="schedule-drawer">
+                <div className="schedule-drawer-head">
+                  <div>
+                    <strong>Schedule draft</strong>
+                    <span>{scheduledForIso ? formatDateTime(scheduledForIso) : "Choose a date and time"}</span>
+                  </div>
+                  <div className="schedule-presets" aria-label="Schedule presets">
+                    <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 30 * 60 * 1000)))}>
+                      30 min
+                    </button>
+                    <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 2 * 60 * 60 * 1000)))}>
+                      2 hours
+                    </button>
+                    <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(tomorrowMorning()))}>
+                      Tomorrow 9 AM
+                    </button>
+                  </div>
+                </div>
+                <div className="schedule-picker">
+                  <label>
+                    <span>Date</span>
+                    <input
+                      min={datetimeDatePart(datetimeLocalValue(new Date()))}
+                      onChange={(event) => {
+                        setScheduledForInput((current) =>
+                          mergeDateTimeParts(current, "date", event.target.value)
+                        );
+                        setScheduleStatus("");
+                      }}
+                      type="date"
+                      value={datetimeDatePart(scheduledForInput)}
+                    />
+                  </label>
+                  <label>
+                    <span>Time</span>
+                    <input
+                      onChange={(event) => {
+                        setScheduledForInput((current) =>
+                          mergeDateTimeParts(current, "time", event.target.value)
+                        );
+                        setScheduleStatus("");
+                      }}
+                      type="time"
+                      value={datetimeTimePart(scheduledForInput)}
+                    />
+                  </label>
+                  <button
+                    className="primary compact-button"
+                    disabled={!canSchedule}
+                    onClick={() => void scheduleDraft("bottom")}
+                    type="button"
+                  >
+                    <CalendarClock size={17} />
+                    {isScheduling ? "Scheduling..." : "Confirm schedule"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {scheduleStatus ? (
+              <p className="schedule-status" role="status">
+                <CheckCircle2 size={16} />
+                {scheduleStatus}
+              </p>
+            ) : null}
             {bottomActionProgress ? <ProgressBox progress={bottomActionProgress} /> : null}
           </div>
         </section>
