@@ -34,7 +34,6 @@ const platforms: Platform[] = [
   "mastodon",
   "devto",
   "linkedin",
-  "instagram",
   "pinterest",
   "youtube"
 ];

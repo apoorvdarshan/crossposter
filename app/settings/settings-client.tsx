@@ -43,17 +43,6 @@ type StorageResponse = {
     files: number;
     bytes: number;
   };
-  supabase: {
-    configured: boolean;
-    bucket: string;
-    prefix: string;
-    files: number;
-    bytes: number;
-    publicBucket: boolean;
-    deleteAfterPublish: boolean;
-    signedUrlSeconds: number;
-    error?: string;
-  };
   config: {
     draftBytes: number;
     publishedPostsBytes: number;
@@ -96,7 +85,6 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
   { id: "linkedin", label: "LinkedIn" },
-  { id: "instagram", label: "Instagram" },
   { id: "pinterest", label: "Pinterest" },
   { id: "youtube", label: "YouTube" }
 ];
@@ -106,25 +94,6 @@ const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = 
   { id: "storage", label: "Storage", href: "/settings/storage" },
   { id: "socials", label: "Socials", href: "/settings/socials" }
 ];
-
-const supabaseSetupGuide: SetupGuide = {
-  title: "Supabase Storage setup",
-  intro:
-    "Use Supabase only for temporary Instagram media hosting. Crossposter uploads after Publish, gives Meta a fetchable URL, then deletes the object when cleanup is enabled.",
-  links: [
-    { label: "Supabase dashboard", href: "https://supabase.com/dashboard" },
-    { label: "Storage docs", href: "https://supabase.com/docs/guides/storage" }
-  ],
-  steps: [
-    "Create a Supabase project in the region closest to where this app runs, or use your own self-hosted Supabase endpoint.",
-    "Create a private Storage bucket named crossposter-media.",
-    "Copy the project URL and service role key. Do not use the anon or publishable key here.",
-    "Set bucket to crossposter-media and prefix to temporary-media, then save config.",
-    "Keep public bucket false so Crossposter uses signed URLs for private media.",
-    "Keep delete after publish true unless you want to inspect uploaded files.",
-    "Use Clear Supabase media to remove leftover objects under the configured bucket and prefix."
-  ]
-};
 
 const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   bluesky: {
@@ -213,42 +182,6 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "For Page posting, use scopes openid profile w_member_social w_organization_social, then click Connect LinkedIn as a Page admin or content admin.",
       "After approval, Crossposter fills the access token and a personal author URN automatically.",
       "For Page posting, replace LinkedIn author URN with urn:li:organization:YOUR_PAGE_ORG_ID and save config."
-    ]
-  },
-  instagram: {
-    title: "Instagram OAuth setup",
-    intro:
-      "Use Instagram Login for your own Business or Creator accounts. No Facebook Page is needed for this path. Crossposter saves the token locally, then uses Supabase only for temporary media URLs during Publish.",
-    links: [
-      {
-        label: "Instagram Login setup",
-        href: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login"
-      },
-      {
-        label: "Instagram publishing",
-        href: "https://developers.facebook.com/docs/instagram-platform/content-publishing"
-      },
-      { label: "Supabase Storage", href: "https://supabase.com/docs/guides/storage" }
-    ],
-    steps: [
-      "Switch the Instagram account to Business or Creator. Personal accounts cannot publish through the API.",
-      "Open your Meta app, then open the Instagram API setup screen. Use the Instagram app ID and Instagram app secret shown there, not the general Meta app ID.",
-      "In Permissions and features, make sure instagram_business_basic and instagram_business_content_publish are available. If Meta requires comments or messages for the selected use case, add them too; Crossposter does not use them for posting.",
-      "In App roles, open Instagram Testers and add every Instagram handle you want Crossposter to use, for example fudai.app, verceltics, scowld_, and quitall_com.",
-      "Log into each Instagram account and accept the tester invite from Apps and Websites / manage access. Pending testers cannot authorize the app.",
-      "In Generate access tokens, click Add account and add the Instagram account you want to post to. In development mode, every Instagram account you connect must be added as an Instagram Tester or added here first.",
-      "If Instagram shows Insufficient Developer Role, you are logged into an Instagram account that has not accepted the Instagram Tester invite yet. Accept the invite, then retry while logged into the same Instagram account.",
-      "Skip Configure webhooks. Crossposter does not need webhooks for publishing posts or Reels.",
-      "In Set up Instagram business login, add http://localhost:2004/api/auth/instagram/callback as the OAuth redirect URI. Use your configured localhost port if you changed it.",
-      "Paste the Instagram app ID and Instagram app secret into this Instagram profile, then save config.",
-      "Keep scopes as instagram_business_basic instagram_business_content_publish unless Meta tells you to add another Instagram business scope.",
-      "Click Connect Instagram and authorize the matching Instagram account. Crossposter saves the token, user ID, and token expiry locally.",
-      "Repeat Add account and Connect Instagram for each Instagram account you want as a separate Crossposter profile.",
-      "Create a Supabase Storage bucket such as crossposter-media. A private bucket is fine.",
-      "Paste the Supabase project URL and service role key in the Media Storage section. Supabase Cloud and self-hosted Supabase endpoints both work.",
-      "Keep Delete hosted media after publish set to true unless you want to inspect uploaded files.",
-      "On the Dashboard, choose a local JPG image or MP4/MOV video. Crossposter uploads it to Supabase only after Publish is clicked, publishes the image post or Reel, then deletes it.",
-      "Use Compress / convert first when an image is not JPG, an image is over 8 MB, a video is not MP4/MOV, or a video is over 300 MB."
     ]
   }
 };
@@ -399,12 +332,9 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [browserStorage, setBrowserStorage] =
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
-  const [confirmClearSupabaseStorage, setConfirmClearSupabaseStorage] = useState(false);
-  const [isSupabaseGuideOpen, setIsSupabaseGuideOpen] = useState(false);
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
-  const [isClearingSupabaseStorage, setIsClearingSupabaseStorage] = useState(false);
   const [settingsView, setSettingsView] = useState<SettingsView>(initialView);
 
   useEffect(() => {
@@ -431,7 +361,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     const params = new URLSearchParams(window.location.search);
     const section = params.get("section");
     const linkedinMessage = params.get("linkedin");
-    const instagramMessage = params.get("instagram");
 
     if (section === "settings" || section === "storage" || section === "socials") {
       setSettingsView(section);
@@ -445,18 +374,9 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
       failed: "LinkedIn authorization failed.",
       bad_state: "LinkedIn authorization expired. Try Connect LinkedIn again."
     };
-    const instagramLabels: Record<string, string> = {
-      connected: "Instagram connected and saved locally.",
-      token_only: "Instagram token saved. Add the Instagram user ID manually if it was not filled.",
-      denied: "Instagram authorization was cancelled.",
-      failed: "Instagram authorization failed.",
-      bad_state: "Instagram authorization expired. Try Connect Instagram again."
-    };
 
     if (linkedinMessage) {
       setStatus(labels[linkedinMessage] || "LinkedIn authorization finished.");
-    } else if (instagramMessage) {
-      setStatus(instagramLabels[instagramMessage] || "Instagram authorization finished.");
     }
 
     if (section === "settings" || section === "storage" || section === "socials") {
@@ -465,7 +385,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
         "",
         settingsViews.find((view) => view.id === section)?.href || window.location.pathname
       );
-    } else if (linkedinMessage || instagramMessage) {
+    } else if (linkedinMessage) {
       window.history.replaceState(null, "", window.location.pathname);
     }
   }, []);
@@ -501,17 +421,12 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     return () => window.clearTimeout(timer);
   }, [status, statusDismissMs]);
 
-  const mediaStorageFields = useMemo(
-    () => fields.filter((field) => field.name.startsWith("SUPABASE_")),
-    [fields]
-  );
   const localFields = useMemo(
     () =>
       fields.filter(
         (field) =>
           !field.requiredFor?.length &&
-          !field.showFor?.length &&
-          !field.name.startsWith("SUPABASE_")
+          !field.showFor?.length
       ),
     [fields]
   );
@@ -760,41 +675,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
-  async function connectInstagram(profile: ProviderProfile) {
-    const clientId = profile.values.INSTAGRAM_CLIENT_ID?.trim();
-    const clientSecret = profile.values.INSTAGRAM_CLIENT_SECRET?.trim();
-
-    if (!clientId || !clientSecret) {
-      setStatus("Add Instagram app ID and app secret first.");
-      return;
-    }
-
-    setStatus("");
-    setIsSaving(true);
-
-    try {
-      const response = await fetch("/api/config", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ values, profiles, activeProfiles })
-      });
-      const body = (await response.json()) as ConfigResponse & { error?: string };
-
-      if (!response.ok) {
-        setStatus(body.error || "Could not save config before connecting Instagram.");
-        return;
-      }
-
-      const startUrl = new URL("/api/auth/instagram/start", window.location.origin);
-      startUrl.searchParams.set("profileId", profile.id);
-      window.location.assign(startUrl.toString());
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not connect Instagram.");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   async function openConfigFile() {
     setStatus("");
 
@@ -894,36 +774,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
-  async function clearSupabaseStorage() {
-    if (!confirmClearSupabaseStorage) {
-      setConfirmClearSupabaseStorage(true);
-      setStatus("Confirm Supabase media clear first.");
-      return;
-    }
-
-    setIsClearingSupabaseStorage(true);
-    setStatus("");
-
-    try {
-      const response = await fetch("/api/storage?target=supabase", { method: "DELETE" });
-      const body = (await response.json()) as StorageResponse & { error?: string };
-
-      setStorage(body);
-
-      if (!response.ok) {
-        setStatus(body.error || "Could not clear Supabase media.");
-        return;
-      }
-
-      setConfirmClearSupabaseStorage(false);
-      setStatus("Supabase temporary media cleared.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not clear Supabase media.");
-    } finally {
-      setIsClearingSupabaseStorage(false);
-    }
-  }
-
   function renderSocialPanel(platform: (typeof platforms)[number]) {
     const providerFields = fieldsFor(platform.id);
     const providerProfiles = profiles[platform.id] || [];
@@ -1015,16 +865,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                     >
                       <RefreshCw size={15} />
                       Connect LinkedIn
-                    </button>
-                  ) : null}
-                  {platform.id === "instagram" ? (
-                    <button
-                      className="secondary compact-button"
-                      type="button"
-                      onClick={() => void connectInstagram(profile)}
-                    >
-                      <RefreshCw size={15} />
-                      Connect Instagram
                     </button>
                   ) : null}
                   <button
@@ -1258,149 +1098,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
         ) : null}
 
         {settingsView === "storage" ? (
-        <>
-        <section className="info-panel">
-          <div className="panel-heading compact">
-            <h2>
-              <HardDrive size={20} />
-              Supabase Storage
-            </h2>
-            <div className="panel-actions">
-              <button
-                aria-expanded={isSupabaseGuideOpen}
-                aria-label="Supabase setup guide"
-                className="secondary compact-button icon-button"
-                type="button"
-                onClick={() => setIsSupabaseGuideOpen((current) => !current)}
-              >
-                <Info size={17} />
-              </button>
-              <button className="secondary compact-button" type="button" onClick={() => void loadStorage()}>
-                Refresh
-              </button>
-            </div>
-          </div>
-          <div className="config-panel">
-            <p className="hint">
-              Supabase can be cloud-hosted or self-hosted. Crossposter uses this only for
-              Instagram media during Publish, after local preview, compression, or conversion.
-              Save config before refreshing or clearing Supabase media.
-            </p>
-            {isSupabaseGuideOpen ? (
-              <section className="setup-guide">
-                <div>
-                  <strong>{supabaseSetupGuide.title}</strong>
-                  <p>{supabaseSetupGuide.intro}</p>
-                </div>
-                <div className="setup-links">
-                  {supabaseSetupGuide.links.map((link) => (
-                    <a href={link.href} key={link.href} target="_blank" rel="noreferrer">
-                      {link.label}
-                      <ExternalLink size={14} />
-                    </a>
-                  ))}
-                </div>
-                <ol>
-                  {supabaseSetupGuide.steps.map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-              </section>
-            ) : null}
-            {mediaStorageFields.map((field) => (
-              <label className="config-field" key={field.name}>
-                <span>{field.label}</span>
-                <span className="secret-input">
-                  <input
-                    type={field.secret && !isSecretVisible(`base:${field.name}`) ? "password" : "text"}
-                    value={values[field.name] || ""}
-                    onChange={(event) =>
-                      setValues((current) => ({ ...current, [field.name]: event.target.value }))
-                    }
-                    placeholder={field.name}
-                  />
-                  {field.secret ? (
-                    <button
-                      aria-label={
-                        isSecretVisible(`base:${field.name}`) ? "Hide secret" : "Show secret"
-                      }
-                      type="button"
-                      onClick={() => toggleSecret(`base:${field.name}`)}
-                    >
-                      {isSecretVisible(`base:${field.name}`) ? <EyeOff size={17} /> : <Eye size={17} />}
-                    </button>
-                  ) : null}
-                </span>
-                <span className="field-hint">{field.help}</span>
-              </label>
-            ))}
-            <div className="storage-total">
-              <span>Supabase temporary media</span>
-              <strong>{formatBytes(storage?.supabase.bytes || 0)}</strong>
-            </div>
-            <div className="storage-breakdown">
-              <div>
-                <span>Bucket</span>
-                <strong>{storage?.supabase.bucket || values.SUPABASE_STORAGE_BUCKET || "Not set"}</strong>
-                <small>{storage?.supabase.configured ? "Connected" : "Save URL and service role key"}</small>
-              </div>
-              <div>
-                <span>Prefix</span>
-                <strong>{storage?.supabase.prefix || values.SUPABASE_STORAGE_PREFIX || "temporary-media"}</strong>
-                <small>Only this folder is cleared</small>
-              </div>
-              <div>
-                <span>Remote objects</span>
-                <strong>{storage?.supabase.files || 0}</strong>
-                <small>Temporary publish files</small>
-              </div>
-              <div>
-                <span>Cleanup mode</span>
-                <strong>{storage?.supabase.deleteAfterPublish === false ? "Manual" : "Auto"}</strong>
-                <small>
-                  {storage?.supabase.deleteAfterPublish === false
-                    ? "Kept after publish"
-                    : "Deleted after publish"}
-                </small>
-              </div>
-            </div>
-            {storage?.supabase.error ? (
-              <div className="storage-warning">
-                <AlertTriangle size={18} />
-                <span>{storage.supabase.error}</span>
-              </div>
-            ) : null}
-            {confirmClearSupabaseStorage ? (
-              <div className="storage-warning">
-                <AlertTriangle size={18} />
-                <span>
-                  This will delete Supabase objects under {storage?.supabase.bucket || "the bucket"}/
-                  {storage?.supabase.prefix || "temporary-media"}. Local config stays untouched.
-                </span>
-              </div>
-            ) : null}
-            <button
-              className={
-                confirmClearSupabaseStorage ? "danger-button compact-button" : "secondary compact-button"
-              }
-              type="button"
-              onClick={() => void clearSupabaseStorage()}
-              disabled={
-                isClearingSupabaseStorage ||
-                !storage?.supabase.configured ||
-                Boolean(storage?.supabase.error)
-              }
-            >
-              <Trash2 size={16} />
-              {isClearingSupabaseStorage
-                ? "Clearing..."
-                : confirmClearSupabaseStorage
-                  ? "Confirm clear Supabase media"
-                  : "Clear Supabase media"}
-            </button>
-          </div>
-        </section>
-
         <section className="info-panel">
           <div className="panel-heading compact">
             <h2>
@@ -1483,7 +1180,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
             </button>
           </div>
         </section>
-        </>
         ) : null}
 
         {settingsView === "socials" ? (

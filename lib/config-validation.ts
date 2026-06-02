@@ -15,10 +15,6 @@ const tokenFields = new Set([
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
   "LINKEDIN_ACCESS_TOKEN",
-  "INSTAGRAM_CLIENT_ID",
-  "INSTAGRAM_CLIENT_SECRET",
-  "INSTAGRAM_ACCESS_TOKEN",
-  "SUPABASE_SERVICE_ROLE_KEY",
   "PINTEREST_ACCESS_TOKEN",
   "YOUTUBE_CLIENT_ID",
   "YOUTUBE_CLIENT_SECRET",
@@ -59,8 +55,6 @@ function invalidReason(name: string, value: string): string | null {
 
   switch (name) {
     case "POSTER_REQUIRE_ADMIN_PASSWORD":
-    case "SUPABASE_STORAGE_PUBLIC_BUCKET":
-    case "SUPABASE_STORAGE_DELETE_AFTER_PUBLISH":
       return value === "true" || value === "false" ? null : "must be true or false";
     case "POSTER_LOCAL_PORT": {
       if (!/^\d+$/.test(value)) {
@@ -92,37 +86,8 @@ function invalidReason(name: string, value: string): string | null {
       return scopesFor(value).includes("w_member_social")
         ? null
         : "must include w_member_social";
-    case "INSTAGRAM_OAUTH_SCOPES":
-      return scopesFor(value).includes("instagram_business_basic") &&
-        scopesFor(value).includes("instagram_business_content_publish")
-        ? null
-        : "must include instagram_business_basic and instagram_business_content_publish";
-    case "INSTAGRAM_USER_ID":
     case "PINTEREST_BOARD_ID":
       return /^\d+$/.test(value) ? null : "must be numeric";
-    case "INSTAGRAM_TOKEN_EXPIRES_AT":
-      return /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value))
-        ? null
-        : "must be an ISO timestamp";
-    case "SUPABASE_URL":
-      return isHttpUrl(value) ? null : "must be a Supabase http or https URL";
-    case "SUPABASE_STORAGE_BUCKET":
-      return /^[A-Za-z0-9._-]{1,100}$/.test(value)
-        ? null
-        : "must be a valid bucket name";
-    case "SUPABASE_STORAGE_PREFIX":
-      return /^[A-Za-z0-9._/-]{1,180}$/.test(value)
-        ? null
-        : "must be a simple storage folder path";
-    case "SUPABASE_STORAGE_SIGNED_URL_SECONDS": {
-      if (!/^\d+$/.test(value)) {
-        return "must be seconds";
-      }
-
-      const seconds = Number(value);
-
-      return seconds >= 60 && seconds <= 86400 ? null : "must be between 60 and 86400";
-    }
     default:
       return null;
   }

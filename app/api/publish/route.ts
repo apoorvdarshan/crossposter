@@ -14,7 +14,6 @@ const platformSchema = z.enum([
   "mastodon",
   "devto",
   "linkedin",
-  "instagram",
   "pinterest",
   "youtube"
 ]);

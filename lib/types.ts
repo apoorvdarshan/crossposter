@@ -3,7 +3,6 @@ export type Platform =
   | "mastodon"
   | "devto"
   | "linkedin"
-  | "instagram"
   | "pinterest"
   | "youtube";
 

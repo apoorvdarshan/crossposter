@@ -10,7 +10,6 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 - Mastodon: text and media
 - Dev.to: Markdown articles
 - LinkedIn: profile or page posts with optional images or MP4 video through an author URN
-- Instagram: JPG image posts and MP4/MOV Reels through temporary Supabase media URLs
 - Pinterest: local image pins
 - YouTube: local video uploads
 
@@ -71,16 +70,10 @@ POSTER_REQUIRE_ADMIN_PASSWORD=true
 
 Then add provider tokens only for the channels you want to use.
 
-Supabase Storage is optional infrastructure for Instagram media publishing only.
-Media is still selected, previewed, and compressed locally in the browser first;
-Crossposter uploads to Supabase only after you click **Publish now**.
-
 ## Deploy To Render Or Self-Hosted
 
 Render and a self-hosted Node server can run the same app. With persistent disk,
-non-Instagram uploaded media and local history can survive restarts. Instagram
-still uses the separate Supabase Media Storage settings because Meta must fetch
-image/Reel media from a public URL.
+uploaded media and local history can survive restarts.
 
 ## Local Media Conversion
 
@@ -158,40 +151,6 @@ urn:li:organization:YOUR_PAGE_ORG_ID
 LinkedIn local media upload supports JPG, PNG, and GIF images, plus MP4 videos
 between 75 KB and 500 MB. Other local media types are rejected before
 publishing.
-
-### Instagram
-
-Instagram uses Meta's Instagram Login OAuth path for your own Business or
-Creator accounts. Add the Instagram API with Instagram Login use case in your
-Meta app, add the local callback URL, then use **Connect Instagram** in the
-Socials settings to save a token and user ID locally.
-
-```text
-INSTAGRAM_CLIENT_ID
-INSTAGRAM_CLIENT_SECRET
-INSTAGRAM_OAUTH_SCOPES=instagram_business_basic instagram_business_content_publish
-INSTAGRAM_ACCESS_TOKEN
-INSTAGRAM_USER_ID
-```
-
-For local media files, Crossposter can temporarily upload selected JPG images or
-MP4/MOV Reels videos to Supabase Storage, give Meta a signed URL, then delete the
-object after publishing.
-
-Create the Supabase bucket first if you plan to publish Instagram media. A private
-bucket is fine; Crossposter uses a server-side service role key to upload, create
-signed URLs, and delete temporary objects. Supabase can be cloud-hosted or
-self-hosted.
-
-```text
-SUPABASE_URL
-SUPABASE_SERVICE_ROLE_KEY
-SUPABASE_STORAGE_BUCKET=crossposter-media
-SUPABASE_STORAGE_PREFIX=temporary-media
-SUPABASE_STORAGE_DELETE_AFTER_PUBLISH=true
-```
-
-Keep the service role key on the server only and never expose it in browser code.
 
 ### Pinterest
 

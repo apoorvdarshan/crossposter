@@ -9,7 +9,6 @@ import {
   ExternalLink,
   File as FileIcon,
   ImageIcon,
-  Info,
   Music2,
   Radio,
   Send,
@@ -64,14 +63,6 @@ const channels: Array<{
     media: "Local images and MP4 video are supported."
   },
   {
-    id: "instagram",
-    label: "Instagram",
-    note: "Meta approval required",
-    uses: ["Post", "Media"],
-    target: "Uses the active Instagram profile from Settings.",
-    media: "JPG images and MP4/MOV Reels are hosted through Supabase only when publishing."
-  },
-  {
     id: "pinterest",
     label: "Pinterest",
     note: "Image pin",
@@ -107,8 +98,6 @@ const envLabels: Record<string, string> = {
   DEVTO_API_KEY: "API key",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
-  INSTAGRAM_ACCESS_TOKEN: "access token",
-  INSTAGRAM_USER_ID: "IG user ID",
   PINTEREST_ACCESS_TOKEN: "access token",
   PINTEREST_BOARD_ID: "board",
   YOUTUBE_CLIENT_ID: "client ID",
@@ -185,14 +174,8 @@ const platformIds = channels.map((channel) => channel.id);
 const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const instagramImageTypes = new Set(["image/jpeg"]);
-const instagramVideoTypes = new Set(["video/mp4", "video/quicktime"]);
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
-const instagramMaxImageSize = 8 * 1024 * 1024;
-const instagramImageTargetSize = 7.5 * 1024 * 1024;
-const instagramMaxVideoSize = 300 * 1024 * 1024;
-const instagramVideoTargetSize = 290 * 1024 * 1024;
 const linkedInMinVideoSize = 75 * 1024;
 const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const linkedInVideoTargetSize = 490 * 1024 * 1024;
@@ -479,41 +462,6 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
   const issues: PreflightIssue[] = [];
   const kind = fileKind(file);
 
-  if (platforms.includes("instagram")) {
-    if (!file) {
-      issues.push({ id: "instagram-missing", message: "Instagram requires an image or video file." });
-    } else if (kind === "image" && !instagramImageTypes.has(file.type)) {
-      issues.push({
-        id: "instagram-image-type",
-        message: `Instagram publishing needs a JPG image; selected file is ${file.type || "unknown"}.`,
-        compress: "image"
-      });
-    } else if (kind === "image" && file.size > instagramMaxImageSize) {
-      issues.push({
-        id: "instagram-image-size",
-        message: `Instagram image limit is 8 MB; selected file is ${formatBytes(file.size)}.`,
-        compress: "image"
-      });
-    } else if (kind === "video" && !instagramVideoTypes.has(file.type)) {
-      issues.push({
-        id: "instagram-video-type",
-        message: `Instagram Reels support MP4 or MOV videos; selected file is ${file.type || "unknown"}.`,
-        compress: "video"
-      });
-    } else if (kind === "video" && file.size > instagramMaxVideoSize) {
-      issues.push({
-        id: "instagram-video-size",
-        message: `Instagram Reels video limit is 300 MB; selected file is ${formatBytes(file.size)}.`,
-        compress: "video"
-      });
-    } else if (kind !== "image" && kind !== "video") {
-      issues.push({
-        id: "instagram-kind",
-        message: `Instagram can publish JPG images and MP4/MOV Reels only; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    }
-  }
-
   if (platforms.includes("pinterest")) {
     if (!file) {
       issues.push({ id: "pinterest-missing", message: "Pinterest requires an image file." });
@@ -630,13 +578,6 @@ function imageTargetBytesForPlatforms(platforms: Platform[], file: File): number
     targets.push(blueskyCompressTargetSize);
   }
 
-  if (
-    platforms.includes("instagram") &&
-    (!instagramImageTypes.has(file.type) || file.size > instagramMaxImageSize)
-  ) {
-    targets.push(instagramImageTargetSize);
-  }
-
   if (platforms.includes("mastodon") && file.size > mastodonImageSizeLimit) {
     targets.push(mastodonImageTargetSize);
   }
@@ -649,13 +590,6 @@ function videoTargetBytesForPlatforms(platforms: Platform[], file: File, request
 
   if (platforms.includes("mastodon")) {
     targets.push(mastodonVideoTargetSize);
-  }
-
-  if (
-    platforms.includes("instagram") &&
-    (!instagramVideoTypes.has(file.type) || file.size > instagramMaxVideoSize)
-  ) {
-    targets.push(instagramVideoTargetSize);
   }
 
   if (platforms.includes("linkedin") && file.size > linkedInMaxVideoSize) {
@@ -1404,7 +1338,6 @@ export default function Home() {
   }
 
   const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
-  const showSupabasePublishNotice = selectedPlatforms.includes("instagram") && Boolean(mediaFile);
   const blueskyLength = postTextLength(text.trim());
   const showBlueskyLimit = selectedPlatforms.includes("bluesky");
   const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
@@ -1626,15 +1559,6 @@ export default function Home() {
               <span className="field-hint">
                 Paste an image from the clipboard, drag and drop a file, or choose one manually.
               </span>
-              {showSupabasePublishNotice ? (
-                <div className="media-storage-notice">
-                  <Info size={16} />
-                  <span>
-                    Supabase upload happens only after you click Publish. This draft file stays
-                    local while you choose, preview, and compress it.
-                  </span>
-                </div>
-              ) : null}
               {canCompressMedia ? (
                 <div className="compression-panel">
                   <div className="compression-heading">
