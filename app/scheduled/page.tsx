@@ -200,7 +200,7 @@ export default function ScheduledPage() {
         return;
       }
 
-      setPosts(body.scheduledPosts || []);
+      setPosts((body.scheduledPosts || []).filter(isQueuePost));
       setStatus("Schedule timing updated.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not reschedule post.");
@@ -224,7 +224,7 @@ export default function ScheduledPage() {
         return;
       }
 
-      setPosts(body.scheduledPosts || []);
+      setPosts((body.scheduledPosts || []).filter(isQueuePost));
       setStatus("Scheduled post discarded.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not discard post.");
