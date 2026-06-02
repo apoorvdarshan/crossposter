@@ -51,9 +51,7 @@ export function SocialLogo({ platform, size = "md" }: SocialLogoProps) {
           <path d={icon.path} />
         </svg>
       ) : platform === "nostr" ? (
-        <span className="nostr-mark" aria-hidden="true">
-          N
-        </span>
+        <span className="nostr-mark" aria-hidden="true" />
       ) : (
         <span className="linkedin-mark" aria-hidden="true">
           in
