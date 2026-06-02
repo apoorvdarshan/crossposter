@@ -14,7 +14,8 @@ const tokenFields = new Set([
   "DEVTO_API_KEY",
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
-  "LINKEDIN_ACCESS_TOKEN"
+  "LINKEDIN_ACCESS_TOKEN",
+  "NOSTR_PRIVATE_KEY"
 ]);
 
 export function isPlaceholderValue(value: string | undefined): boolean {
@@ -44,8 +45,38 @@ function scopesFor(value: string): string[] {
   return value.split(/[\s,]+/).filter(Boolean);
 }
 
+function isNostrPrivateKey(value: string): boolean {
+  return /^[0-9a-f]{64}$/i.test(value) || /^nsec1[02-9ac-hj-np-z]+$/i.test(value);
+}
+
+function invalidNostrRelays(value: string): string | null {
+  const relays = value.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean);
+
+  if (relays.length === 0) {
+    return "must include at least one relay URL";
+  }
+
+  const invalid = relays.find((relay) => {
+    try {
+      const parsed = new URL(relay);
+
+      return parsed.protocol !== "wss:" && parsed.protocol !== "ws:";
+    } catch {
+      return true;
+    }
+  });
+
+  return invalid ? `invalid relay URL ${invalid}` : null;
+}
+
 function invalidReason(name: string, value: string): string | null {
   if (tokenFields.has(name)) {
+    if (name === "NOSTR_PRIVATE_KEY") {
+      return isNostrPrivateKey(value)
+        ? null
+        : "must be an nsec... or 64-character hex private key";
+    }
+
     return value.length >= 8 && !hasWhitespace(value) ? null : "must be a token/key with no spaces";
   }
 
@@ -82,6 +113,8 @@ function invalidReason(name: string, value: string): string | null {
       return scopesFor(value).includes("w_member_social")
         ? null
         : "must include w_member_social";
+    case "NOSTR_RELAYS":
+      return invalidNostrRelays(value);
     default:
       return null;
   }

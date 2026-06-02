@@ -100,6 +100,19 @@ export const configFields: ConfigField[] = [
     help: "Optional version header in YYYYMM format. Leave the default unless LinkedIn docs require a newer version.",
     defaultValue: "202605",
     showFor: ["linkedin"]
+  },
+  {
+    name: "NOSTR_PRIVATE_KEY",
+    label: "Nostr private key",
+    help: "Use a dedicated Nostr nsec... or 64-character hex private key. Saved locally and used to sign notes.",
+    secret: true,
+    requiredFor: ["nostr"]
+  },
+  {
+    name: "NOSTR_RELAYS",
+    label: "Nostr relays",
+    help: "Comma or newline separated relay WebSocket URLs, for example wss://relay.example.com.",
+    requiredFor: ["nostr"]
   }
 ];
 
@@ -115,6 +128,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     bluesky: [],
     mastodon: [],
     devto: [],
-    linkedin: []
+    linkedin: [],
+    nostr: []
   } as Record<Platform, string[]>
 );

@@ -535,6 +535,13 @@ h2 {
   letter-spacing: 0;
 }
 
+.nostr-mark {
+  font-size: 0.9rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
 .counter {
   border-radius: 999px;
   background: var(--counter-bg);

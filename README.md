@@ -39,6 +39,7 @@ that server process is running.
 | Mastodon | Text posts and local media |
 | Dev.to | Markdown articles |
 | LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
+| Nostr | Kind-1 text notes published to configured relays |
 
 Removed integrations: Instagram, Pinterest, Twitch, and YouTube are not part of
 the current app.
@@ -208,6 +209,30 @@ DEVTO_API_KEY
 ```
 
 Dev.to publishing expects a title and Markdown body text.
+
+### Nostr
+
+Nostr publishes signed kind-1 text notes directly to relay WebSocket URLs.
+
+Required fields:
+
+```text
+NOSTR_PRIVATE_KEY
+NOSTR_RELAYS
+```
+
+`NOSTR_PRIVATE_KEY` can be an `nsec...` key or a 64-character hex private key.
+Use a dedicated Nostr key if you do not want Crossposter to sign as your main
+identity.
+
+`NOSTR_RELAYS` is a comma or newline separated list of relays:
+
+```text
+wss://relay.example.com,wss://another-relay.example
+```
+
+Local media is ignored for Nostr. Paste public image/video links into the post
+body if you want Nostr clients to render media previews.
 
 ### LinkedIn
 

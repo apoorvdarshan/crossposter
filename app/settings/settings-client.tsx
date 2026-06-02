@@ -87,7 +87,8 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
-  { id: "linkedin", label: "LinkedIn" }
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "nostr", label: "Nostr" }
 ];
 
 const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = [
@@ -183,6 +184,26 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "For Page posting, use scopes openid profile w_member_social w_organization_social, then click Connect LinkedIn as a Page admin or content admin.",
       "After approval, Crossposter fills the access token and a personal author URN automatically.",
       "For Page posting, replace LinkedIn author URN with urn:li:organization:YOUR_PAGE_ORG_ID and save config."
+    ]
+  },
+  nostr: {
+    title: "Nostr setup",
+    intro:
+      "Nostr posts are signed locally with your private key and sent directly to the relays you configure.",
+    links: [
+      { label: "Nostr protocol", href: "https://github.com/nostr-protocol/nips/blob/master/01.md" },
+      { label: "NIP-19 keys", href: "https://github.com/nostr-protocol/nips/blob/master/19.md" }
+    ],
+    steps: [
+      "Create or choose a Nostr account in your preferred Nostr client.",
+      "For safer local automation, create a dedicated Nostr key instead of using your main identity key.",
+      "Export or copy the account private key as nsec... or 64-character hex.",
+      "Add a Nostr profile here.",
+      "Paste the private key into Nostr private key.",
+      "Paste one or more relay URLs into Nostr relays, separated by commas or new lines.",
+      "Use the same relays you already publish to from your Nostr client.",
+      "Save config, then select Nostr on the Dashboard.",
+      "Crossposter publishes kind-1 text notes. Local file upload is ignored; paste public media links into the post text when needed."
     ]
   }
 };

@@ -71,6 +71,14 @@ const channels: Array<{
     uses: ["Post", "Media"],
     target: "Uses the active LinkedIn profile or Page from Settings.",
     media: "Local images and MP4 video are supported."
+  },
+  {
+    id: "nostr",
+    label: "Nostr",
+    note: "Text note",
+    uses: ["Post"],
+    target: "Uses the active Nostr profile from Settings.",
+    media: "Local media is ignored; paste public media links into the post text."
   }
 ];
 
@@ -91,7 +99,9 @@ const envLabels: Record<string, string> = {
   MASTODON_ACCESS_TOKEN: "access token",
   DEVTO_API_KEY: "API key",
   LINKEDIN_ACCESS_TOKEN: "access token",
-  LINKEDIN_AUTHOR_URN: "author URN"
+  LINKEDIN_AUTHOR_URN: "author URN",
+  NOSTR_PRIVATE_KEY: "private key",
+  NOSTR_RELAYS: "relays"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {

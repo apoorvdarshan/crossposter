@@ -17,14 +17,16 @@ const socialNames: Record<Platform, string> = {
   bluesky: "Bluesky",
   mastodon: "Mastodon",
   devto: "Dev.to",
-  linkedin: "LinkedIn"
+  linkedin: "LinkedIn",
+  nostr: "Nostr"
 };
 
 const brandColors: Record<Platform, string> = {
   bluesky: `#${siBluesky.hex}`,
   mastodon: `#${siMastodon.hex}`,
   devto: `#${siDevdotto.hex}`,
-  linkedin: "#0a66c2"
+  linkedin: "#0a66c2",
+  nostr: "#8f3ffc"
 };
 
 type SocialLogoProps = {
@@ -48,6 +50,10 @@ export function SocialLogo({ platform, size = "md" }: SocialLogoProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d={icon.path} />
         </svg>
+      ) : platform === "nostr" ? (
+        <span className="nostr-mark" aria-hidden="true">
+          N
+        </span>
       ) : (
         <span className="linkedin-mark" aria-hidden="true">
           in
