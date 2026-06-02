@@ -32,4 +32,5 @@ The operator is responsible for keeping API keys, access tokens, refresh tokens,
 For privacy questions, contact:
 
 - Email: apoorvdarshan@gmail.com
+- Email: ad13dtu@gmail.com
 - X: https://x.com/apoorvdarshan

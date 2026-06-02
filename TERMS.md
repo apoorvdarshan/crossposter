@@ -25,4 +25,5 @@ The software is provided without warranty. Access may be removed or disabled at 
 For terms or access questions, contact:
 
 - Email: apoorvdarshan@gmail.com
+- Email: ad13dtu@gmail.com
 - X: https://x.com/apoorvdarshan
