@@ -34,11 +34,11 @@
   --missing-card-bg: #fff0ee;
   --missing-card-line: #c74435;
   --warning: #d69224;
-  --masthead-bg: #11140f;
-  --masthead-ink: #f7f8f3;
-  --masthead-muted: rgba(247, 248, 243, 0.62);
-  --masthead-soft: rgba(247, 248, 243, 0.09);
-  --masthead-line: rgba(247, 248, 243, 0.24);
+  --masthead-bg: rgba(255, 255, 255, 0.94);
+  --masthead-ink: #161a14;
+  --masthead-muted: #65705f;
+  --masthead-soft: rgba(22, 26, 20, 0.08);
+  --masthead-line: rgba(22, 26, 20, 0.18);
   --grid-line: rgba(23, 25, 22, 0.045);
   --glow: rgba(32, 177, 90, 0.12);
   --placeholder: #929a8d;
