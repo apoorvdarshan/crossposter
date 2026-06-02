@@ -4,7 +4,16 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { configFields } from "@/lib/config-spec";
 import { isPlaceholderValue, validatePlatformConfig } from "@/lib/config-validation";
-import type { ComposeDraft, Platform, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
+import type {
+  ComposeDraft,
+  Platform,
+  PublishedMedia,
+  PublishedPost,
+  PublishResult,
+  PublishTarget,
+  ScheduledPost,
+  ScheduledPostStatus
+} from "@/lib/types";
 
 export type LocalConfigValues = Record<string, string>;
 
@@ -20,6 +29,7 @@ export type LocalConfigFile = {
   activeProfiles: Partial<Record<Platform, string>>;
   draft: ComposeDraft;
   publishedPosts: PublishedPost[];
+  scheduledPosts: ScheduledPost[];
 };
 
 export const localConfigPath = path.join(process.cwd(), "poster.config.local.json");
@@ -196,6 +206,32 @@ function normalizePublishResult(value: unknown): PublishResult | null {
   };
 }
 
+function normalizePublishedMedia(value: unknown): PublishedMedia | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const mediaKind = record.kind;
+
+  if (
+    typeof record.id !== "string" ||
+    typeof record.filename !== "string" ||
+    !["image", "video", "audio", "file"].includes(mediaKind as string)
+  ) {
+    return undefined;
+  }
+
+  return {
+    id: record.id.slice(0, 120),
+    filename: record.filename.slice(0, 240),
+    contentType: stringValue(record.contentType, 160),
+    size: typeof record.size === "number" ? record.size : 0,
+    kind: mediaKind as "image" | "video" | "audio" | "file",
+    url: stringValue(record.url, 2048)
+  };
+}
+
 function normalizePublishedPost(value: unknown): PublishedPost | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -210,11 +246,7 @@ function normalizePublishedPost(value: unknown): PublishedPost | null {
     return null;
   }
 
-  const mediaRecord =
-    record.media && typeof record.media === "object" && !Array.isArray(record.media)
-      ? (record.media as Record<string, unknown>)
-      : null;
-  const mediaKind = mediaRecord?.kind;
+  const media = normalizePublishedMedia(record.media);
 
   return {
     id: stringValue(record.id, 120) || randomUUID(),
@@ -226,21 +258,7 @@ function normalizePublishedPost(value: unknown): PublishedPost | null {
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
     results,
-    ...(mediaRecord &&
-    typeof mediaRecord.id === "string" &&
-    typeof mediaRecord.filename === "string" &&
-    ["image", "video", "audio", "file"].includes(mediaKind as string)
-      ? {
-          media: {
-            id: mediaRecord.id.slice(0, 120),
-            filename: mediaRecord.filename.slice(0, 240),
-            contentType: stringValue(mediaRecord.contentType, 160),
-            size: typeof mediaRecord.size === "number" ? mediaRecord.size : 0,
-            kind: mediaKind as "image" | "video" | "audio" | "file",
-            url: stringValue(mediaRecord.url, 2048)
-          }
-        }
-      : {})
+    ...(media ? { media } : {})
   };
 }
 
@@ -252,6 +270,70 @@ function normalizePublishedPosts(value: unknown): PublishedPost[] {
   return value
     .map(normalizePublishedPost)
     .filter((item): item is PublishedPost => Boolean(item));
+}
+
+function normalizeScheduledPostStatus(value: unknown): ScheduledPostStatus {
+  return value === "publishing" ||
+    value === "published" ||
+    value === "failed" ||
+    value === "canceled"
+    ? value
+    : "scheduled";
+}
+
+function normalizeScheduledPost(value: unknown): ScheduledPost | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const targets = normalizePublishTargets(record.targets);
+  const platforms = targets.length ? normalizePlatforms(targets.map((target) => target.platform)) : normalizePlatforms(record.platforms);
+  const scheduledFor = stringValue(record.scheduledFor, 40);
+  const scheduledAt = Date.parse(scheduledFor);
+  const results = Array.isArray(record.results)
+    ? record.results.map(normalizePublishResult).filter((item): item is PublishResult => Boolean(item))
+    : [];
+
+  if (!Number.isFinite(scheduledAt) || !stringValue(record.text, 12000).trim() || platforms.length === 0) {
+    return null;
+  }
+
+  return {
+    id: stringValue(record.id, 120) || randomUUID(),
+    createdAt: stringValue(record.createdAt, 40) || new Date().toISOString(),
+    updatedAt: stringValue(record.updatedAt, 40) || new Date().toISOString(),
+    scheduledFor: new Date(scheduledAt).toISOString(),
+    ...(typeof record.title === "string" && record.title
+      ? { title: record.title.slice(0, 300) }
+      : {}),
+    text: stringValue(record.text, 12000),
+    platforms,
+    targets,
+    ...(normalizePublishedMedia(record.media) ? { media: normalizePublishedMedia(record.media) } : {}),
+    status: normalizeScheduledPostStatus(record.status),
+    attempts: typeof record.attempts === "number" && record.attempts > 0 ? Math.floor(record.attempts) : 0,
+    ...(typeof record.lastError === "string" && record.lastError
+      ? { lastError: record.lastError.slice(0, 1000) }
+      : {}),
+    ...(results.length ? { results } : {}),
+    ...(typeof record.publishedPostId === "string" && record.publishedPostId
+      ? { publishedPostId: record.publishedPostId.slice(0, 120) }
+      : {}),
+    ...(typeof record.publishedAt === "string" && record.publishedAt
+      ? { publishedAt: record.publishedAt.slice(0, 40) }
+      : {})
+  };
+}
+
+function normalizeScheduledPosts(value: unknown): ScheduledPost[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(normalizeScheduledPost)
+    .filter((item): item is ScheduledPost => Boolean(item));
 }
 
 function normalizeConfig(value: unknown): LocalConfigFile {
@@ -266,7 +348,8 @@ function normalizeConfig(value: unknown): LocalConfigFile {
     profiles: normalizeProfiles(record.profiles),
     activeProfiles: normalizeActiveProfiles(record.activeProfiles),
     draft: normalizeComposeDraft(record.draft),
-    publishedPosts: normalizePublishedPosts(record.publishedPosts)
+    publishedPosts: normalizePublishedPosts(record.publishedPosts),
+    scheduledPosts: normalizeScheduledPosts(record.scheduledPosts)
   };
 }
 
@@ -277,7 +360,8 @@ export function readLocalConfig(): LocalConfigFile {
       profiles: {},
       activeProfiles: {},
       draft: { ...emptyComposeDraft },
-      publishedPosts: []
+      publishedPosts: [],
+      scheduledPosts: []
     };
   }
 
@@ -289,7 +373,8 @@ export function readLocalConfig(): LocalConfigFile {
       profiles: {},
       activeProfiles: {},
       draft: { ...emptyComposeDraft },
-      publishedPosts: []
+      publishedPosts: [],
+      scheduledPosts: []
     };
   }
 }
@@ -315,6 +400,52 @@ export function appendPublishedPost(post: PublishedPost): PublishedPost | undefi
   }).publishedPosts;
 
   return saved;
+}
+
+export function getScheduledPosts(): ScheduledPost[] {
+  return readLocalConfig().scheduledPosts;
+}
+
+export function upsertScheduledPost(post: ScheduledPost): ScheduledPost {
+  const localConfig = readLocalConfig();
+  const existing = new Set(localConfig.scheduledPosts.map((item) => item.id));
+  const scheduledPosts = existing.has(post.id)
+    ? localConfig.scheduledPosts.map((item) => (item.id === post.id ? post : item))
+    : [post, ...localConfig.scheduledPosts];
+
+  const saved = writeLocalConfig({
+    ...localConfig,
+    scheduledPosts
+  });
+
+  return saved.scheduledPosts.find((item) => item.id === post.id) || post;
+}
+
+export function updateScheduledPost(
+  id: string,
+  update: (post: ScheduledPost) => ScheduledPost
+): ScheduledPost | undefined {
+  const localConfig = readLocalConfig();
+  let updated: ScheduledPost | undefined;
+  const scheduledPosts = localConfig.scheduledPosts.map((post) => {
+    if (post.id !== id) {
+      return post;
+    }
+
+    updated = update(post);
+    return updated;
+  });
+
+  if (!updated) {
+    return undefined;
+  }
+
+  const saved = writeLocalConfig({
+    ...localConfig,
+    scheduledPosts
+  });
+
+  return saved.scheduledPosts.find((post) => post.id === id);
 }
 
 export function getConfigValue(name: string, profileId?: string): string | undefined {

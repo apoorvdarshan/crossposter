@@ -5,6 +5,7 @@ import NextImage from "next/image";
 import Link from "next/link";
 import {
   AlertTriangle,
+  CalendarClock,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -20,7 +21,14 @@ import {
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { validatePlatformConfig, type ConfigIssue } from "@/lib/config-validation";
-import type { ComposeDraft, Platform, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
+import type {
+  ComposeDraft,
+  Platform,
+  PublishedPost,
+  PublishResult,
+  PublishTarget,
+  ScheduledPost
+} from "@/lib/types";
 import type { ProviderProfile } from "@/lib/local-config";
 
 const channels: Array<{
@@ -117,6 +125,11 @@ type UploadedMedia = {
 
 type MediaUploadResponse = {
   media?: UploadedMedia;
+  error?: unknown;
+};
+
+type ScheduledResponse = {
+  scheduledPost?: ScheduledPost;
   error?: unknown;
 };
 
@@ -709,6 +722,18 @@ function formatDateTime(value: string): string {
   }).format(date);
 }
 
+function datetimeLocalValue(date = new Date(Date.now() + 30 * 60 * 1000)): string {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+
+  return local.toISOString().slice(0, 16);
+}
+
+function datetimeLocalToIso(value: string): string {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
 function ProgressBox({
   progress,
   className = ""
@@ -745,7 +770,9 @@ export default function Home() {
   const [results, setResults] = useState<PublishResult[]>([]);
   const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
   const [error, setError] = useState("");
+  const [scheduleStatus, setScheduleStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isCompressingMedia, setIsCompressingMedia] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
@@ -754,6 +781,7 @@ export default function Home() {
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [configHydrated, setConfigHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [scheduledForInput, setScheduledForInput] = useState(() => datetimeLocalValue());
   const [configProfiles, setConfigProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
 
   const visibleTargets = useMemo<ChannelTarget[]>(
@@ -1021,6 +1049,7 @@ export default function Home() {
     setMediaFile(file);
     setError("");
     setResults([]);
+    setScheduleStatus("");
   }
 
   function selectMedia(event: React.ChangeEvent<HTMLInputElement>) {
@@ -1118,6 +1147,7 @@ export default function Home() {
     setMediaInputKey((current) => current + 1);
     setResults([]);
     setError("");
+    setScheduleStatus("");
     writeStoredDraft(draft);
     await saveStoredDraftMedia(null).catch(() => undefined);
     await fetch("/api/draft", {
@@ -1223,6 +1253,7 @@ export default function Home() {
 
   async function publish(placement: ProgressPlacement = "bottom") {
     setError("");
+    setScheduleStatus("");
     setResults([]);
     setProgress(null);
     setProgressPlacement(placement);
@@ -1295,6 +1326,84 @@ export default function Home() {
     }
   }
 
+  async function scheduleDraft(placement: ProgressPlacement = "bottom") {
+    setError("");
+    setScheduleStatus("");
+    setResults([]);
+    setProgress(null);
+    setProgressPlacement(placement);
+    let uploadedMedia: UploadedMedia | undefined;
+    const publishTargets = selectedTargets.map(publishTargetFromCard);
+    const publishPlatforms = Array.from(new Set(publishTargets.map((target) => target.platform)));
+    const scheduledFor = datetimeLocalToIso(scheduledForInput);
+
+    if (publishTargets.length === 0) {
+      setError("Select at least one connected social profile.");
+      return;
+    }
+
+    if (!scheduledFor) {
+      setError("Choose a valid scheduled time.");
+      return;
+    }
+
+    if (Date.parse(scheduledFor) < Date.now() - 60_000) {
+      setError("Choose a scheduled time in the future.");
+      return;
+    }
+
+    const isBlueskyTooLong =
+      publishPlatforms.includes("bluesky") &&
+      postTextLength(text.trim()) > 300;
+
+    if (isBlueskyTooLong) {
+      setError("Bluesky is over 300 characters. Shorten the post or deselect Bluesky.");
+      return;
+    }
+
+    const preflightIssues = mediaPreflightIssues(publishPlatforms, mediaFile);
+
+    if (preflightIssues.length > 0) {
+      setError(preflightIssues[0].message);
+      return;
+    }
+
+    setIsScheduling(true);
+    setProgress({ label: mediaFile ? "Preparing scheduled media" : "Saving schedule", value: 8 });
+
+    try {
+      uploadedMedia = await uploadSelectedMedia();
+      setProgress({ label: "Writing scheduled post", value: uploadedMedia ? 58 : 35 });
+      const response = await fetch("/api/scheduled", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim() || undefined,
+          text,
+          mediaId: uploadedMedia?.id,
+          platforms: publishPlatforms,
+          targets: publishTargets,
+          scheduledFor
+        })
+      });
+      const body = (await response.json()) as ScheduledResponse;
+
+      if (!response.ok) {
+        setError(formatApiError(body.error));
+        return;
+      }
+
+      setProgress({ label: "Scheduled", value: 100 });
+      setScheduleStatus(`Scheduled for ${formatDateTime(body.scheduledPost?.scheduledFor || scheduledFor)}.`);
+      setScheduledForInput(datetimeLocalValue());
+    } catch (scheduleError) {
+      setError(scheduleError instanceof Error ? scheduleError.message : "Scheduling failed");
+    } finally {
+      setIsScheduling(false);
+      window.setTimeout(() => setProgress(null), 500);
+    }
+  }
+
   const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
   const blueskyLength = postTextLength(text.trim());
   const showBlueskyLimit = selectedPlatforms.includes("bluesky");
@@ -1305,6 +1414,19 @@ export default function Home() {
     preflightIssues.length === 0 &&
     !blueskyTooLong &&
     !isPublishing &&
+    !isScheduling &&
+    !isUploadingMedia &&
+    !isCompressingMedia;
+  const scheduledForIso = datetimeLocalToIso(scheduledForInput);
+  const canSchedule =
+    text.trim() &&
+    selectedTargets.length > 0 &&
+    scheduledForIso &&
+    Date.parse(scheduledForIso) >= Date.now() - 60_000 &&
+    preflightIssues.length === 0 &&
+    !blueskyTooLong &&
+    !isPublishing &&
+    !isScheduling &&
     !isUploadingMedia &&
     !isCompressingMedia;
   const readyCount = visibleTargets.filter((target) => target.ready).length;
@@ -1359,6 +1481,9 @@ export default function Home() {
             <span className="top-tab is-active" aria-current="page">
               Dashboard
             </span>
+            <Link className="top-tab" href="/scheduled">
+              Scheduler
+            </Link>
             <Link className="top-tab" href="/settings">
               Settings
             </Link>
@@ -1699,6 +1824,40 @@ export default function Home() {
                 ))}
               </div>
             </div>
+
+            <div className="schedule-strip">
+              <label>
+                <span>Schedule for</span>
+                <input
+                  min={datetimeLocalValue(new Date())}
+                  onChange={(event) => {
+                    setScheduledForInput(event.target.value);
+                    setScheduleStatus("");
+                  }}
+                  type="datetime-local"
+                  value={scheduledForInput}
+                />
+              </label>
+              <button
+                className="secondary compact-button"
+                disabled={!canSchedule}
+                onClick={() => void scheduleDraft("bottom")}
+                type="button"
+              >
+                <CalendarClock size={17} />
+                {isScheduling ? "Scheduling..." : "Schedule draft"}
+              </button>
+              <Link className="secondary compact-button" href="/scheduled">
+                <Clock3 size={17} />
+                Scheduler
+              </Link>
+            </div>
+            {scheduleStatus ? (
+              <p className="schedule-status" role="status">
+                <CheckCircle2 size={16} />
+                {scheduleStatus}
+              </p>
+            ) : null}
 
             <div className="actions">
               <button className="primary" disabled={!canPublish} onClick={() => void publish("bottom")}>

@@ -30,6 +30,15 @@ export type PublishResult = {
   url?: string;
 };
 
+export type PublishedMedia = {
+  id: string;
+  filename: string;
+  contentType: string;
+  size: number;
+  kind: "image" | "video" | "audio" | "file";
+  url: string;
+};
+
 export type ComposeDraft = {
   title: string;
   text: string;
@@ -46,14 +55,32 @@ export type PublishedPost = {
   platforms: Platform[];
   targets?: PublishTarget[];
   results: PublishResult[];
-  media?: {
-    id: string;
-    filename: string;
-    contentType: string;
-    size: number;
-    kind: "image" | "video" | "audio" | "file";
-    url: string;
-  };
+  media?: PublishedMedia;
+};
+
+export type ScheduledPostStatus =
+  | "scheduled"
+  | "publishing"
+  | "published"
+  | "failed"
+  | "canceled";
+
+export type ScheduledPost = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  scheduledFor: string;
+  title?: string;
+  text: string;
+  platforms: Platform[];
+  targets?: PublishTarget[];
+  media?: PublishedMedia;
+  status: ScheduledPostStatus;
+  attempts: number;
+  lastError?: string;
+  results?: PublishResult[];
+  publishedPostId?: string;
+  publishedAt?: string;
 };
 
 export type ProviderContext = PublishPayload & {

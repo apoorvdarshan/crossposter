@@ -84,7 +84,28 @@ const child = spawn(command, ["dev", "--port", port], {
 
 console.log(`Crossposter local URL: http://localhost:${port}`);
 
+async function pingScheduler() {
+  try {
+    await fetch(`http://localhost:${port}/api/scheduled/tick`, {
+      method: "POST"
+    });
+  } catch {}
+}
+
+const schedulerWarmup = setTimeout(() => {
+  void pingScheduler();
+}, 5000);
+const schedulerInterval = setInterval(() => {
+  void pingScheduler();
+}, 30000);
+
+schedulerWarmup.unref?.();
+schedulerInterval.unref?.();
+
 child.on("exit", (code, signal) => {
+  clearTimeout(schedulerWarmup);
+  clearInterval(schedulerInterval);
+
   if (signal) {
     process.kill(process.pid, signal);
     return;

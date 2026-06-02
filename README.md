@@ -5,8 +5,8 @@
 <h1 align="center">Crossposter</h1>
 
 <p align="center">
-  <strong>Private publish-now dashboard for your own social accounts.</strong><br>
-  Compose once, attach media, select channels, and publish manually.
+  <strong>Private crossposting dashboard for your own social accounts.</strong><br>
+  Compose once, attach media, publish now, or schedule posts from a local/self-hosted server.
 </p>
 
 <p align="center">
@@ -21,13 +21,15 @@
 ## Overview
 
 Crossposter is a small local/self-hosted publishing dashboard. It is built for
-personal use: no database, no scheduler, no background worker fleet, and no
-multi-user product layer. Posts are sent only when you click **Publish now**.
+personal use: no database, no queue service, and no multi-user product layer.
+Posts can be sent immediately with **Publish now** or saved to the local
+scheduler for a later time.
 
 This is intentionally not a Postiz-style stack. Full scheduling products usually
-need services such as Postgres, Redis, queues, workers, and always-running
-background jobs. Crossposter keeps the surface area narrow so it can run on your
-Mac, a small VPS, Render, or a simple Node host.
+need services such as Postgres, Redis, queues, workers, and separate background
+jobs. Crossposter keeps the surface area narrow so it can run on your Mac, a
+small VPS, Render, or a simple Node host. Scheduled posts publish only while
+that server process is running.
 
 ## Supported Channels
 
@@ -44,6 +46,7 @@ the current app.
 ## Features
 
 - Dashboard composer for title, body text, channel selection, and media upload
+- Local scheduler page for queued posts, rescheduling, cancellation, and results
 - Per-platform profile configuration from the UI
 - Local config saved to `poster.config.local.json`
 - Local publish history
@@ -53,6 +56,29 @@ the current app.
 - Platform preflight warnings before publishing
 - Light/dark/system theme controls
 - macOS auto-start service for `http://localhost:2004`
+
+## Scheduler
+
+Use **Schedule draft** from the Dashboard to save a post for a specific local
+date/time. Scheduled posts are stored in `poster.config.local.json` and can be
+managed from:
+
+```text
+http://localhost:2004/scheduled
+```
+
+You can reschedule or cancel queued posts before they begin publishing. Failed
+scheduled posts can also be rescheduled.
+
+The scheduler is local/self-hosted. The Crossposter server must be running at
+the scheduled time:
+
+- `npm run dev:local` pings the scheduler every 30 seconds
+- the macOS auto-start service keeps `http://localhost:2004` alive after login
+- on Render or a VPS, keep the Node service running with persistent disk
+
+If the server is offline when a post is due, it will publish the next time the
+server starts and the scheduler tick runs.
 
 ## Run Locally
 

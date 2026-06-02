@@ -14,13 +14,19 @@ async function storageSnapshot() {
   const config = {
     draftBytes: jsonBytes(localConfig.draft),
     publishedPostsBytes: jsonBytes(localConfig.publishedPosts),
-    publishedPosts: localConfig.publishedPosts.length
+    publishedPosts: localConfig.publishedPosts.length,
+    scheduledPostsBytes: jsonBytes(localConfig.scheduledPosts),
+    scheduledPosts: localConfig.scheduledPosts.length
   };
 
   return {
     uploads,
     config,
-    totalBytes: uploads.bytes + config.draftBytes + config.publishedPostsBytes
+    totalBytes:
+      uploads.bytes +
+      config.draftBytes +
+      config.publishedPostsBytes +
+      config.scheduledPostsBytes
   };
 }
 
@@ -41,7 +47,8 @@ export async function DELETE(request: Request) {
   writeLocalConfig({
     ...localConfig,
     draft: { ...emptyComposeDraft },
-    publishedPosts: []
+    publishedPosts: [],
+    scheduledPosts: []
   });
 
   return NextResponse.json(await storageSnapshot());

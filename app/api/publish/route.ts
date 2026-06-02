@@ -1,10 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { appendPublishedPost, getProfileConfigIssues } from "@/lib/local-config";
-import { getUploadedMedia } from "@/lib/media-store";
-import { providers } from "@/lib/providers";
-import type { Platform, ProviderContext, PublishedPost, PublishResult, PublishTarget } from "@/lib/types";
+import { runPublish } from "@/lib/publish-runner";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -86,20 +82,6 @@ function validationMessage(error: z.ZodError): string {
   return "Publish request is invalid. Check the highlighted fields and try again.";
 }
 
-function uniquePlatforms(targets: PublishTarget[]): Platform[] {
-  return Array.from(new Set(targets.map((target) => target.platform)));
-}
-
-function formatConfigIssues(target: PublishTarget): string {
-  const issues = getProfileConfigIssues(target.platform, target.profileId);
-
-  if (issues.length === 0) {
-    return "";
-  }
-
-  return issues.map((issue) => issue.message).slice(0, 2).join("; ");
-}
-
 export async function POST(request: Request) {
   const requiresPassword =
     process.env.POSTER_REQUIRE_ADMIN_PASSWORD === "true" ||
@@ -124,97 +106,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let media: ProviderContext["media"] | undefined;
+  try {
+    const { results, publishedPost } = await runPublish({
+      title: parsed.data.title,
+      text: parsed.data.text,
+      mediaId: parsed.data.mediaId || undefined,
+      mediaUrl: parsed.data.mediaUrl,
+      platforms: parsed.data.platforms || [],
+      targets: parsed.data.targets,
+      requestUrl: request.url
+    });
 
-  if (parsed.data.mediaId) {
-    try {
-      media = await getUploadedMedia(parsed.data.mediaId, request.url);
-    } catch {
-      return NextResponse.json({ error: "Uploaded media was not found" }, { status: 400 });
-    }
+    return NextResponse.json({ results, publishedPost });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Publish failed" },
+      { status: 400 }
+    );
   }
-
-  const targets = (parsed.data.targets?.length
-    ? parsed.data.targets
-    : (parsed.data.platforms || []).map((platform) => ({
-        id: platform,
-        platform
-      }))) as PublishTarget[];
-  const platforms = uniquePlatforms(targets);
-  const ctx: ProviderContext = {
-    title: parsed.data.title?.trim() || undefined,
-    text: parsed.data.text.trim(),
-    mediaId: parsed.data.mediaId || undefined,
-    mediaUrl: parsed.data.mediaUrl || undefined,
-    media,
-    platforms,
-    targets,
-    now: new Date()
-  };
-
-  const results = await Promise.all(
-    targets.map(async (target): Promise<PublishResult> => {
-      const targetCtx: ProviderContext = {
-        ...ctx,
-        platforms: [target.platform],
-        target
-      };
-      const configError = formatConfigIssues(target);
-
-      if (configError) {
-        return {
-          platform: target.platform,
-          targetId: target.id,
-          profileId: target.profileId,
-          profileLabel: target.profileLabel,
-          ok: false,
-          message: configError
-        };
-      }
-
-      try {
-        const result = await providers[target.platform](targetCtx);
-
-        return {
-          ...result,
-          platform: target.platform,
-          targetId: result.targetId || target.id,
-          profileId: result.profileId || target.profileId,
-          profileLabel: result.profileLabel || target.profileLabel
-        };
-      } catch (error) {
-        return {
-          platform: target.platform,
-          targetId: target.id,
-          profileId: target.profileId,
-          profileLabel: target.profileLabel,
-          ok: false,
-          message: error instanceof Error ? error.message : "Unknown error"
-        };
-      }
-    })
-  );
-  const publishedPost = appendPublishedPost({
-    id: randomUUID(),
-    createdAt: new Date().toISOString(),
-    ...(ctx.title ? { title: ctx.title } : {}),
-    text: ctx.text,
-    platforms,
-    targets,
-    results,
-    ...(media
-      ? {
-          media: {
-            id: media.id,
-            filename: media.filename,
-            contentType: media.contentType,
-            size: media.size,
-            kind: media.kind,
-            url: media.url
-          }
-        }
-      : {})
-  } satisfies PublishedPost);
-
-  return NextResponse.json({ results, publishedPost });
 }

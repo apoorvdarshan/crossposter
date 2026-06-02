@@ -48,6 +48,8 @@ type StorageResponse = {
     draftBytes: number;
     publishedPostsBytes: number;
     publishedPosts: number;
+    scheduledPostsBytes: number;
+    scheduledPosts: number;
   };
   totalBytes: number;
 };
@@ -979,6 +981,9 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
             <Link className="top-tab" href="/">
               Dashboard
             </Link>
+            <Link className="top-tab" href="/scheduled">
+              Scheduler
+            </Link>
             {settingsViews.map((view) => (
               <Link
                 aria-current={settingsView === view.id ? "page" : undefined}
@@ -1141,6 +1146,11 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                 <strong>{formatBytes(storage?.config.publishedPostsBytes || 0)}</strong>
                 <small>{storage?.config.publishedPosts || 0} posts</small>
               </div>
+              <div>
+                <span>Scheduled queue</span>
+                <strong>{formatBytes(storage?.config.scheduledPostsBytes || 0)}</strong>
+                <small>{storage?.config.scheduledPosts || 0} posts</small>
+              </div>
             </div>
             {storage?.uploads.path ? (
               <div className="config-location">
@@ -1162,7 +1172,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
             ) : null}
             <p className="hint">
               Clear storage removes current draft, browser draft media, local uploaded files,
-              and published history. It does not delete config keys, profiles, or provider setup.
+              scheduled posts, and published history. It does not delete config keys, profiles, or provider setup.
             </p>
             {confirmClearStorage ? (
               <div className="storage-warning">
