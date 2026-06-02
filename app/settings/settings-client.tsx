@@ -17,6 +17,7 @@ import {
   Save,
   Trash2
 } from "lucide-react";
+import { ProjectLinks } from "@/components/project-links";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { ConfigField } from "@/lib/config-spec";
@@ -995,6 +996,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               </Link>
             ))}
           </nav>
+          <ProjectLinks />
           <ThemeToggle />
           <button
             className={`primary compact-button masthead-action-slot ${saveFeedback ? "is-saved" : ""}`}

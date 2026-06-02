@@ -359,6 +359,39 @@ h2 {
   color: var(--accent-contrast);
 }
 
+.project-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  border: 1px solid var(--masthead-line);
+  border-radius: 999px;
+  background: var(--masthead-soft);
+  padding: 3px;
+}
+
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  border-radius: 999px;
+  color: var(--masthead-muted);
+  padding: 0 9px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.project-link:hover,
+.project-link:focus-visible {
+  background: var(--accent-soft);
+  color: var(--masthead-ink);
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;

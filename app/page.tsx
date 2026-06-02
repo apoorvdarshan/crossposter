@@ -18,6 +18,7 @@ import {
   Video,
   X
 } from "lucide-react";
+import { ProjectLinks } from "@/components/project-links";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { validatePlatformConfig, type ConfigIssue } from "@/lib/config-validation";
@@ -1633,6 +1634,7 @@ export default function Home() {
               Socials
             </Link>
           </nav>
+          <ProjectLinks />
           <ThemeToggle />
           <div className="status-pill masthead-action-slot">
             <span className="dot" />
