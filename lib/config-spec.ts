@@ -126,6 +126,13 @@ export const configFields: ConfigField[] = [
     help: "Your Hacker News password. Saved locally and used only to log in during publish.",
     secret: true,
     requiredFor: ["hackernews"]
+  },
+  {
+    name: "HACKERNEWS_COOKIE",
+    label: "Hacker News session cookie",
+    help: "Optional user=... cookie from a browser session. If set, Crossposter uses it before trying password login.",
+    secret: true,
+    showFor: ["hackernews"]
   }
 ];
 

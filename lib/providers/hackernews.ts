@@ -1,4 +1,4 @@
-import { requireEnv } from "@/lib/env";
+import { optionalEnv, requireEnv } from "@/lib/env";
 import { compactText } from "@/lib/http";
 import type { ProviderContext, PublishResult } from "@/lib/types";
 
@@ -49,6 +49,29 @@ async function login(username: string, password: string): Promise<string> {
   throw new Error("Hacker News login failed. Check username and password.");
 }
 
+function normalizeSessionCookie(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const userCookie = trimmed
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith("user="));
+
+  if (userCookie) {
+    return userCookie;
+  }
+
+  if (!trimmed.includes("=") && !trimmed.includes(";")) {
+    return `user=${trimmed}`;
+  }
+
+  return trimmed;
+}
+
 async function readSubmitFnid(cookie: string): Promise<string> {
   const response = await fetch(`${hnBaseUrl}/submit`, {
     headers: {
@@ -61,13 +84,33 @@ async function readSubmitFnid(cookie: string): Promise<string> {
 
   if (!fnid) {
     if (/You have to be logged in/i.test(html)) {
-      throw new Error("Hacker News session was not accepted. Check username and password.");
+      throw new Error("Hacker News session was not accepted. Refresh the session cookie or check username and password.");
     }
 
     throw new Error("Could not find Hacker News submit form token.");
   }
 
   return fnid;
+}
+
+async function sessionCookie(profileId: string | undefined): Promise<string> {
+  const configuredCookie = normalizeSessionCookie(optionalEnv("HACKERNEWS_COOKIE", profileId));
+  const username = optionalEnv("HACKERNEWS_USERNAME", profileId);
+  const password = optionalEnv("HACKERNEWS_PASSWORD", profileId);
+
+  if (configuredCookie) {
+    if (username && password) {
+      try {
+        await readSubmitFnid(configuredCookie);
+
+        return configuredCookie;
+      } catch {}
+    } else {
+      return configuredCookie;
+    }
+  }
+
+  return login(username || requireEnv("HACKERNEWS_USERNAME", profileId), password || requireEnv("HACKERNEWS_PASSWORD", profileId));
 }
 
 async function submitStory({
@@ -156,8 +199,6 @@ function normalizeSubmissionUrl(value: string | undefined): string | undefined {
 
 export async function publishHackerNews(ctx: ProviderContext): Promise<PublishResult> {
   const profileId = ctx.target?.profileId;
-  const username = requireEnv("HACKERNEWS_USERNAME", profileId);
-  const password = requireEnv("HACKERNEWS_PASSWORD", profileId);
   const title = ctx.title?.trim();
 
   if (!title) {
@@ -166,7 +207,7 @@ export async function publishHackerNews(ctx: ProviderContext): Promise<PublishRe
 
   const text = compactText([ctx.text]);
   const linkUrl = normalizeSubmissionUrl(ctx.linkUrl);
-  const cookie = await login(username, password);
+  const cookie = await sessionCookie(profileId);
   const fnid = await readSubmitFnid(cookie);
   const submittedUrl = await submitStory({
     cookie,
