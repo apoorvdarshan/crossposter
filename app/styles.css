@@ -782,12 +782,12 @@ textarea {
 
 .media-picker {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.42fr);
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--input-bg);
-  cursor: pointer;
+  cursor: default;
   outline: none;
   transition:
     border-color 160ms ease,
@@ -796,7 +796,6 @@ textarea {
 }
 
 .media-picker.has-file {
-  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.42fr);
   border-color: var(--line-hover);
 }
 
@@ -816,11 +815,13 @@ textarea {
   min-height: 210px;
   place-items: center;
   overflow: hidden;
+  border-right: 1px solid var(--line);
   background: var(--media-bg);
+  outline: none;
 }
 
-.media-picker.has-file .media-preview {
-  border-right: 1px solid var(--line);
+.media-preview:focus {
+  box-shadow: inset 0 0 0 3px var(--accent-ring);
 }
 
 .media-preview img,
@@ -857,10 +858,15 @@ textarea {
 .media-controls {
   display: grid;
   align-content: center;
+  justify-items: start;
   gap: 10px;
   min-width: 0;
   cursor: default;
   padding: 14px;
+}
+
+.media-choose-button {
+  width: fit-content;
 }
 
 .icon-button {
@@ -2229,7 +2235,7 @@ a.history-platform.ok:hover {
     grid-template-columns: 1fr;
   }
 
-  .media-picker.has-file .media-preview {
+  .media-picker .media-preview {
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }

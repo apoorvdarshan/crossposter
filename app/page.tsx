@@ -1104,27 +1104,6 @@ export default function Home() {
     mediaInputRef.current?.click();
   }
 
-  function shouldIgnoreMediaPickerOpen(target: EventTarget | null): boolean {
-    return target instanceof Element && Boolean(target.closest("button,input,a,video,audio"));
-  }
-
-  function clickMediaPicker(event: React.MouseEvent<HTMLDivElement>) {
-    if (shouldIgnoreMediaPickerOpen(event.target)) {
-      return;
-    }
-
-    openMediaFilePicker();
-  }
-
-  function keyMediaPicker(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) {
-      return;
-    }
-
-    event.preventDefault();
-    openMediaFilePicker();
-  }
-
   function pickClipboardFile(items: DataTransferItemList): File | null {
     for (const item of Array.from(items)) {
       if (item.kind === "file") {
@@ -1742,14 +1721,7 @@ export default function Home() {
                 onDrop={dropMedia}
                 onPaste={pasteMedia}
               >
-                <div
-                  className="media-preview"
-                  onClick={clickMediaPicker}
-                  onKeyDown={keyMediaPicker}
-                  role="button"
-                  aria-label="Choose media file"
-                  tabIndex={0}
-                >
+                <div className="media-preview" aria-label="Drop or paste media file" tabIndex={0}>
                   {mediaFile && mediaPreviewUrl && selectedMediaKind === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={mediaPreviewUrl} alt={mediaFile.name} />
@@ -1772,7 +1744,7 @@ export default function Home() {
                   {!mediaFile ? (
                     <div className="media-empty">
                       <Upload size={28} />
-                      <span>Drop, paste, or click here</span>
+                      <span>Drop or paste a file</span>
                     </div>
                   ) : null}
                 </div>
@@ -1784,23 +1756,33 @@ export default function Home() {
                   type="file"
                   onChange={selectMedia}
                 />
-                {mediaFile ? (
-                  <div className="media-controls">
-                    <button className="secondary icon-button" type="button" onClick={clearMedia}>
-                      <X size={18} />
-                      <span className="sr-only">Remove media file</span>
-                    </button>
-                    <div className="media-meta">
-                      <span>
-                        <SelectedMediaIcon size={16} />
-                        {mediaFile.name}
-                      </span>
-                      <span>
-                        {mediaFile.type || "file"} · {formatBytes(mediaFile.size)}
-                      </span>
-                    </div>
-                  </div>
-                ) : null}
+                <div className="media-controls">
+                  <button
+                    className="secondary compact-button media-choose-button"
+                    type="button"
+                    onClick={openMediaFilePicker}
+                  >
+                    <Upload size={17} />
+                    Choose file
+                  </button>
+                  {mediaFile ? (
+                    <>
+                      <button className="secondary icon-button" type="button" onClick={clearMedia}>
+                        <X size={18} />
+                        <span className="sr-only">Remove media file</span>
+                      </button>
+                      <div className="media-meta">
+                        <span>
+                          <SelectedMediaIcon size={16} />
+                          {mediaFile.name}
+                        </span>
+                        <span>
+                          {mediaFile.type || "file"} · {formatBytes(mediaFile.size)}
+                        </span>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
               </div>
               <span className="field-hint">
                 Paste an image from the clipboard, drag and drop a file, or choose one manually.
