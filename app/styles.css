@@ -1086,6 +1086,10 @@ textarea {
   padding: 12px;
 }
 
+.schedule-drawer-top {
+  margin: 14px 20px 0;
+}
+
 .schedule-drawer-head,
 .schedule-presets,
 .schedule-picker {
@@ -1165,6 +1169,10 @@ textarea {
   color: var(--accent-dark);
   font-size: 0.86rem;
   font-weight: 900;
+}
+
+.schedule-status-top {
+  margin: 10px 20px 0;
 }
 
 .progress-box {

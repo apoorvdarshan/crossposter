@@ -1075,6 +1075,12 @@ export default function Home() {
     );
   }
 
+  function toggleSchedulePanel() {
+    setScheduledForInput((current) => futureScheduleValue(current));
+    setShowSchedulePanel((current) => !current);
+    setScheduleStatus("");
+  }
+
   function setDraftMedia(file: File | null) {
     setHasSavedDraft(true);
     setMediaFile(file);
@@ -1564,6 +1570,15 @@ export default function Home() {
               </button>
               <button
                 className="secondary compact-button"
+                disabled={!canOpenSchedule}
+                onClick={toggleSchedulePanel}
+                type="button"
+              >
+                <CalendarClock size={16} />
+                Schedule draft
+              </button>
+              <button
+                className="secondary compact-button"
                 type="button"
                 onClick={() => void clearDraft()}
               >
@@ -1572,6 +1587,72 @@ export default function Home() {
               {topActionProgress ? <ProgressBox className="head-progress" progress={topActionProgress} /> : null}
             </div>
           </div>
+
+          {showSchedulePanel ? (
+            <div className="schedule-drawer schedule-drawer-top">
+              <div className="schedule-drawer-head">
+                <div>
+                  <strong>Schedule draft</strong>
+                  <span>{scheduledForIso ? formatDateTime(scheduledForIso) : "Choose a date and time"}</span>
+                </div>
+                <div className="schedule-presets" aria-label="Schedule presets">
+                  <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 30 * 60 * 1000)))}>
+                    30 min
+                  </button>
+                  <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 2 * 60 * 60 * 1000)))}>
+                    2 hours
+                  </button>
+                  <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(tomorrowMorning()))}>
+                    Tomorrow 9 AM
+                  </button>
+                </div>
+              </div>
+              <div className="schedule-picker">
+                <label>
+                  <span>Date</span>
+                  <input
+                    min={datetimeDatePart(datetimeLocalValue(new Date()))}
+                    onChange={(event) => {
+                      setScheduledForInput((current) =>
+                        mergeDateTimeParts(current, "date", event.target.value)
+                      );
+                      setScheduleStatus("");
+                    }}
+                    type="date"
+                    value={datetimeDatePart(scheduledForInput)}
+                  />
+                </label>
+                <label>
+                  <span>Time</span>
+                  <input
+                    onChange={(event) => {
+                      setScheduledForInput((current) =>
+                        mergeDateTimeParts(current, "time", event.target.value)
+                      );
+                      setScheduleStatus("");
+                    }}
+                    type="time"
+                    value={datetimeTimePart(scheduledForInput)}
+                  />
+                </label>
+                <button
+                  className="primary compact-button"
+                  disabled={!canSchedule}
+                  onClick={() => void scheduleDraft("top")}
+                  type="button"
+                >
+                  <CalendarClock size={17} />
+                  {isScheduling ? "Scheduling..." : "Confirm schedule"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {scheduleStatus ? (
+            <p className="schedule-status schedule-status-top" role="status">
+              <CheckCircle2 size={16} />
+              {scheduleStatus}
+            </p>
+          ) : null}
 
           <div className="composer">
             <div className="field">
@@ -1877,11 +1958,7 @@ export default function Home() {
               <button
                 className="secondary"
                 disabled={!canOpenSchedule}
-                onClick={() => {
-                  setScheduledForInput((current) => futureScheduleValue(current));
-                  setShowSchedulePanel((current) => !current);
-                  setScheduleStatus("");
-                }}
+                onClick={toggleSchedulePanel}
                 type="button"
               >
                 <CalendarClock size={18} />
@@ -1895,71 +1972,6 @@ export default function Home() {
                 Clear draft
               </button>
             </div>
-            {showSchedulePanel ? (
-              <div className="schedule-drawer">
-                <div className="schedule-drawer-head">
-                  <div>
-                    <strong>Schedule draft</strong>
-                    <span>{scheduledForIso ? formatDateTime(scheduledForIso) : "Choose a date and time"}</span>
-                  </div>
-                  <div className="schedule-presets" aria-label="Schedule presets">
-                    <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 30 * 60 * 1000)))}>
-                      30 min
-                    </button>
-                    <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 2 * 60 * 60 * 1000)))}>
-                      2 hours
-                    </button>
-                    <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(tomorrowMorning()))}>
-                      Tomorrow 9 AM
-                    </button>
-                  </div>
-                </div>
-                <div className="schedule-picker">
-                  <label>
-                    <span>Date</span>
-                    <input
-                      min={datetimeDatePart(datetimeLocalValue(new Date()))}
-                      onChange={(event) => {
-                        setScheduledForInput((current) =>
-                          mergeDateTimeParts(current, "date", event.target.value)
-                        );
-                        setScheduleStatus("");
-                      }}
-                      type="date"
-                      value={datetimeDatePart(scheduledForInput)}
-                    />
-                  </label>
-                  <label>
-                    <span>Time</span>
-                    <input
-                      onChange={(event) => {
-                        setScheduledForInput((current) =>
-                          mergeDateTimeParts(current, "time", event.target.value)
-                        );
-                        setScheduleStatus("");
-                      }}
-                      type="time"
-                      value={datetimeTimePart(scheduledForInput)}
-                    />
-                  </label>
-                  <button
-                    className="primary compact-button"
-                    disabled={!canSchedule}
-                    onClick={() => void scheduleDraft("bottom")}
-                    type="button"
-                  >
-                    <CalendarClock size={17} />
-                    {isScheduling ? "Scheduling..." : "Confirm schedule"}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            {scheduleStatus ? (
-              <p className="schedule-status" role="status">
-                <CheckCircle2 size={16} />
-                {scheduleStatus}
-              </p>
-            ) : null}
             {bottomActionProgress ? <ProgressBox progress={bottomActionProgress} /> : null}
           </div>
         </section>
