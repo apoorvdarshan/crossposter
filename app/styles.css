@@ -1075,7 +1075,8 @@ textarea {
   padding-top: 2px;
 }
 
-.schedule-drawer {
+.schedule-popup {
+  position: relative;
   display: grid;
   gap: 12px;
   border: 1px solid var(--line);
@@ -1083,37 +1084,57 @@ textarea {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 42%),
     var(--panel-soft);
+  box-shadow: var(--shadow);
   padding: 12px;
+  z-index: 12;
 }
 
-.schedule-drawer-top {
+.schedule-popup-top {
   margin: 14px 20px 0;
 }
 
-.schedule-drawer-head,
+.schedule-popup-bottom {
+  margin-top: 2px;
+}
+
+.schedule-popup::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 26px;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: var(--panel-soft);
+  transform: rotate(45deg);
+}
+
+.schedule-popup-head,
 .schedule-presets,
+.schedule-popup-actions,
 .schedule-picker {
   display: flex;
   align-items: center;
 }
 
-.schedule-drawer-head {
+.schedule-popup-head {
   justify-content: space-between;
   gap: 12px;
 }
 
-.schedule-drawer-head > div:first-child {
+.schedule-popup-head > div:first-child {
   display: grid;
   gap: 3px;
   min-width: 0;
 }
 
-.schedule-drawer-head strong {
+.schedule-popup-head strong {
   color: var(--heading-ink);
   font-size: 0.95rem;
 }
 
-.schedule-drawer-head span {
+.schedule-popup-head span {
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 800;
@@ -1121,6 +1142,11 @@ textarea {
 
 .schedule-presets {
   flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.schedule-popup-actions {
   justify-content: flex-end;
   gap: 6px;
 }
@@ -1994,7 +2020,7 @@ a.history-platform.ok:hover {
   .socials-masonry,
   .channel-grid,
   .compression-grid,
-  .schedule-drawer-head,
+  .schedule-popup-head,
   .schedule-picker,
   .media-picker {
     display: grid;

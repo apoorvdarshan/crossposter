@@ -811,7 +811,8 @@ export default function Home() {
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [configHydrated, setConfigHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
-  const [showSchedulePanel, setShowSchedulePanel] = useState(false);
+  const [schedulePanelPlacement, setSchedulePanelPlacement] = useState<ProgressPlacement | null>(null);
+  const [scheduleStatusPlacement, setScheduleStatusPlacement] = useState<ProgressPlacement>("top");
   const [scheduledForInput, setScheduledForInput] = useState(() => datetimeLocalValue());
   const [configProfiles, setConfigProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
 
@@ -1075,10 +1076,15 @@ export default function Home() {
     );
   }
 
-  function toggleSchedulePanel() {
+  function toggleSchedulePanel(placement: ProgressPlacement) {
     setScheduledForInput((current) => futureScheduleValue(current));
-    setShowSchedulePanel((current) => !current);
+    setSchedulePanelPlacement((current) => (current === placement ? null : placement));
+    setScheduleStatusPlacement(placement);
     setScheduleStatus("");
+  }
+
+  function closeSchedulePanel() {
+    setSchedulePanelPlacement(null);
   }
 
   function setDraftMedia(file: File | null) {
@@ -1431,9 +1437,10 @@ export default function Home() {
       }
 
       setProgress({ label: "Scheduled", value: 100 });
+      setScheduleStatusPlacement(placement);
       setScheduleStatus(`Scheduled for ${formatDateTime(body.scheduledPost?.scheduledFor || scheduledFor)}.`);
       setScheduledForInput(datetimeLocalValue());
-      setShowSchedulePanel(false);
+      setSchedulePanelPlacement(null);
     } catch (scheduleError) {
       setError(scheduleError instanceof Error ? scheduleError.message : "Scheduling failed");
     } finally {
@@ -1507,6 +1514,91 @@ export default function Home() {
   const bottomActionProgress =
     actionProgress && progressPlacement === "bottom" ? actionProgress : null;
 
+  function renderSchedulePopup(placement: ProgressPlacement) {
+    return (
+      <div className={`schedule-popup schedule-popup-${placement}`}>
+        <div className="schedule-popup-head">
+          <div>
+            <strong>Schedule draft</strong>
+            <span>{scheduledForIso ? formatDateTime(scheduledForIso) : "Choose a date and time"}</span>
+          </div>
+          <div className="schedule-popup-actions">
+            <div className="schedule-presets" aria-label="Schedule presets">
+              <button
+                type="button"
+                onClick={() =>
+                  setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 30 * 60 * 1000)))
+                }
+              >
+                30 min
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 2 * 60 * 60 * 1000)))
+                }
+              >
+                2 hours
+              </button>
+              <button
+                type="button"
+                onClick={() => setScheduledForInput(datetimeLocalValue(tomorrowMorning()))}
+              >
+                Tomorrow 9 AM
+              </button>
+            </div>
+            <button
+              className="secondary compact-button icon-button"
+              type="button"
+              onClick={closeSchedulePanel}
+              aria-label="Close schedule popup"
+            >
+              <X size={17} />
+            </button>
+          </div>
+        </div>
+        <div className="schedule-picker">
+          <label>
+            <span>Date</span>
+            <input
+              min={datetimeDatePart(datetimeLocalValue(new Date()))}
+              onChange={(event) => {
+                setScheduledForInput((current) =>
+                  mergeDateTimeParts(current, "date", event.target.value)
+                );
+                setScheduleStatus("");
+              }}
+              type="date"
+              value={datetimeDatePart(scheduledForInput)}
+            />
+          </label>
+          <label>
+            <span>Time</span>
+            <input
+              onChange={(event) => {
+                setScheduledForInput((current) =>
+                  mergeDateTimeParts(current, "time", event.target.value)
+                );
+                setScheduleStatus("");
+              }}
+              type="time"
+              value={datetimeTimePart(scheduledForInput)}
+            />
+          </label>
+          <button
+            className="primary compact-button"
+            disabled={!canSchedule}
+            onClick={() => void scheduleDraft(placement)}
+            type="button"
+          >
+            <CalendarClock size={17} />
+            {isScheduling ? "Scheduling..." : "Confirm schedule"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="workspace">
       <header className="masthead">
@@ -1571,7 +1663,7 @@ export default function Home() {
               <button
                 className="secondary compact-button"
                 disabled={!canOpenSchedule}
-                onClick={toggleSchedulePanel}
+                onClick={() => toggleSchedulePanel("top")}
                 type="button"
               >
                 <CalendarClock size={16} />
@@ -1588,66 +1680,8 @@ export default function Home() {
             </div>
           </div>
 
-          {showSchedulePanel ? (
-            <div className="schedule-drawer schedule-drawer-top">
-              <div className="schedule-drawer-head">
-                <div>
-                  <strong>Schedule draft</strong>
-                  <span>{scheduledForIso ? formatDateTime(scheduledForIso) : "Choose a date and time"}</span>
-                </div>
-                <div className="schedule-presets" aria-label="Schedule presets">
-                  <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 30 * 60 * 1000)))}>
-                    30 min
-                  </button>
-                  <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(new Date(Date.now() + 2 * 60 * 60 * 1000)))}>
-                    2 hours
-                  </button>
-                  <button type="button" onClick={() => setScheduledForInput(datetimeLocalValue(tomorrowMorning()))}>
-                    Tomorrow 9 AM
-                  </button>
-                </div>
-              </div>
-              <div className="schedule-picker">
-                <label>
-                  <span>Date</span>
-                  <input
-                    min={datetimeDatePart(datetimeLocalValue(new Date()))}
-                    onChange={(event) => {
-                      setScheduledForInput((current) =>
-                        mergeDateTimeParts(current, "date", event.target.value)
-                      );
-                      setScheduleStatus("");
-                    }}
-                    type="date"
-                    value={datetimeDatePart(scheduledForInput)}
-                  />
-                </label>
-                <label>
-                  <span>Time</span>
-                  <input
-                    onChange={(event) => {
-                      setScheduledForInput((current) =>
-                        mergeDateTimeParts(current, "time", event.target.value)
-                      );
-                      setScheduleStatus("");
-                    }}
-                    type="time"
-                    value={datetimeTimePart(scheduledForInput)}
-                  />
-                </label>
-                <button
-                  className="primary compact-button"
-                  disabled={!canSchedule}
-                  onClick={() => void scheduleDraft("top")}
-                  type="button"
-                >
-                  <CalendarClock size={17} />
-                  {isScheduling ? "Scheduling..." : "Confirm schedule"}
-                </button>
-              </div>
-            </div>
-          ) : null}
-          {scheduleStatus ? (
+          {schedulePanelPlacement === "top" ? renderSchedulePopup("top") : null}
+          {scheduleStatus && scheduleStatusPlacement === "top" ? (
             <p className="schedule-status schedule-status-top" role="status">
               <CheckCircle2 size={16} />
               {scheduleStatus}
@@ -1958,7 +1992,7 @@ export default function Home() {
               <button
                 className="secondary"
                 disabled={!canOpenSchedule}
-                onClick={toggleSchedulePanel}
+                onClick={() => toggleSchedulePanel("bottom")}
                 type="button"
               >
                 <CalendarClock size={18} />
@@ -1972,6 +2006,13 @@ export default function Home() {
                 Clear draft
               </button>
             </div>
+            {schedulePanelPlacement === "bottom" ? renderSchedulePopup("bottom") : null}
+            {scheduleStatus && scheduleStatusPlacement === "bottom" ? (
+              <p className="schedule-status" role="status">
+                <CheckCircle2 size={16} />
+                {scheduleStatus}
+              </p>
+            ) : null}
             {bottomActionProgress ? <ProgressBox progress={bottomActionProgress} /> : null}
           </div>
         </section>
