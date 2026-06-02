@@ -161,15 +161,22 @@ publishing.
 
 ### Instagram
 
-Instagram requires an Instagram professional account connected through Meta. For local
-media files, Crossposter can temporarily upload selected JPG images or MP4/MOV
-Reels videos to Supabase Storage, give Meta a signed URL, then delete the object
-after publishing.
+Instagram uses Meta's Instagram Login OAuth path for your own Business or
+Creator accounts. Add the Instagram API with Instagram Login use case in your
+Meta app, add the local callback URL, then use **Connect Instagram** in the
+Socials settings to save a token and user ID locally.
 
 ```text
+INSTAGRAM_CLIENT_ID
+INSTAGRAM_CLIENT_SECRET
+INSTAGRAM_OAUTH_SCOPES=instagram_business_basic instagram_business_content_publish
 INSTAGRAM_ACCESS_TOKEN
 INSTAGRAM_USER_ID
 ```
+
+For local media files, Crossposter can temporarily upload selected JPG images or
+MP4/MOV Reels videos to Supabase Storage, give Meta a signed URL, then delete the
+object after publishing.
 
 Create the Supabase bucket first if you plan to publish Instagram media. A private
 bucket is fine; Crossposter uses a server-side service role key to upload, create

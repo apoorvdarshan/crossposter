@@ -15,6 +15,8 @@ const tokenFields = new Set([
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
   "LINKEDIN_ACCESS_TOKEN",
+  "INSTAGRAM_CLIENT_ID",
+  "INSTAGRAM_CLIENT_SECRET",
   "INSTAGRAM_ACCESS_TOKEN",
   "SUPABASE_SERVICE_ROLE_KEY",
   "PINTEREST_ACCESS_TOKEN",
@@ -86,9 +88,18 @@ function invalidReason(name: string, value: string): string | null {
       return value.split(/\s+/).includes("w_member_social")
         ? null
         : "must include w_member_social";
+    case "INSTAGRAM_OAUTH_SCOPES":
+      return value.split(/\s+/).includes("instagram_business_basic") &&
+        value.split(/\s+/).includes("instagram_business_content_publish")
+        ? null
+        : "must include instagram_business_basic and instagram_business_content_publish";
     case "INSTAGRAM_USER_ID":
     case "PINTEREST_BOARD_ID":
       return /^\d+$/.test(value) ? null : "must be numeric";
+    case "INSTAGRAM_TOKEN_EXPIRES_AT":
+      return /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value))
+        ? null
+        : "must be an ISO timestamp";
     case "SUPABASE_URL":
       return isHttpUrl(value) ? null : "must be a Supabase http or https URL";
     case "SUPABASE_STORAGE_BUCKET":

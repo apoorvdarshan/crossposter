@@ -216,13 +216,13 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     ]
   },
   instagram: {
-    title: "Instagram setup with Supabase media hosting",
+    title: "Instagram OAuth setup",
     intro:
-      "Instagram needs a professional account and a public fetchable media URL. Crossposter can create that URL through Supabase Storage and remove it after publishing.",
+      "Use Instagram Login for your own Business or Creator accounts. Crossposter saves the token locally, then uses Supabase only for temporary media URLs during Publish.",
     links: [
       {
-        label: "Instagram API setup",
-        href: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/get-started"
+        label: "Instagram Login setup",
+        href: "https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login"
       },
       {
         label: "Instagram publishing",
@@ -231,10 +231,12 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       { label: "Supabase Storage", href: "https://supabase.com/docs/guides/storage" }
     ],
     steps: [
-      "Switch the Instagram account to Business or Creator, then connect it to a Facebook Page.",
-      "Create a Meta developer app and add yourself as an app admin, developer, or tester while using development mode.",
-      "Get a Meta token with instagram_basic, pages_show_list, and instagram_content_publish for your own connected account.",
-      "Paste the token and Instagram professional account ID into this Instagram profile.",
+      "Switch the Instagram account to Business or Creator. Personal accounts cannot publish through the API.",
+      "Create or open a Meta developer app, then add the Instagram API with Instagram Login use case.",
+      "In that Instagram API setup, add http://localhost:2004/api/auth/instagram/callback as a valid OAuth redirect URI. Use your configured localhost port if you changed it.",
+      "Copy the app ID and app secret into this Instagram profile.",
+      "Keep scopes as instagram_business_basic instagram_business_content_publish.",
+      "Click Connect Instagram and authorize the matching Instagram account. Crossposter saves the token, user ID, and token expiry locally.",
       "Create a Supabase Storage bucket such as crossposter-media. A private bucket is fine.",
       "Paste the Supabase project URL and service role key in the Media Storage section. Supabase Cloud and self-hosted Supabase endpoints both work.",
       "Keep Delete hosted media after publish set to true unless you want to inspect uploaded files.",
@@ -421,7 +423,8 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const section = params.get("section");
-    const message = params.get("linkedin");
+    const linkedinMessage = params.get("linkedin");
+    const instagramMessage = params.get("instagram");
 
     if (section === "settings" || section === "storage" || section === "socials") {
       setSettingsView(section);
@@ -435,9 +438,18 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
       failed: "LinkedIn authorization failed.",
       bad_state: "LinkedIn authorization expired. Try Connect LinkedIn again."
     };
+    const instagramLabels: Record<string, string> = {
+      connected: "Instagram connected and saved locally.",
+      token_only: "Instagram token saved. Add the Instagram user ID manually if it was not filled.",
+      denied: "Instagram authorization was cancelled.",
+      failed: "Instagram authorization failed.",
+      bad_state: "Instagram authorization expired. Try Connect Instagram again."
+    };
 
-    if (message) {
-      setStatus(labels[message] || "LinkedIn authorization finished.");
+    if (linkedinMessage) {
+      setStatus(labels[linkedinMessage] || "LinkedIn authorization finished.");
+    } else if (instagramMessage) {
+      setStatus(instagramLabels[instagramMessage] || "Instagram authorization finished.");
     }
 
     if (section === "settings" || section === "storage" || section === "socials") {
@@ -446,7 +458,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
         "",
         settingsViews.find((view) => view.id === section)?.href || window.location.pathname
       );
-    } else if (message) {
+    } else if (linkedinMessage || instagramMessage) {
       window.history.replaceState(null, "", window.location.pathname);
     }
   }, []);
@@ -741,6 +753,41 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  async function connectInstagram(profile: ProviderProfile) {
+    const clientId = profile.values.INSTAGRAM_CLIENT_ID?.trim();
+    const clientSecret = profile.values.INSTAGRAM_CLIENT_SECRET?.trim();
+
+    if (!clientId || !clientSecret) {
+      setStatus("Add Instagram app ID and app secret first.");
+      return;
+    }
+
+    setStatus("");
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ values, profiles, activeProfiles })
+      });
+      const body = (await response.json()) as ConfigResponse & { error?: string };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not save config before connecting Instagram.");
+        return;
+      }
+
+      const startUrl = new URL("/api/auth/instagram/start", window.location.origin);
+      startUrl.searchParams.set("profileId", profile.id);
+      window.location.assign(startUrl.toString());
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not connect Instagram.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function openConfigFile() {
     setStatus("");
 
@@ -961,6 +1008,16 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                     >
                       <RefreshCw size={15} />
                       Connect LinkedIn
+                    </button>
+                  ) : null}
+                  {platform.id === "instagram" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void connectInstagram(profile)}
+                    >
+                      <RefreshCw size={15} />
+                      Connect Instagram
                     </button>
                   ) : null}
                   <button

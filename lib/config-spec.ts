@@ -102,9 +102,29 @@ export const configFields: ConfigField[] = [
     showFor: ["linkedin"]
   },
   {
+    name: "INSTAGRAM_CLIENT_ID",
+    label: "Instagram app ID",
+    help: "App ID from Meta's Instagram API with Instagram Login setup. Used only when connecting this profile locally.",
+    showFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_CLIENT_SECRET",
+    label: "Instagram app secret",
+    help: "App secret from Meta's Instagram API setup. Saved locally and used only during OAuth.",
+    secret: true,
+    showFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_OAUTH_SCOPES",
+    label: "Instagram OAuth scopes",
+    help: "Use instagram_business_basic instagram_business_content_publish for direct Instagram Login publishing.",
+    defaultValue: "instagram_business_basic instagram_business_content_publish",
+    showFor: ["instagram"]
+  },
+  {
     name: "INSTAGRAM_ACCESS_TOKEN",
     label: "Instagram access token",
-    help: "Meta Graph API token.",
+    help: "Instagram OAuth token with content publishing permission.",
     secret: true,
     requiredFor: ["instagram"]
   },
@@ -113,6 +133,12 @@ export const configFields: ConfigField[] = [
     label: "Instagram user ID",
     help: "Instagram professional account ID.",
     requiredFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_TOKEN_EXPIRES_AT",
+    label: "Instagram token expires at",
+    help: "Saved by Connect Instagram after exchanging for a long-lived token. Reconnect before this date.",
+    showFor: ["instagram"]
   },
   {
     name: "SUPABASE_URL",

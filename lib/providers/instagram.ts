@@ -26,20 +26,21 @@ const instagramMaxImageSize = 8 * 1024 * 1024;
 const instagramMaxVideoSize = 300 * 1024 * 1024;
 const videoStatusPolls = 45;
 const videoStatusPollDelayMs = 3000;
+const defaultGraphVersion = "v25.0";
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function waitForVideoContainer(
-  graphVersion: string,
+  graphBaseUrl: string,
   containerId: string,
   accessToken: string
 ): Promise<void> {
   for (let attempt = 0; attempt < videoStatusPolls; attempt += 1) {
     const status = await assertOk<InstagramContainerStatus>(
       await fetch(
-        `https://graph.facebook.com/${graphVersion}/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(accessToken)}`
+        `${graphBaseUrl}/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(accessToken)}`
       )
     );
     const code = status.status_code || "";
@@ -59,7 +60,7 @@ async function waitForVideoContainer(
 }
 
 async function getPublishedPermalink(
-  graphVersion: string,
+  graphBaseUrl: string,
   mediaId: string | undefined,
   accessToken: string
 ): Promise<string | undefined> {
@@ -69,18 +70,28 @@ async function getPublishedPermalink(
 
   const media = await assertOk<InstagramMediaPermalink>(
     await fetch(
-      `https://graph.facebook.com/${graphVersion}/${mediaId}?fields=permalink&access_token=${encodeURIComponent(accessToken)}`
+      `${graphBaseUrl}/${mediaId}?fields=permalink&access_token=${encodeURIComponent(accessToken)}`
     )
   );
 
   return media.permalink;
 }
 
+function instagramGraphBaseUrl(profileId: string | undefined): string {
+  const host = (optionalEnv("INSTAGRAM_GRAPH_HOST", profileId) || "graph.instagram.com")
+    .trim()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "");
+  const graphVersion = optionalEnv("META_GRAPH_VERSION", profileId) || defaultGraphVersion;
+
+  return `https://${host}/${graphVersion}`;
+}
+
 export async function publishInstagram(ctx: ProviderContext): Promise<PublishResult> {
   const profileId = ctx.target?.profileId;
   const accessToken = requireEnv("INSTAGRAM_ACCESS_TOKEN", profileId);
   const userId = requireEnv("INSTAGRAM_USER_ID", profileId);
-  const graphVersion = optionalEnv("META_GRAPH_VERSION", profileId) || "v23.0";
+  const graphBaseUrl = instagramGraphBaseUrl(profileId);
 
   if (ctx.media?.kind === "image") {
     if (!instagramImageTypes.has(ctx.media.contentType)) {
@@ -126,14 +137,14 @@ export async function publishInstagram(ctx: ProviderContext): Promise<PublishRes
     createBody.set("access_token", accessToken);
 
     const container = await assertOk<InstagramContainer>(
-      await fetch(`https://graph.facebook.com/${graphVersion}/${userId}/media`, {
+      await fetch(`${graphBaseUrl}/${userId}/media`, {
         method: "POST",
         body: createBody
       })
     );
 
     if (publishKind === "video") {
-      await waitForVideoContainer(graphVersion, container.id, accessToken);
+      await waitForVideoContainer(graphBaseUrl, container.id, accessToken);
     }
 
     const publishBody = new URLSearchParams();
@@ -141,13 +152,13 @@ export async function publishInstagram(ctx: ProviderContext): Promise<PublishRes
     publishBody.set("access_token", accessToken);
 
     const published = await assertOk<InstagramPublish>(
-      await fetch(`https://graph.facebook.com/${graphVersion}/${userId}/media_publish`, {
+      await fetch(`${graphBaseUrl}/${userId}/media_publish`, {
         method: "POST",
         body: publishBody
       })
     );
     const permalink = await getPublishedPermalink(
-      graphVersion,
+      graphBaseUrl,
       published.id,
       accessToken
     ).catch(() => undefined);
