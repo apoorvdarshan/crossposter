@@ -2,7 +2,6 @@ import {
   siBluesky,
   siDevdotto,
   siMastodon,
-  siPixelfed,
   type SimpleIcon
 } from "simple-icons";
 import type { CSSProperties } from "react";
@@ -11,7 +10,6 @@ import type { Platform } from "@/lib/types";
 const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   bluesky: siBluesky,
   mastodon: siMastodon,
-  pixelfed: siPixelfed,
   devto: siDevdotto
 };
 
@@ -27,7 +25,7 @@ const socialNames: Record<Platform, string> = {
 const brandColors: Record<Platform, string> = {
   bluesky: `#${siBluesky.hex}`,
   mastodon: `#${siMastodon.hex}`,
-  pixelfed: `#${siPixelfed.hex}`,
+  pixelfed: "#6366f1",
   devto: `#${siDevdotto.hex}`,
   linkedin: "#0a66c2",
   nostr: "#8f3ffc"
@@ -54,6 +52,8 @@ export function SocialLogo({ platform, size = "md" }: SocialLogoProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d={icon.path} />
         </svg>
+      ) : platform === "pixelfed" ? (
+        <span className="pixelfed-mark" aria-hidden="true" />
       ) : platform === "nostr" ? (
         <span className="nostr-mark" aria-hidden="true" />
       ) : (

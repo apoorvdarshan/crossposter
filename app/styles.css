@@ -542,6 +542,13 @@ h2 {
   background: url("/assets/nostr-ostrich.png") center / contain no-repeat;
 }
 
+.pixelfed-mark {
+  display: block;
+  width: 82%;
+  height: 82%;
+  background: url("/assets/pixelfed-logo.png") center / contain no-repeat;
+}
+
 .counter {
   border-radius: 999px;
   background: var(--counter-bg);

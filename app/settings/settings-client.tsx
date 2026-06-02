@@ -86,10 +86,10 @@ type SetupGuide = {
 const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
-  { id: "pixelfed", label: "Pixelfed" },
   { id: "devto", label: "Dev.to" },
   { id: "linkedin", label: "LinkedIn" },
-  { id: "nostr", label: "Nostr" }
+  { id: "nostr", label: "Nostr" },
+  { id: "pixelfed", label: "Pixelfed" }
 ];
 
 const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = [
