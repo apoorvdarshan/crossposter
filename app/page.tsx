@@ -69,14 +69,6 @@ const channels: Array<{
     uses: ["Title", "Post", "Media"],
     target: "Uses the active Pinterest profile from Settings.",
     media: "Local image upload is supported."
-  },
-  {
-    id: "youtube",
-    label: "YouTube",
-    note: "Video upload",
-    uses: ["Title", "Post", "Media"],
-    target: "Uses the active YouTube profile from Settings.",
-    media: "Local video upload is supported."
   }
 ];
 
@@ -99,10 +91,7 @@ const envLabels: Record<string, string> = {
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
   PINTEREST_ACCESS_TOKEN: "access token",
-  PINTEREST_BOARD_ID: "board",
-  YOUTUBE_CLIENT_ID: "client ID",
-  YOUTUBE_CLIENT_SECRET: "client secret",
-  YOUTUBE_REFRESH_TOKEN: "refresh token"
+  PINTEREST_BOARD_ID: "board"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -469,17 +458,6 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
       issues.push({
         id: "pinterest-kind",
         message: `Pinterest needs an image file; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    }
-  }
-
-  if (platforms.includes("youtube")) {
-    if (!file) {
-      issues.push({ id: "youtube-missing", message: "YouTube requires a video file." });
-    } else if (kind !== "video") {
-      issues.push({
-        id: "youtube-kind",
-        message: `YouTube needs a video file; selected media is a ${mediaKindLabel(kind)}.`
       });
     }
   }

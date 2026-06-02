@@ -113,27 +113,6 @@ export const configFields: ConfigField[] = [
     label: "Pinterest board",
     help: "Board ID to create pins in.",
     requiredFor: ["pinterest"]
-  },
-  {
-    name: "YOUTUBE_CLIENT_ID",
-    label: "YouTube client ID",
-    help: "Google OAuth client ID.",
-    secret: true,
-    requiredFor: ["youtube"]
-  },
-  {
-    name: "YOUTUBE_CLIENT_SECRET",
-    label: "YouTube client secret",
-    help: "Google OAuth client secret.",
-    secret: true,
-    requiredFor: ["youtube"]
-  },
-  {
-    name: "YOUTUBE_REFRESH_TOKEN",
-    label: "YouTube refresh token",
-    help: "Refresh token with youtube.upload scope.",
-    secret: true,
-    requiredFor: ["youtube"]
   }
 ];
 
@@ -150,7 +129,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     mastodon: [],
     devto: [],
     linkedin: [],
-    pinterest: [],
-    youtube: []
+    pinterest: []
   } as Record<Platform, string[]>
 );

@@ -11,7 +11,6 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 - Dev.to: Markdown articles
 - LinkedIn: profile or page posts with optional images or MP4 video through an author URN
 - Pinterest: local image pins
-- YouTube: local video uploads
 
 ## Run Locally
 
@@ -159,21 +158,6 @@ Pinterest image pins use a local image file encoded directly into the create-pin
 ```text
 PINTEREST_ACCESS_TOKEN
 PINTEREST_BOARD_ID
-```
-
-### YouTube
-
-YouTube uploads need OAuth with the `https://www.googleapis.com/auth/youtube.upload` scope and a local video file. New or unaudited Google API projects may be forced to upload videos as private.
-
-```text
-YOUTUBE_CLIENT_ID
-YOUTUBE_CLIENT_SECRET
-YOUTUBE_REFRESH_TOKEN
-YOUTUBE_CATEGORY_ID
-YOUTUBE_PRIVACY_STATUS
-YOUTUBE_NOTIFY_SUBSCRIBERS
-YOUTUBE_MADE_FOR_KIDS
-YOUTUBE_TAGS
 ```
 
 ## Security

@@ -15,10 +15,7 @@ const tokenFields = new Set([
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
   "LINKEDIN_ACCESS_TOKEN",
-  "PINTEREST_ACCESS_TOKEN",
-  "YOUTUBE_CLIENT_ID",
-  "YOUTUBE_CLIENT_SECRET",
-  "YOUTUBE_REFRESH_TOKEN"
+  "PINTEREST_ACCESS_TOKEN"
 ]);
 
 export function isPlaceholderValue(value: string | undefined): boolean {

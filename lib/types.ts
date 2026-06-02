@@ -3,8 +3,7 @@ export type Platform =
   | "mastodon"
   | "devto"
   | "linkedin"
-  | "pinterest"
-  | "youtube";
+  | "pinterest";
 
 export type PublishPayload = {
   title?: string;

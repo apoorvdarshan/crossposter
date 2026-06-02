@@ -3,7 +3,6 @@ import {
   siDevdotto,
   siMastodon,
   siPinterest,
-  siYoutube,
   type SimpleIcon
 } from "simple-icons";
 import type { CSSProperties } from "react";
@@ -13,8 +12,7 @@ const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   bluesky: siBluesky,
   mastodon: siMastodon,
   devto: siDevdotto,
-  pinterest: siPinterest,
-  youtube: siYoutube
+  pinterest: siPinterest
 };
 
 const socialNames: Record<Platform, string> = {
@@ -22,8 +20,7 @@ const socialNames: Record<Platform, string> = {
   mastodon: "Mastodon",
   devto: "Dev.to",
   linkedin: "LinkedIn",
-  pinterest: "Pinterest",
-  youtube: "YouTube"
+  pinterest: "Pinterest"
 };
 
 const brandColors: Record<Platform, string> = {
@@ -31,8 +28,7 @@ const brandColors: Record<Platform, string> = {
   mastodon: `#${siMastodon.hex}`,
   devto: `#${siDevdotto.hex}`,
   linkedin: "#0a66c2",
-  pinterest: `#${siPinterest.hex}`,
-  youtube: `#${siYoutube.hex}`
+  pinterest: `#${siPinterest.hex}`
 };
 
 type SocialLogoProps = {
