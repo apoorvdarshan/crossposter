@@ -149,7 +149,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     mastodon: [],
     devto: [],
     linkedin: [],
-    nostr: [],
-    hackernews: []
+    hackernews: [],
+    nostr: []
   } as Record<Platform, string[]>
 );

@@ -13,6 +13,6 @@ export const providers: Record<Platform, Provider> = {
   mastodon: publishMastodon,
   devto: publishDevto,
   linkedin: publishLinkedIn,
-  nostr: publishNostr,
-  hackernews: publishHackerNews
+  hackernews: publishHackerNews,
+  nostr: publishNostr
 };

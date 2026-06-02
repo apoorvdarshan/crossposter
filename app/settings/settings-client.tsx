@@ -88,8 +88,8 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
   { id: "linkedin", label: "LinkedIn" },
-  { id: "nostr", label: "Nostr" },
-  { id: "hackernews", label: "Hacker News" }
+  { id: "hackernews", label: "Hacker News" },
+  { id: "nostr", label: "Nostr" }
 ];
 
 const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = [

@@ -85,20 +85,20 @@ const channels: Array<{
     media: "Local images and MP4 video are supported."
   },
   {
-    id: "nostr",
-    label: "Nostr",
-    note: "Text note",
-    uses: ["Post"],
-    target: "Uses the active Nostr profile from Settings.",
-    media: "Local media is ignored; paste public media links into the post text."
-  },
-  {
     id: "hackernews",
     label: "Hacker News",
     note: "Submit link or text",
     uses: ["Title", "Link", "Post"],
     target: "Uses the active Hacker News profile from Settings.",
     media: "Unofficial personal automation; local media is ignored; the Link field becomes the submitted URL."
+  },
+  {
+    id: "nostr",
+    label: "Nostr",
+    note: "Text note",
+    uses: ["Post"],
+    target: "Uses the active Nostr profile from Settings.",
+    media: "Local media is ignored; paste public media links into the post text."
   }
 ];
 

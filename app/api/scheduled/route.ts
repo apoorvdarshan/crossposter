@@ -14,8 +14,8 @@ const platformSchema = z.enum([
   "mastodon",
   "devto",
   "linkedin",
-  "nostr",
-  "hackernews"
+  "hackernews",
+  "nostr"
 ]);
 const targetSchema = z.object({
   id: z.string().min(1).max(180),
