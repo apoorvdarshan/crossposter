@@ -1940,6 +1940,162 @@ a.history-platform.ok:hover {
   max-height: none;
 }
 
+.scheduler-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 0.34fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.scheduler-help {
+  position: sticky;
+  top: 116px;
+}
+
+.scheduler-list {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.scheduler-counts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.scheduler-counts span {
+  min-height: 28px;
+  border-radius: 999px;
+  background: var(--counter-bg);
+  color: var(--muted);
+  padding: 6px 9px;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.scheduled-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 14px;
+}
+
+.scheduled-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scheduled-card-head > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.scheduled-card h3 {
+  margin: 0;
+  color: var(--heading-ink);
+  font-size: 1rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.scheduled-card time {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.scheduled-icon {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.scheduled-icon.ok {
+  color: var(--accent-dark);
+}
+
+.scheduled-icon.err {
+  color: var(--danger);
+}
+
+.scheduled-preview {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.scheduled-media {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid var(--line-muted);
+  border-radius: 7px;
+  background: var(--chip-bg);
+  color: var(--muted);
+  padding: 9px 10px;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.scheduled-media span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.scheduled-results {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line-muted);
+  border-radius: 7px;
+  background: var(--chip-bg);
+  padding: 10px;
+}
+
+.scheduled-results > strong {
+  color: var(--heading-ink);
+  font-size: 0.84rem;
+}
+
+.schedule-card-actions {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.badge.scheduler-status {
+  width: fit-content;
+}
+
+.badge.scheduler-status.scheduled,
+.badge.scheduler-status.publishing,
+.badge.scheduler-status.published {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.badge.scheduler-status.failed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge.scheduler-status.canceled {
+  background: var(--counter-bg);
+  color: var(--muted);
+}
+
 .mini-status {
   border-radius: 999px;
   padding: 4px 8px;
@@ -2017,11 +2173,13 @@ a.history-platform.ok:hover {
   .masthead,
   .dashboard,
   .settings-grid,
+  .scheduler-grid,
   .socials-masonry,
   .channel-grid,
   .compression-grid,
   .schedule-popup-head,
   .schedule-picker,
+  .schedule-card-actions,
   .media-picker {
     display: grid;
     grid-template-columns: 1fr;
@@ -2041,6 +2199,10 @@ a.history-platform.ok:hover {
   }
 
   .publish-panel {
+    position: static;
+  }
+
+  .scheduler-help {
     position: static;
   }
 

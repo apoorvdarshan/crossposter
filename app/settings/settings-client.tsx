@@ -981,6 +981,9 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
             <Link className="top-tab" href="/">
               Dashboard
             </Link>
+            <Link className="top-tab" href="/scheduled">
+              Scheduler
+            </Link>
             {settingsViews.map((view) => (
               <Link
                 aria-current={settingsView === view.id ? "page" : undefined}

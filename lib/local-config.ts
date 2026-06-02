@@ -448,6 +448,16 @@ export function updateScheduledPost(
   return saved.scheduledPosts.find((post) => post.id === id);
 }
 
+export function removeScheduledPost(id: string): ScheduledPost[] {
+  const localConfig = readLocalConfig();
+  const saved = writeLocalConfig({
+    ...localConfig,
+    scheduledPosts: localConfig.scheduledPosts.filter((post) => post.id !== id)
+  });
+
+  return saved.scheduledPosts;
+}
+
 export function getConfigValue(name: string, profileId?: string): string | undefined {
   const localConfig = readLocalConfig();
   const platform = fieldPlatform.get(name);

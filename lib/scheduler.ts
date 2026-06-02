@@ -1,5 +1,5 @@
 import "server-only";
-import { getScheduledPosts, updateScheduledPost } from "@/lib/local-config";
+import { getScheduledPosts, removeScheduledPost, updateScheduledPost } from "@/lib/local-config";
 import { runPublish } from "@/lib/publish-runner";
 import type { ScheduledPost } from "@/lib/types";
 
@@ -80,16 +80,19 @@ export async function runScheduledTick(requestUrl = "http://localhost:2004/api/s
         const ok = result.results.some((item) => item.ok);
         const completedAt = new Date().toISOString();
 
-        updateScheduledPost(locked.id, (current) => ({
-          ...current,
-          status: ok ? "published" : "failed",
-          attempts: current.attempts + 1,
-          updatedAt: completedAt,
-          ...(ok ? { publishedAt: completedAt } : {}),
-          ...(result.publishedPost ? { publishedPostId: result.publishedPost.id } : {}),
-          results: result.results,
-          lastError: ok ? undefined : "No selected channel published successfully."
-        }));
+        if (ok) {
+          removeScheduledPost(locked.id);
+        } else {
+          updateScheduledPost(locked.id, (current) => ({
+            ...current,
+            status: "failed",
+            attempts: current.attempts + 1,
+            updatedAt: completedAt,
+            ...(result.publishedPost ? { publishedPostId: result.publishedPost.id } : {}),
+            results: result.results,
+            lastError: "No selected channel published successfully."
+          }));
+        }
       } catch (error) {
         const failedAt = new Date().toISOString();
 

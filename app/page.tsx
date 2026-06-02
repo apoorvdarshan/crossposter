@@ -1620,6 +1620,9 @@ export default function Home() {
             <span className="top-tab is-active" aria-current="page">
               Dashboard
             </span>
+            <Link className="top-tab" href="/scheduled">
+              Scheduler
+            </Link>
             <Link className="top-tab" href="/settings">
               Settings
             </Link>

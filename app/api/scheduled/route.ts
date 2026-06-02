@@ -41,7 +41,9 @@ function uniquePlatforms(targets: PublishTarget[]): Platform[] {
 }
 
 function scheduledList() {
-  return getScheduledPosts().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  return getScheduledPosts()
+    .filter((post) => post.status !== "canceled")
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 
 function mediaSummary(media: Awaited<ReturnType<typeof getUploadedMedia>>): PublishedMedia {

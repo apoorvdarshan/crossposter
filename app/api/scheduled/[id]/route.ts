@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getScheduledPosts, updateScheduledPost } from "@/lib/local-config";
+import { getScheduledPosts, removeScheduledPost, updateScheduledPost } from "@/lib/local-config";
 import { ensureSchedulerStarted } from "@/lib/scheduler";
 
 export const runtime = "nodejs";
@@ -73,20 +73,13 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   if (current.status === "publishing" || current.status === "published") {
     return NextResponse.json(
-      { error: "This scheduled post can no longer be canceled." },
+      { error: "This scheduled post can no longer be discarded." },
       { status: 400 }
     );
   }
 
-  const updated = updateScheduledPost(id, (post) => ({
-    ...post,
-    status: "canceled",
-    updatedAt: new Date().toISOString(),
-    lastError: undefined
-  }));
-
   return NextResponse.json({
-    scheduledPost: updated,
-    scheduledPosts: getScheduledPosts()
+    scheduledPost: current,
+    scheduledPosts: removeScheduledPost(id)
   });
 }

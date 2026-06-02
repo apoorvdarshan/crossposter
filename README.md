@@ -47,6 +47,7 @@ the current app.
 
 - Dashboard composer for title, body text, channel selection, and media upload
 - Inline Schedule draft control for local timed posting
+- Scheduler page for reviewing queued posts, editing timing, and discarding posts
 - Per-platform profile configuration from the UI
 - Local config saved to `poster.config.local.json`
 - Local publish history
@@ -59,8 +60,24 @@ the current app.
 
 ## Scheduled Posting
 
-Use **Schedule draft** next to **Publish now** on the Dashboard. It opens the
-local date/time picker, then saves the post to `poster.config.local.json`.
+Use **Schedule draft** next to **Publish now** on the Dashboard. It opens a
+local date/time popup next to the button you clicked, then saves the post to
+`poster.config.local.json`.
+
+Manage the queue from:
+
+```text
+http://localhost:2004/scheduled
+```
+
+The Scheduler page lets you:
+
+- edit the scheduled timing
+- discard queued or failed posts
+- review target channels, media, and last publish errors
+
+When a scheduled post publishes successfully, it is added to local publish
+history and removed from the Scheduler queue.
 
 The scheduler is local/self-hosted. The Crossposter server must be running at
 the scheduled time:
