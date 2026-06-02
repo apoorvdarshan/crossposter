@@ -1,7 +1,6 @@
 export type Platform =
   | "bluesky"
   | "mastodon"
-  | "pixelfed"
   | "devto"
   | "linkedin"
   | "nostr";

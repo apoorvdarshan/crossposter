@@ -86,7 +86,6 @@ type SetupGuide = {
 const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
-  { id: "pixelfed", label: "Pixelfed" },
   { id: "devto", label: "Dev.to" },
   { id: "linkedin", label: "LinkedIn" },
   { id: "nostr", label: "Nostr" }
@@ -128,29 +127,6 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Add a Mastodon profile here.",
       "Set Mastodon instance to the full URL, for example https://mastodon.social.",
       "Paste the access token, save config, then select Mastodon on the Dashboard."
-    ]
-  },
-  pixelfed: {
-    title: "Pixelfed setup",
-    intro:
-      "Connect one Pixelfed instance account. Crossposter uses Pixelfed's Mastodon-compatible media and status endpoints for photo posts.",
-    links: [
-      { label: "Join Pixelfed", href: "https://pixelfed.org/join" },
-      { label: "pixelfed.social apps", href: "https://pixelfed.social/settings/applications" },
-      { label: "Pixelfed source", href: "https://github.com/pixelfed/pixelfed" },
-      { label: "Mastodon media API", href: "https://docs.joinmastodon.org/methods/media/" },
-      { label: "Mastodon status API", href: "https://docs.joinmastodon.org/methods/statuses/" }
-    ],
-    steps: [
-      "Create a Pixelfed account on one instance, for example pixelfed.social.",
-      "Open that instance's settings, then Applications or Developer applications.",
-      "Create an application or access token with write permissions. If scopes are shown, use write:statuses and write:media, or the broad write scope.",
-      "Add a Pixelfed profile here.",
-      "Set Pixelfed instance to the full instance URL, for example https://pixelfed.social.",
-      "Paste the access token into Pixelfed access token.",
-      "Keep Pixelfed visibility as public unless you intentionally want unlisted, private, or direct.",
-      "Save config, then select Pixelfed on the Dashboard.",
-      "Crossposter uploads one local image and creates one Pixelfed post. Non-image local media is rejected."
     ]
   },
   devto: {

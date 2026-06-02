@@ -28,7 +28,6 @@ type ScheduledResponse = {
 const platformLabels: Record<Platform, string> = {
   bluesky: "Bluesky",
   mastodon: "Mastodon",
-  pixelfed: "Pixelfed",
   devto: "Dev.to",
   linkedin: "LinkedIn",
   nostr: "Nostr"

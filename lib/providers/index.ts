@@ -3,7 +3,6 @@ import { publishDevto } from "@/lib/providers/devto";
 import { publishLinkedIn } from "@/lib/providers/linkedin";
 import { publishMastodon } from "@/lib/providers/mastodon";
 import { publishNostr } from "@/lib/providers/nostr";
-import { publishPixelfed } from "@/lib/providers/pixelfed";
 import type { Platform, ProviderContext, PublishResult } from "@/lib/types";
 
 type Provider = (ctx: ProviderContext) => Promise<PublishResult>;
@@ -11,7 +10,6 @@ type Provider = (ctx: ProviderContext) => Promise<PublishResult>;
 export const providers: Record<Platform, Provider> = {
   bluesky: publishBluesky,
   mastodon: publishMastodon,
-  pixelfed: publishPixelfed,
   devto: publishDevto,
   linkedin: publishLinkedIn,
   nostr: publishNostr

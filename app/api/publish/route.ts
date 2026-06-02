@@ -8,7 +8,6 @@ export const maxDuration = 180;
 const platformSchema = z.enum([
   "bluesky",
   "mastodon",
-  "pixelfed",
   "devto",
   "linkedin",
   "nostr"
