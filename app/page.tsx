@@ -1611,9 +1611,9 @@ export default function Home() {
             src="/assets/logo-crossposter.png"
             width="46"
           />
-          <div>
-            <p className="eyebrow">Private console</p>
+          <div className="brand-copy">
             <h1>Crossposter</h1>
+            <ProjectLinks />
           </div>
         </div>
         <div className="masthead-actions">
@@ -1634,7 +1634,6 @@ export default function Home() {
               Socials
             </Link>
           </nav>
-          <ProjectLinks />
           <ThemeToggle />
           <div className="status-pill masthead-action-slot">
             <span className="dot" />

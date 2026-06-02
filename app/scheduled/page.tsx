@@ -15,7 +15,6 @@ import {
   Trash2,
   Video
 } from "lucide-react";
-import { ProjectLinks } from "@/components/project-links";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Platform, PublishTarget, ScheduledPost } from "@/lib/types";
@@ -268,7 +267,6 @@ export default function ScheduledPage() {
               Socials
             </Link>
           </nav>
-          <ProjectLinks />
           <ThemeToggle />
           <button
             className="secondary compact-button masthead-action-slot"

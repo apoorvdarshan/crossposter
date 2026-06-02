@@ -1,6 +1,15 @@
-import { AtSign, Coffee, Github } from "lucide-react";
+import { Coffee, Github, type LucideIcon } from "lucide-react";
+import { siX, type SimpleIcon } from "simple-icons";
 
-const projectLinks = [
+type ProjectLink = {
+  href: string;
+  label: string;
+  title: string;
+  icon?: LucideIcon;
+  simpleIcon?: SimpleIcon;
+};
+
+const projectLinks: ProjectLink[] = [
   {
     href: "https://github.com/apoorvdarshan/crossposter",
     label: "Star",
@@ -9,9 +18,9 @@ const projectLinks = [
   },
   {
     href: "https://x.com/apoorvdarshan",
-    label: "Dev X",
-    title: "Meet the developer on X",
-    icon: AtSign
+    label: "Follow",
+    title: "Follow @apoorvdarshan on X",
+    simpleIcon: siX
   },
   {
     href: "https://ko-fi.com/apoorvdarshan",
@@ -36,7 +45,13 @@ export function ProjectLinks() {
             target="_blank"
             title={link.title}
           >
-            <Icon size={15} />
+            {link.simpleIcon ? (
+              <svg aria-hidden="true" className="project-link-brand" viewBox="0 0 24 24">
+                <path d={link.simpleIcon.path} />
+              </svg>
+            ) : Icon ? (
+              <Icon size={15} />
+            ) : null}
             <span>{link.label}</span>
           </a>
         );
