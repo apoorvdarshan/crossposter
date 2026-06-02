@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Crossposter privacy and terms for a private publishing tool.">
+    <title>Crossposter Privacy and Terms</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f7f2;
+        --ink: #171a15;
+        --muted: #62695f;
+        --line: #d8ddd2;
+        --panel: #ffffff;
+        --accent: #22b867;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111711;
+          --ink: #f4f5ee;
+          --muted: #bac3b4;
+          --line: #334033;
+          --panel: #172017;
+          --accent: #36c979;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+        font-size: 17px;
+        line-height: 1.55;
+      }
+
+      main {
+        width: min(760px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 42px 0 56px;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 24px;
+      }
+
+      .mark {
+        align-items: center;
+        display: inline-flex;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+
+      .mark span:first-child {
+        align-items: center;
+        background: var(--accent);
+        border-radius: 8px;
+        color: #08100a;
+        display: inline-flex;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 16px;
+        font-weight: 800;
+        height: 42px;
+        justify-content: center;
+        width: 42px;
+      }
+
+      h1,
+      h2 {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0;
+        line-height: 1.1;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 38px;
+        margin-bottom: 12px;
+      }
+
+      h2 {
+        font-size: 20px;
+        margin-top: 32px;
+      }
+
+      p {
+        margin: 10px 0 0;
+      }
+
+      ul {
+        margin: 12px 0 0;
+        padding-left: 22px;
+      }
+
+      a {
+        color: inherit;
+        font-weight: 700;
+        text-decoration-color: var(--accent);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+
+      .summary {
+        color: var(--muted);
+        max-width: 620px;
+      }
+
+      .notice {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-top: 24px;
+        padding: 18px;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        margin-top: 36px;
+        padding-top: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="mark" aria-label="Crossposter">
+          <span>PX</span>
+          <span>Crossposter</span>
+        </div>
+        <h1>Privacy and Terms</h1>
+        <p class="summary">
+          Crossposter is a private self-hosted publishing tool for manually posting
+          content to social accounts controlled by the operator.
+        </p>
+        <p class="summary">Effective date: June 2, 2026</p>
+      </header>
+
+      <section class="notice" aria-labelledby="about">
+        <h2 id="about">About</h2>
+        <p>
+          Crossposter is not a public social network, agency service, or ad platform.
+          It is used to prepare posts, attach media, and publish to connected social
+          accounts when the operator clicks publish.
+        </p>
+        <p>
+          Source code:
+          <a href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">
+            github.com/apoorvdarshan/crossposter
+          </a>
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy">
+        <h2 id="privacy">Privacy</h2>
+        <ul>
+          <li>No analytics, advertising pixels, or tracking cookies are used by this page.</li>
+          <li>Crossposter stores social API credentials only in the operator's own local or self-hosted configuration.</li>
+          <li>Credentials are used only to publish content the operator submits manually.</li>
+          <li>Uploaded media and draft text are used only for publishing and local history.</li>
+          <li>Crossposter does not sell personal information or share data with third parties except the selected social platforms during publishing.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="terms">
+        <h2 id="terms">Terms</h2>
+        <ul>
+          <li>Use Crossposter only with accounts, boards, pages, and profiles you own or are authorized to manage.</li>
+          <li>You are responsible for the content you publish and for following each platform's rules.</li>
+          <li>The software is provided without warranty.</li>
+          <li>Access may be removed or disabled at any time for security, abuse prevention, or platform policy reasons.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="contact">
+        <h2 id="contact">Contact</h2>
+        <p>
+          For privacy or access questions, contact
+          <a href="mailto:apoorvdarshan@gmail.com">apoorvdarshan@gmail.com</a>.
+        </p>
+        <p>
+          X:
+          <a href="https://x.com/apoorvdarshan" rel="noreferrer" target="_blank">
+            @apoorvdarshan
+          </a>
+        </p>
+      </section>
+
+      <footer>
+        <p>Planned domain: crossposter.apoorvdarshan.com</p>
+      </footer>
+    </main>
+  </body>
+</html>
