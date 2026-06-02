@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 const platformSchema = z.enum([
   "bluesky",
   "mastodon",
+  "pixelfed",
   "devto",
   "linkedin",
   "nostr"

@@ -55,6 +55,26 @@ export const configFields: ConfigField[] = [
     requiredFor: ["mastodon"]
   },
   {
+    name: "PIXELFED_INSTANCE",
+    label: "Pixelfed instance",
+    help: "Base URL such as https://pixelfed.social.",
+    requiredFor: ["pixelfed"]
+  },
+  {
+    name: "PIXELFED_ACCESS_TOKEN",
+    label: "Pixelfed access token",
+    help: "Token from your Pixelfed instance with write posting permissions.",
+    secret: true,
+    requiredFor: ["pixelfed"]
+  },
+  {
+    name: "PIXELFED_VISIBILITY",
+    label: "Pixelfed visibility",
+    help: "Post visibility: public, unlisted, private, or direct. Default is public.",
+    defaultValue: "public",
+    showFor: ["pixelfed"]
+  },
+  {
     name: "DEVTO_API_KEY",
     label: "Dev.to API key",
     help: "API key from Dev.to account settings.",
@@ -127,6 +147,7 @@ export const requiredConfigByPlatform = configFields.reduce(
   {
     bluesky: [],
     mastodon: [],
+    pixelfed: [],
     devto: [],
     linkedin: [],
     nostr: []

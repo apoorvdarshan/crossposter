@@ -57,6 +57,14 @@ const channels: Array<{
     media: "Local image, video, audio, or file upload is supported."
   },
   {
+    id: "pixelfed",
+    label: "Pixelfed",
+    note: "Photo post",
+    uses: ["Post", "Media"],
+    target: "Uses the active Pixelfed profile from Settings.",
+    media: "Local image only: JPEG, PNG, WebP, or GIF."
+  },
+  {
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
@@ -97,6 +105,9 @@ const envLabels: Record<string, string> = {
   BLUESKY_APP_PASSWORD: "app password",
   MASTODON_INSTANCE: "instance",
   MASTODON_ACCESS_TOKEN: "access token",
+  PIXELFED_INSTANCE: "instance",
+  PIXELFED_ACCESS_TOKEN: "access token",
+  PIXELFED_VISIBILITY: "visibility",
   DEVTO_API_KEY: "API key",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
@@ -187,6 +198,7 @@ const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
 const mastodonImageTargetSize = 15 * 1024 * 1024;
 const mastodonVideoTargetSize = 95 * 1024 * 1024;
+const pixelfedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const maxManualVideoTargetSize = 500 * 1024 * 1024;
 
 type PreflightIssue = {
@@ -532,6 +544,21 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
         id: "mastodon-video-size",
         message: `Mastodon video limit on mastodon.social is about 99 MB; selected file is ${formatBytes(file.size)}.`,
         compress: "video"
+      });
+    }
+  }
+
+  if (platforms.includes("pixelfed")) {
+    if (kind !== "image") {
+      issues.push({
+        id: "pixelfed-kind",
+        message: `Pixelfed can upload images only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (!pixelfedImageTypes.has(file.type)) {
+      issues.push({
+        id: "pixelfed-type",
+        message: `Pixelfed supports JPG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`,
+        compress: "image"
       });
     }
   }

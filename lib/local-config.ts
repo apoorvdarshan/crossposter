@@ -42,6 +42,7 @@ const fieldDefaults = new Map(
 const platforms: Platform[] = [
   "bluesky",
   "mastodon",
+  "pixelfed",
   "devto",
   "linkedin",
   "nostr"

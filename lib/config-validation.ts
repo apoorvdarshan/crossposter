@@ -11,6 +11,7 @@ export type ConfigIssue = {
 const tokenFields = new Set([
   "BLUESKY_APP_PASSWORD",
   "MASTODON_ACCESS_TOKEN",
+  "PIXELFED_ACCESS_TOKEN",
   "DEVTO_API_KEY",
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
@@ -103,6 +104,12 @@ function invalidReason(name: string, value: string): string | null {
         : "must be a handle like apoorvdarshan.com";
     case "MASTODON_INSTANCE":
       return isHttpUrl(value) ? null : "must be a URL like https://mastodon.social";
+    case "PIXELFED_INSTANCE":
+      return isHttpUrl(value) ? null : "must be a URL like https://pixelfed.social";
+    case "PIXELFED_VISIBILITY":
+      return ["public", "unlisted", "private", "direct"].includes(value)
+        ? null
+        : "must be public, unlisted, private, or direct";
     case "LINKEDIN_AUTHOR_URN":
       return /^urn:li:(person|organization):[A-Za-z0-9_-]+$/.test(value)
         ? null

@@ -37,6 +37,7 @@ that server process is running.
 | --- | --- |
 | Bluesky | Text posts and local image media |
 | Mastodon | Text posts and local media |
+| Pixelfed | Photo posts with local image media |
 | Dev.to | Markdown articles |
 | LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
 | Nostr | Kind-1 text notes published to configured relays |
@@ -197,6 +198,36 @@ Example instance:
 ```text
 https://mastodon.social
 ```
+
+### Pixelfed
+
+Create a Pixelfed account on an instance such as `pixelfed.social`, then create
+an application/access token from that instance's application settings.
+
+Required fields:
+
+```text
+PIXELFED_INSTANCE
+PIXELFED_ACCESS_TOKEN
+```
+
+Optional field:
+
+```text
+PIXELFED_VISIBILITY
+```
+
+Example instance:
+
+```text
+https://pixelfed.social
+```
+
+Use a token with write permissions. If your instance exposes scoped tokens, use
+`write:statuses` and `write:media`, or the broad `write` scope.
+
+Pixelfed publishing is image-first. Crossposter uploads one local JPG, PNG, WebP,
+or GIF image and creates one Pixelfed post. Non-image local media is rejected.
 
 ### Dev.to
 
