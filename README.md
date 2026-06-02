@@ -300,6 +300,18 @@ Before exposing it publicly:
 - never commit API keys, access tokens, refresh tokens, or app secrets
 - only connect accounts, pages, and profiles you own or are authorized to manage
 
+## Contact And Support
+
+- Email: apoorvdarshan@gmail.com
+- Email: ad13dtu@gmail.com
+- X: https://x.com/apoorvdarshan
+- Report an issue: https://github.com/apoorvdarshan/crossposter/issues/new
+- Request a feature: https://github.com/apoorvdarshan/crossposter/issues/new
+- View open issues: https://github.com/apoorvdarshan/crossposter/issues
+
+Do not post API keys, tokens, app secrets, or private account details in public
+issues.
+
 ## License
 
 MIT
