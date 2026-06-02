@@ -115,6 +115,10 @@ function invalidReason(name: string, value: string): string | null {
         : "must include w_member_social";
     case "NOSTR_RELAYS":
       return invalidNostrRelays(value);
+    case "HACKERNEWS_USERNAME":
+      return /^[A-Za-z0-9_-]{2,20}$/.test(value)
+        ? null
+        : "must be a Hacker News username";
     default:
       return null;
   }

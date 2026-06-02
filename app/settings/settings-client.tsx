@@ -88,7 +88,8 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
   { id: "linkedin", label: "LinkedIn" },
-  { id: "nostr", label: "Nostr" }
+  { id: "nostr", label: "Nostr" },
+  { id: "hackernews", label: "Hacker News" }
 ];
 
 const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = [
@@ -204,6 +205,28 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Use the same relays you already publish to from your Nostr client.",
       "Save config, then select Nostr on the Dashboard.",
       "Crossposter publishes kind-1 text notes. Local file upload is ignored; paste public media links into the post text when needed."
+    ]
+  },
+  hackernews: {
+    title: "Hacker News setup",
+    intro:
+      "Unofficial personal automation. Hacker News has no official submit API, so Crossposter logs in with your local credentials and submits through HN's normal form flow.",
+    links: [
+      { label: "HN submit", href: "https://news.ycombinator.com/submit" },
+      { label: "HN guidelines", href: "https://news.ycombinator.com/newsguidelines.html" },
+      { label: "Official read-only API", href: "https://github.com/HackerNews/API" },
+      { label: "Unofficial flow reference", href: "https://github.com/lukakerr/hkn" }
+    ],
+    steps: [
+      "Only use this for your own Hacker News account and your own submissions.",
+      "Add a Hacker News profile here.",
+      "Paste your Hacker News username and password. They stay in poster.config.local.json.",
+      "Save config, then select Hacker News on the Dashboard.",
+      "Add a Title. Hacker News requires it.",
+      "If the post contains an http or https URL, Crossposter submits that URL as a link story.",
+      "If there is no URL in the post, Crossposter submits the post body as a text story.",
+      "Local media upload is ignored.",
+      "If Hacker News requires CAPTCHA or browser validation, Crossposter will fail with a message and you must submit manually."
     ]
   }
 };

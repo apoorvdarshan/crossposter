@@ -3,7 +3,8 @@ export type Platform =
   | "mastodon"
   | "devto"
   | "linkedin"
-  | "nostr";
+  | "nostr"
+  | "hackernews";
 
 export type PublishPayload = {
   title?: string;

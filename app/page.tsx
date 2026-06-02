@@ -79,6 +79,14 @@ const channels: Array<{
     uses: ["Post"],
     target: "Uses the active Nostr profile from Settings.",
     media: "Local media is ignored; paste public media links into the post text."
+  },
+  {
+    id: "hackernews",
+    label: "Hacker News",
+    note: "Submit link or text",
+    uses: ["Title", "Post"],
+    target: "Uses the active Hacker News profile from Settings.",
+    media: "Unofficial personal automation; local media is ignored; first URL becomes the submitted link."
   }
 ];
 
@@ -101,7 +109,9 @@ const envLabels: Record<string, string> = {
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
   NOSTR_PRIVATE_KEY: "private key",
-  NOSTR_RELAYS: "relays"
+  NOSTR_RELAYS: "relays",
+  HACKERNEWS_USERNAME: "username",
+  HACKERNEWS_PASSWORD: "password"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {

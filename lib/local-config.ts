@@ -44,7 +44,8 @@ const platforms: Platform[] = [
   "mastodon",
   "devto",
   "linkedin",
-  "nostr"
+  "nostr",
+  "hackernews"
 ];
 const fieldPlatform = new Map<string, Platform>(
   configFields.flatMap((field) =>

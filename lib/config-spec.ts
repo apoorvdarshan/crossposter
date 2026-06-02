@@ -113,6 +113,19 @@ export const configFields: ConfigField[] = [
     label: "Nostr relays",
     help: "Comma or newline separated relay WebSocket URLs, for example wss://relay.example.com.",
     requiredFor: ["nostr"]
+  },
+  {
+    name: "HACKERNEWS_USERNAME",
+    label: "Hacker News username",
+    help: "Your Hacker News username. Used for personal, unofficial submit-page automation.",
+    requiredFor: ["hackernews"]
+  },
+  {
+    name: "HACKERNEWS_PASSWORD",
+    label: "Hacker News password",
+    help: "Your Hacker News password. Saved locally and used only to log in during publish.",
+    secret: true,
+    requiredFor: ["hackernews"]
   }
 ];
 
@@ -129,6 +142,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     mastodon: [],
     devto: [],
     linkedin: [],
-    nostr: []
+    nostr: [],
+    hackernews: []
   } as Record<Platform, string[]>
 );

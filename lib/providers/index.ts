@@ -1,5 +1,6 @@
 import { publishBluesky } from "@/lib/providers/bluesky";
 import { publishDevto } from "@/lib/providers/devto";
+import { publishHackerNews } from "@/lib/providers/hackernews";
 import { publishLinkedIn } from "@/lib/providers/linkedin";
 import { publishMastodon } from "@/lib/providers/mastodon";
 import { publishNostr } from "@/lib/providers/nostr";
@@ -12,5 +13,6 @@ export const providers: Record<Platform, Provider> = {
   mastodon: publishMastodon,
   devto: publishDevto,
   linkedin: publishLinkedIn,
-  nostr: publishNostr
+  nostr: publishNostr,
+  hackernews: publishHackerNews
 };

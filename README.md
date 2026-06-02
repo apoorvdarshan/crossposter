@@ -40,6 +40,7 @@ that server process is running.
 | Dev.to | Markdown articles |
 | LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
 | Nostr | Kind-1 text notes published to configured relays |
+| Hacker News | Personal link/text submission through HN's normal form flow |
 
 Removed integrations: Instagram, Pinterest, Twitch, and YouTube are not part of
 the current app.
@@ -233,6 +234,32 @@ wss://relay.example.com,wss://another-relay.example
 
 Local media is ignored for Nostr. Paste public image/video links into the post
 body if you want Nostr clients to render media previews.
+
+### Hacker News
+
+Hacker News has no official write/submit API. Crossposter uses unofficial
+personal automation through Hacker News' normal login and submit form flow.
+
+Required fields:
+
+```text
+HACKERNEWS_USERNAME
+HACKERNEWS_PASSWORD
+```
+
+How publishing works:
+
+- Title is required.
+- If the post body contains an `http` or `https` URL, the first URL is submitted
+  as a link story.
+- If the post body has no URL, the post body is submitted as a text story.
+- Local media is ignored.
+- Crossposter logs in during publish and does not store an HN session cookie.
+
+Use this only for your own Hacker News account and normal personal submissions.
+Do not use it for spam, vote/comment solicitation, or bulk promotional posting.
+If Hacker News requires browser validation or CAPTCHA for the login, Crossposter
+will fail and you must submit manually.
 
 ### LinkedIn
 

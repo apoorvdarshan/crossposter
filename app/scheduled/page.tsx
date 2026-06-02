@@ -30,7 +30,8 @@ const platformLabels: Record<Platform, string> = {
   mastodon: "Mastodon",
   devto: "Dev.to",
   linkedin: "LinkedIn",
-  nostr: "Nostr"
+  nostr: "Nostr",
+  hackernews: "Hacker News"
 };
 
 function formatDateTime(value: string): string {
