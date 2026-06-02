@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import {
@@ -221,6 +221,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Only use this for your own Hacker News account and your own submissions.",
       "Add a Hacker News profile here.",
       "Paste your Hacker News username and password. They stay in poster.config.local.json.",
+      "If HN blocks password login validation, log in through Chrome and click Import Chrome cookie.",
       "Save config, then select Hacker News on the Dashboard.",
       "Add a Title. Hacker News requires it.",
       "Optionally put a URL in the Dashboard Link field.",
@@ -380,24 +381,25 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
+  const [importingHackerNewsCookie, setImportingHackerNewsCookie] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
   const [settingsView, setSettingsView] = useState<SettingsView>(initialView);
 
-  useEffect(() => {
-    async function loadConfig() {
-      const response = await fetch("/api/config", { cache: "no-store" });
-      const body = (await response.json()) as ConfigResponse;
+  const loadConfig = useCallback(async () => {
+    const response = await fetch("/api/config", { cache: "no-store" });
+    const body = (await response.json()) as ConfigResponse;
 
-      setFields(body.fields || []);
-      setValues(body.values || {});
-      setProfiles(body.profiles || {});
-      setActiveProfiles(body.activeProfiles || {});
-      setConfigPath(body.configPath || "");
-      setLocalUrl(body.localUrl || "http://localhost:2004");
-    }
-
-    void loadConfig();
+    setFields(body.fields || []);
+    setValues(body.values || {});
+    setProfiles(body.profiles || {});
+    setActiveProfiles(body.activeProfiles || {});
+    setConfigPath(body.configPath || "");
+    setLocalUrl(body.localUrl || "http://localhost:2004");
   }, []);
+
+  useEffect(() => {
+    void loadConfig();
+  }, [loadConfig]);
 
   useEffect(() => {
     setSettingsView(initialView);
@@ -721,6 +723,41 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  async function importHackerNewsCookie(profile: ProviderProfile) {
+    setStatus("");
+    setImportingHackerNewsCookie(profile.id);
+
+    try {
+      const saved = await saveConfig();
+
+      if (!saved) {
+        return;
+      }
+
+      const response = await fetch("/api/auth/hackernews/import-cookie", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ profileId: profile.id })
+      });
+      const body = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not import Hacker News cookie from Chrome.");
+        return;
+      }
+
+      await loadConfig();
+      setStatus(body.message || "Imported Hacker News session from Chrome.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not import Hacker News cookie from Chrome.");
+    } finally {
+      setImportingHackerNewsCookie("");
+    }
+  }
+
   async function openConfigFile() {
     setStatus("");
 
@@ -911,6 +948,19 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                     >
                       <RefreshCw size={15} />
                       Connect LinkedIn
+                    </button>
+                  ) : null}
+                  {platform.id === "hackernews" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void importHackerNewsCookie(profile)}
+                      disabled={Boolean(importingHackerNewsCookie)}
+                    >
+                      <RefreshCw size={15} />
+                      {importingHackerNewsCookie === profile.id
+                        ? "Importing..."
+                        : "Import Chrome cookie"}
                     </button>
                   ) : null}
                   <button
