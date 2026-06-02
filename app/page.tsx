@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import NextImage from "next/image";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -1341,7 +1342,13 @@ export default function Home() {
     <main className="workspace">
       <header className="masthead">
         <div className="brand-lockup">
-          <div className="mark">PX</div>
+          <NextImage
+            alt=""
+            className="mark"
+            height="46"
+            src="/assets/logo-crossposter.png"
+            width="46"
+          />
           <div>
             <p className="eyebrow">Private console</p>
             <h1>Crossposter</h1>

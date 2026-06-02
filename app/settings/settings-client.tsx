@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import NextImage from "next/image";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -961,7 +962,13 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     <main className="workspace">
       <header className="masthead">
         <div className="brand-lockup">
-          <div className="mark">PX</div>
+          <NextImage
+            alt=""
+            className="mark"
+            height="46"
+            src="/assets/logo-crossposter.png"
+            width="46"
+          />
           <div>
             <p className="eyebrow">Configuration</p>
             <h1>{settingsViews.find((view) => view.id === settingsView)?.label || "Settings"}</h1>

@@ -3,7 +3,11 @@ import "./styles.css";
 
 export const metadata: Metadata = {
   title: "Crossposter",
-  description: "Private publish-now dashboard for your own social accounts."
+  description: "Private publish-now dashboard for your own social accounts.",
+  icons: {
+    icon: "/assets/logo-crossposter.png",
+    apple: "/assets/logo-crossposter.png"
+  }
 };
 
 export default function RootLayout({

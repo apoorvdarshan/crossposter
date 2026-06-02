@@ -257,16 +257,13 @@ button:disabled {
 }
 
 .mark {
-  display: grid;
   flex: 0 0 auto;
   width: 46px;
   height: 46px;
-  place-items: center;
   border: 1px solid var(--masthead-line);
   border-radius: 7px;
-  background: var(--accent);
-  color: var(--accent-contrast);
-  font-weight: 900;
+  background: transparent;
+  object-fit: contain;
 }
 
 .eyebrow {
