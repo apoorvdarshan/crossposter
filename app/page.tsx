@@ -1878,7 +1878,7 @@ export default function Home() {
                 placeholder="example.com or https://example.com"
               />
               <span className="field-hint">
-                Optional. Bare domains are sent as https URLs for Hacker News.
+                Optional. Hacker News uses this as the submitted URL.
               </span>
             </div>
 
