@@ -57,6 +57,14 @@ const channels: Array<{
     media: "Local image, video, audio, or file upload is supported."
   },
   {
+    id: "pixelfed",
+    label: "Pixelfed",
+    note: "Photo post",
+    uses: ["Post", "Media"],
+    target: "Uses the active Pixelfed profile from Settings.",
+    media: "Local image only: JPEG, PNG, WebP, or GIF."
+  },
+  {
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
@@ -79,14 +87,6 @@ const channels: Array<{
     uses: ["Post"],
     target: "Uses the active Nostr profile from Settings.",
     media: "Local media is ignored; paste public media links into the post text."
-  },
-  {
-    id: "pixelfed",
-    label: "Pixelfed",
-    note: "Photo post",
-    uses: ["Post", "Media"],
-    target: "Uses the active Pixelfed profile from Settings.",
-    media: "Local image only: JPEG, PNG, WebP, or GIF."
   }
 ];
 
