@@ -218,7 +218,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   instagram: {
     title: "Instagram OAuth setup",
     intro:
-      "Use Instagram Login for your own Business or Creator accounts. Crossposter saves the token locally, then uses Supabase only for temporary media URLs during Publish.",
+      "Use Instagram Login for your own Business or Creator accounts. No Facebook Page is needed for this path. Crossposter saves the token locally, then uses Supabase only for temporary media URLs during Publish.",
     links: [
       {
         label: "Instagram Login setup",
@@ -232,11 +232,16 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     ],
     steps: [
       "Switch the Instagram account to Business or Creator. Personal accounts cannot publish through the API.",
-      "Create or open a Meta developer app, then add the Instagram API with Instagram Login use case.",
-      "In that Instagram API setup, add http://localhost:2004/api/auth/instagram/callback as a valid OAuth redirect URI. Use your configured localhost port if you changed it.",
-      "Copy the app ID and app secret into this Instagram profile.",
-      "Keep scopes as instagram_business_basic instagram_business_content_publish.",
+      "Open your Meta app, then open the Instagram API setup screen. Use the Instagram app ID and Instagram app secret shown there, not the general Meta app ID.",
+      "In Permissions and features, make sure instagram_business_basic and instagram_business_content_publish are available. If Meta requires comments or messages for the selected use case, add them too; Crossposter does not use them for posting.",
+      "In Generate access tokens, click Add account and add the Instagram account you want to post to. In development mode, every Instagram account you connect must be added here or assigned as a tester.",
+      "If Instagram shows Insufficient Developer Role, you are logged into an Instagram account that has not been added to this app yet, or the tester invite was not accepted. Add that exact account in Generate access tokens, then retry while logged into the same Instagram account.",
+      "Skip Configure webhooks. Crossposter does not need webhooks for publishing posts or Reels.",
+      "In Set up Instagram business login, add http://localhost:2004/api/auth/instagram/callback as the OAuth redirect URI. Use your configured localhost port if you changed it.",
+      "Paste the Instagram app ID and Instagram app secret into this Instagram profile, then save config.",
+      "Keep scopes as instagram_business_basic instagram_business_content_publish unless Meta tells you to add another Instagram business scope.",
       "Click Connect Instagram and authorize the matching Instagram account. Crossposter saves the token, user ID, and token expiry locally.",
+      "Repeat Add account and Connect Instagram for each Instagram account you want as a separate Crossposter profile.",
       "Create a Supabase Storage bucket such as crossposter-media. A private bucket is fine.",
       "Paste the Supabase project URL and service role key in the Media Storage section. Supabase Cloud and self-hosted Supabase endpoints both work.",
       "Keep Delete hosted media after publish set to true unless you want to inspect uploaded files.",
