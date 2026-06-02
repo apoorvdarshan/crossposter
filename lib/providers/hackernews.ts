@@ -4,23 +4,6 @@ import type { ProviderContext, PublishResult } from "@/lib/types";
 
 const hnBaseUrl = "https://news.ycombinator.com";
 const fnidPattern = /<input\s+type=['"]hidden['"]\s+name=['"]fnid['"][^>]*\s+value=['"]([^'"]+)['"]/i;
-const urlPattern = /\bhttps?:\/\/[^\s<>"']+/i;
-
-function firstHttpUrl(value: string): string | undefined {
-  const match = value.match(urlPattern)?.[0]?.replace(/[),.;!?]+$/, "");
-
-  if (!match) {
-    return undefined;
-  }
-
-  try {
-    const parsed = new URL(match);
-
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 function cookieHeaderFromResponse(response: Response): string {
   const setCookie = response.headers.get("set-cookie") || "";
@@ -106,7 +89,7 @@ async function submitStory({
   body.set("fnop", "submit-page");
   body.set("title", title);
   body.set("url", url || "");
-  body.set("text", url ? "" : text || "");
+  body.set("text", text || "");
 
   const response = await fetch(`${hnBaseUrl}/r`, {
     method: "POST",
@@ -156,14 +139,15 @@ export async function publishHackerNews(ctx: ProviderContext): Promise<PublishRe
   }
 
   const text = compactText([ctx.text]);
-  const url = firstHttpUrl(text);
+  const linkUrl = ctx.linkUrl?.trim();
   const cookie = await login(username, password);
   const fnid = await readSubmitFnid(cookie);
   const submittedUrl = await submitStory({
     cookie,
     fnid,
     title,
-    ...(url ? { url } : { text })
+    ...(linkUrl ? { url: linkUrl } : {}),
+    text
   });
 
   return {
@@ -172,7 +156,7 @@ export async function publishHackerNews(ctx: ProviderContext): Promise<PublishRe
     profileId,
     profileLabel: ctx.target?.profileLabel,
     ok: true,
-    message: `${url ? "Submitted link" : "Submitted text"}${ctx.media ? " without local media" : ""}`,
+    message: `${linkUrl ? "Submitted link" : "Submitted text"}${ctx.media ? " without local media" : ""}`,
     url: submittedUrl
   };
 }

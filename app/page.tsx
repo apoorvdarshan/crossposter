@@ -84,9 +84,9 @@ const channels: Array<{
     id: "hackernews",
     label: "Hacker News",
     note: "Submit link or text",
-    uses: ["Title", "Post"],
+    uses: ["Title", "Link", "Post"],
     target: "Uses the active Hacker News profile from Settings.",
-    media: "Unofficial personal automation; local media is ignored; first URL becomes the submitted link."
+    media: "Unofficial personal automation; local media is ignored; the Link field becomes the submitted URL."
   }
 ];
 
@@ -157,6 +157,8 @@ type ScheduledResponse = {
 type SavedDraft = {
   title?: string;
   text?: string;
+  linkUrl?: string;
+  url?: string;
   selected?: string[];
   platforms?: Platform[];
   targets?: PublishTarget[];
@@ -283,6 +285,12 @@ function readStoredDraft(): SavedDraft | null {
     return {
       title: typeof parsed.title === "string" ? parsed.title : "",
       text: typeof parsed.text === "string" ? parsed.text : "",
+      linkUrl:
+        typeof parsed.linkUrl === "string"
+          ? parsed.linkUrl
+          : typeof parsed.url === "string"
+            ? parsed.url
+            : "",
       platforms: normalizePlatforms(parsed.platforms || parsed.selected),
       targets: normalizePublishTargets(parsed.targets),
       updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : undefined
@@ -313,6 +321,12 @@ function normalizeDraft(draft: ComposeDraft | SavedDraft | undefined | null): Co
   return {
     title: typeof draft?.title === "string" ? draft.title : "",
     text: typeof draft?.text === "string" ? draft.text : "",
+    linkUrl:
+      typeof draft?.linkUrl === "string"
+        ? draft.linkUrl
+        : typeof (draft as SavedDraft | undefined)?.url === "string"
+          ? ((draft as SavedDraft).url as string)
+          : "",
     platforms: normalizePlatforms(draft?.platforms || (draft as SavedDraft | undefined)?.selected),
     targets: normalizePublishTargets(draft?.targets),
     ...(typeof draft?.updatedAt === "string" ? { updatedAt: draft.updatedAt } : {})
@@ -418,6 +432,10 @@ function formatApiError(error: unknown): string {
 
   if (error && typeof error === "object") {
     const fieldError = error as ApiFieldError;
+
+    if (fieldError.fieldErrors?.linkUrl?.length) {
+      return "Link is invalid. Use a URL like https://example.com, or leave Link empty.";
+    }
 
     if (fieldError.fieldErrors?.mediaUrl?.length) {
       return "Media URL is invalid. Upload a local file instead.";
@@ -808,6 +826,7 @@ function ProgressBox({
 export default function Home() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const mediaInputRef = useRef<HTMLInputElement | null>(null);
@@ -948,6 +967,7 @@ export default function Home() {
 
         setTitle(draft.title);
         setText(draft.text);
+        setLinkUrl(draft.linkUrl);
         setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(hasDraft);
         setPublishedPosts(body.publishedPosts || []);
@@ -966,6 +986,7 @@ export default function Home() {
 
         setTitle(draft.title);
         setText(draft.text);
+        setLinkUrl(draft.linkUrl);
         setSelected(draft.targets?.length ? draft.targets.map((target) => target.id) : draft.platforms);
         setHasSavedDraft(draftTimestamp(draft) > 0);
       } finally {
@@ -1038,13 +1059,14 @@ export default function Home() {
       return;
     }
 
-    if (!hasSavedDraft && !title && !text && selected.length === 0) {
+    if (!hasSavedDraft && !title && !text && !linkUrl && selected.length === 0) {
       return;
     }
 
     const draft: ComposeDraft = {
       title,
       text,
+      linkUrl,
       platforms: selectedPlatforms,
       targets: selectedTargets.map(publishTargetFromCard),
       updatedAt: new Date().toISOString()
@@ -1064,6 +1086,7 @@ export default function Home() {
   }, [
     title,
     text,
+    linkUrl,
     selected,
     selectedPlatforms,
     selectedTargets,
@@ -1177,6 +1200,7 @@ export default function Home() {
     const draft: ComposeDraft = {
       title: "",
       text: "",
+      linkUrl: "",
       platforms: [],
       targets: [],
       updatedAt: new Date().toISOString()
@@ -1185,6 +1209,7 @@ export default function Home() {
     setHasSavedDraft(true);
     setTitle("");
     setText("");
+    setLinkUrl("");
     setSelected([]);
     setMediaFile(null);
     setMediaInputKey((current) => current + 1);
@@ -1309,6 +1334,19 @@ export default function Home() {
       return;
     }
 
+    const hasHackerNews = publishPlatforms.includes("hackernews");
+    const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
+
+    if (hasHackerNews && !title.trim()) {
+      setError("Hacker News requires a title.");
+      return;
+    }
+
+    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
+      setError("Write post text before publishing, or select only Hacker News and add a title.");
+      return;
+    }
+
     const isBlueskyTooLong =
       publishPlatforms.includes("bluesky") &&
       postTextLength(text.trim()) > 300;
@@ -1337,6 +1375,7 @@ export default function Home() {
         body: JSON.stringify({
           title: title.trim() || undefined,
           text,
+          linkUrl: linkUrl.trim() || undefined,
           mediaId: uploadedMedia?.id,
           platforms: publishPlatforms,
           targets: publishTargets
@@ -1385,6 +1424,19 @@ export default function Home() {
       return;
     }
 
+    const hasHackerNews = publishPlatforms.includes("hackernews");
+    const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
+
+    if (hasHackerNews && !title.trim()) {
+      setError("Hacker News requires a title.");
+      return;
+    }
+
+    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
+      setError("Write post text before scheduling, or select only Hacker News and add a title.");
+      return;
+    }
+
     if (!scheduledFor) {
       setError("Choose a valid scheduled time.");
       return;
@@ -1423,6 +1475,7 @@ export default function Home() {
         body: JSON.stringify({
           title: title.trim() || undefined,
           text,
+          linkUrl: linkUrl.trim() || undefined,
           mediaId: uploadedMedia?.id,
           platforms: publishPlatforms,
           targets: publishTargets,
@@ -1452,37 +1505,29 @@ export default function Home() {
   const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
   const blueskyLength = postTextLength(text.trim());
   const showBlueskyLimit = selectedPlatforms.includes("bluesky");
+  const showHackerNewsLink = selectedPlatforms.includes("hackernews");
+  const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
+  const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
+  const hasRequiredPostText = Boolean(text.trim()) || (isHackerNewsOnly && Boolean(title.trim()));
   const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
+  const canSubmitDraft =
+    selectedTargets.length > 0 &&
+    hasRequiredHackerNewsTitle &&
+    hasRequiredPostText &&
+    preflightIssues.length === 0 &&
+    !blueskyTooLong &&
+    !isPublishing &&
+    !isScheduling &&
+    !isUploadingMedia &&
+    !isCompressingMedia;
   const canPublish =
-    text.trim() &&
-    selectedTargets.length > 0 &&
-    preflightIssues.length === 0 &&
-    !blueskyTooLong &&
-    !isPublishing &&
-    !isScheduling &&
-    !isUploadingMedia &&
-    !isCompressingMedia;
-  const canOpenSchedule =
-    text.trim() &&
-    selectedTargets.length > 0 &&
-    preflightIssues.length === 0 &&
-    !blueskyTooLong &&
-    !isPublishing &&
-    !isScheduling &&
-    !isUploadingMedia &&
-    !isCompressingMedia;
+    canSubmitDraft;
+  const canOpenSchedule = canSubmitDraft;
   const scheduledForIso = datetimeLocalToIso(scheduledForInput);
   const canSchedule =
-    text.trim() &&
-    selectedTargets.length > 0 &&
+    canSubmitDraft &&
     scheduledForIso &&
-    Date.parse(scheduledForIso) >= Date.now() - 60_000 &&
-    preflightIssues.length === 0 &&
-    !blueskyTooLong &&
-    !isPublishing &&
-    !isScheduling &&
-    !isUploadingMedia &&
-    !isCompressingMedia;
+    Date.parse(scheduledForIso) >= Date.now() - 60_000;
   const readyCount = visibleTargets.filter((target) => target.ready).length;
   const selectedMediaKind = fileKind(mediaFile);
   const SelectedMediaIcon =
@@ -1707,6 +1752,27 @@ export default function Home() {
               />
             </div>
 
+            {showHackerNewsLink ? (
+              <div className="field">
+                <label className="field-label" htmlFor="linkUrl">
+                  Link
+                </label>
+                <input
+                  id="linkUrl"
+                  inputMode="url"
+                  value={linkUrl}
+                  onChange={(event) => {
+                    setHasSavedDraft(true);
+                    setLinkUrl(event.target.value);
+                  }}
+                  placeholder="https://example.com"
+                />
+                <span className="field-hint">
+                  Hacker News uses this as the URL field. Leave empty for a text post.
+                </span>
+              </div>
+            ) : null}
+
             <div className="field">
               <label className="field-label" htmlFor="text">
                 Post
@@ -1723,6 +1789,11 @@ export default function Home() {
               {showBlueskyLimit ? (
                 <span className={`field-hint ${blueskyTooLong ? "is-warning" : ""}`}>
                   Bluesky: {blueskyLength}/300 characters.
+                </span>
+              ) : null}
+              {showHackerNewsLink && !showBlueskyLimit ? (
+                <span className="field-hint">
+                  For Hacker News, Post is optional. Title is required.
                 </span>
               ) : null}
             </div>
@@ -2124,6 +2195,12 @@ export default function Home() {
                         </span>
                       </div>
                       {preview ? <p className="history-preview">{preview}</p> : null}
+                      {post.linkUrl ? (
+                        <a className="result-link" href={post.linkUrl} target="_blank" rel="noreferrer">
+                          <span>{post.linkUrl}</span>
+                          <ExternalLink size={13} />
+                        </a>
+                      ) : null}
                       {post.media ? (
                         <div className="history-media">
                           {post.media.kind === "image" ? (

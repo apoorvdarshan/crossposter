@@ -75,6 +75,7 @@ export async function runPublish(input: PublishRunInput): Promise<PublishRunResu
   const ctx: ProviderContext = {
     title: input.title?.trim() || undefined,
     text: input.text.trim(),
+    linkUrl: input.linkUrl?.trim() || undefined,
     mediaId: input.mediaId || undefined,
     mediaUrl: input.mediaUrl || undefined,
     media,
@@ -131,6 +132,7 @@ export async function runPublish(input: PublishRunInput): Promise<PublishRunResu
     createdAt: now.toISOString(),
     ...(ctx.title ? { title: ctx.title } : {}),
     text: ctx.text,
+    ...(ctx.linkUrl ? { linkUrl: ctx.linkUrl } : {}),
     platforms,
     targets,
     results,

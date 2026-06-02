@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { runPublish } from "@/lib/publish-runner";
+import type { Platform } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -56,11 +57,32 @@ const optionalUrlSchema = z.preprocess(
     .optional()
 );
 
+function requestedPlatforms(value: {
+  platforms?: Platform[];
+  targets?: Array<{ platform: Platform }>;
+}): Platform[] {
+  const platforms = value.targets?.length
+    ? value.targets.map((target) => target.platform)
+    : value.platforms || [];
+
+  return Array.from(new Set(platforms));
+}
+
+function isHackerNewsOnly(value: {
+  platforms?: Platform[];
+  targets?: Array<{ platform: Platform }>;
+}): boolean {
+  const platforms = requestedPlatforms(value);
+
+  return platforms.length === 1 && platforms[0] === "hackernews";
+}
+
 const requestSchema = z
   .object({
     adminPassword: z.string().optional(),
     title: z.string().max(300).optional(),
-    text: z.string().min(1).max(12000),
+    text: z.string().max(12000).default(""),
+    linkUrl: optionalUrlSchema,
     mediaId: z.string().max(80).optional().or(z.literal("")),
     mediaUrl: optionalUrlSchema,
     platforms: z.array(platformSchema).max(30).optional(),
@@ -68,10 +90,20 @@ const requestSchema = z
   })
   .refine((value) => (value.targets?.length || value.platforms?.length || 0) > 0, {
     message: "Select at least one channel."
+  })
+  .refine((value) => !requestedPlatforms(value).includes("hackernews") || value.title?.trim(), {
+    message: "Hacker News requires a title."
+  })
+  .refine((value) => value.text.trim() || (isHackerNewsOnly(value) && value.title?.trim()), {
+    message: "Write post text, or select only Hacker News and add a title."
   });
 
 function validationMessage(error: z.ZodError): string {
   const fields = error.flatten().fieldErrors;
+
+  if (fields.linkUrl?.length) {
+    return "Link is invalid. Use a URL like https://example.com, or leave Link empty.";
+  }
 
   if (fields.mediaUrl?.length) {
     return "Media URL is invalid. Upload a local file instead.";
@@ -112,6 +144,7 @@ export async function POST(request: Request) {
     const { results, publishedPost } = await runPublish({
       title: parsed.data.title,
       text: parsed.data.text,
+      linkUrl: parsed.data.linkUrl,
       mediaId: parsed.data.mediaId || undefined,
       mediaUrl: parsed.data.mediaUrl,
       platforms: parsed.data.platforms || [],

@@ -58,6 +58,7 @@ const fieldPlatform = new Map<string, Platform>(
 export const emptyComposeDraft: ComposeDraft = {
   title: "",
   text: "",
+  linkUrl: "",
   platforms: [],
   targets: []
 };
@@ -179,6 +180,7 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
   return {
     title: stringValue(record.title, 300),
     text: stringValue(record.text, 12000),
+    linkUrl: stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048),
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
     ...(updatedAt ? { updatedAt } : {})
@@ -257,6 +259,9 @@ function normalizePublishedPost(value: unknown): PublishedPost | null {
       ? { title: record.title.slice(0, 300) }
       : {}),
     text: stringValue(record.text, 12000),
+    ...(stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048)
+      ? { linkUrl: stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048) }
+      : {}),
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
     results,
@@ -293,11 +298,18 @@ function normalizeScheduledPost(value: unknown): ScheduledPost | null {
   const platforms = targets.length ? normalizePlatforms(targets.map((target) => target.platform)) : normalizePlatforms(record.platforms);
   const scheduledFor = stringValue(record.scheduledFor, 40);
   const scheduledAt = Date.parse(scheduledFor);
+  const title = stringValue(record.title, 300);
+  const text = stringValue(record.text, 12000);
+  const isHackerNewsOnly = platforms.length === 1 && platforms[0] === "hackernews";
   const results = Array.isArray(record.results)
     ? record.results.map(normalizePublishResult).filter((item): item is PublishResult => Boolean(item))
     : [];
 
-  if (!Number.isFinite(scheduledAt) || !stringValue(record.text, 12000).trim() || platforms.length === 0) {
+  if (
+    !Number.isFinite(scheduledAt) ||
+    (!text.trim() && !(isHackerNewsOnly && title.trim())) ||
+    platforms.length === 0
+  ) {
     return null;
   }
 
@@ -306,10 +318,11 @@ function normalizeScheduledPost(value: unknown): ScheduledPost | null {
     createdAt: stringValue(record.createdAt, 40) || new Date().toISOString(),
     updatedAt: stringValue(record.updatedAt, 40) || new Date().toISOString(),
     scheduledFor: new Date(scheduledAt).toISOString(),
-    ...(typeof record.title === "string" && record.title
-      ? { title: record.title.slice(0, 300) }
+    ...(title ? { title } : {}),
+    text,
+    ...(stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048)
+      ? { linkUrl: stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048) }
       : {}),
-    text: stringValue(record.text, 12000),
     platforms,
     targets,
     ...(normalizePublishedMedia(record.media) ? { media: normalizePublishedMedia(record.media) } : {}),

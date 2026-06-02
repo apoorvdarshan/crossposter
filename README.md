@@ -250,9 +250,11 @@ HACKERNEWS_PASSWORD
 How publishing works:
 
 - Title is required.
-- If the post body contains an `http` or `https` URL, the first URL is submitted
-  as a link story.
-- If the post body has no URL, the post body is submitted as a text story.
+- Link is optional. If set, it is submitted as Hacker News' `url` field.
+- Post text is optional for Hacker News. If set, it is submitted as Hacker News'
+  `text` field.
+- Leave Link empty to submit a discussion/text post.
+- For non-Hacker News channels, Crossposter still requires Post text.
 - Local media is ignored.
 - Crossposter logs in during publish and does not store an HN session cookie.
 

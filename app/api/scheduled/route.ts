@@ -22,10 +22,68 @@ const targetSchema = z.object({
   profileId: z.string().max(120).optional(),
   profileLabel: z.string().max(180).optional()
 });
+function normalizeOptionalUrl(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+}
+
+const optionalUrlSchema = z.preprocess(
+  normalizeOptionalUrl,
+  z
+    .string()
+    .url()
+    .refine((value) => {
+      try {
+        const parsed = new URL(value);
+        const isHttp = parsed.protocol === "http:" || parsed.protocol === "https:";
+        const isPublicLike = parsed.hostname === "localhost" || parsed.hostname.includes(".");
+
+        return isHttp && isPublicLike && !parsed.username && !parsed.password;
+      } catch {
+        return false;
+      }
+    })
+    .optional()
+);
+
+function requestedPlatforms(value: {
+  platforms?: Platform[];
+  targets?: Array<{ platform: Platform }>;
+}): Platform[] {
+  const platforms = value.targets?.length
+    ? value.targets.map((target) => target.platform)
+    : value.platforms || [];
+
+  return Array.from(new Set(platforms));
+}
+
+function isHackerNewsOnly(value: {
+  platforms?: Platform[];
+  targets?: Array<{ platform: Platform }>;
+}): boolean {
+  const platforms = requestedPlatforms(value);
+
+  return platforms.length === 1 && platforms[0] === "hackernews";
+}
+
 const requestSchema = z
   .object({
     title: z.string().max(300).optional(),
-    text: z.string().min(1).max(12000),
+    text: z.string().max(12000).default(""),
+    linkUrl: optionalUrlSchema,
     mediaId: z.string().max(80).optional().or(z.literal("")),
     platforms: z.array(platformSchema).max(30).optional(),
     targets: z.array(targetSchema).max(30).optional(),
@@ -33,6 +91,12 @@ const requestSchema = z
   })
   .refine((value) => (value.targets?.length || value.platforms?.length || 0) > 0, {
     message: "Select at least one channel."
+  })
+  .refine((value) => !requestedPlatforms(value).includes("hackernews") || value.title?.trim(), {
+    message: "Hacker News requires a title."
+  })
+  .refine((value) => value.text.trim() || (isHackerNewsOnly(value) && value.title?.trim()), {
+    message: "Write post text, or select only Hacker News and add a title."
   })
   .refine((value) => Number.isFinite(Date.parse(value.scheduledFor)), {
     message: "Choose a valid scheduled time."
@@ -113,6 +177,7 @@ export async function POST(request: Request) {
     scheduledFor: new Date(scheduledAt).toISOString(),
     ...(parsed.data.title?.trim() ? { title: parsed.data.title.trim() } : {}),
     text: parsed.data.text.trim(),
+    ...(parsed.data.linkUrl ? { linkUrl: parsed.data.linkUrl } : {}),
     platforms,
     targets,
     ...(media ? { media } : {}),

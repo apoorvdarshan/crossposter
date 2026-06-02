@@ -71,6 +71,7 @@ export async function runScheduledTick(requestUrl = "http://localhost:2004/api/s
         const result = await runPublish({
           title: locked.title,
           text: locked.text,
+          linkUrl: locked.linkUrl,
           mediaId: locked.media?.id,
           platforms: locked.platforms,
           targets: locked.targets,

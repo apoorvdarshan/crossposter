@@ -223,8 +223,9 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Paste your Hacker News username and password. They stay in poster.config.local.json.",
       "Save config, then select Hacker News on the Dashboard.",
       "Add a Title. Hacker News requires it.",
-      "If the post contains an http or https URL, Crossposter submits that URL as a link story.",
-      "If there is no URL in the post, Crossposter submits the post body as a text story.",
+      "Optionally put a URL in the Dashboard Link field.",
+      "Optionally write text/body in the Dashboard Post field.",
+      "Leave Link empty when you want a discussion/text post.",
       "Local media upload is ignored.",
       "If Hacker News requires CAPTCHA or browser validation, Crossposter will fail with a message and you must submit manually."
     ]

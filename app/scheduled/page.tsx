@@ -344,7 +344,13 @@ export default function ScheduledPage() {
                     )}
                   </div>
 
-                  <p className="scheduled-preview">{post.text}</p>
+                  {post.text ? <p className="scheduled-preview">{post.text}</p> : null}
+                  {post.linkUrl ? (
+                    <a className="result-link" href={post.linkUrl} target="_blank" rel="noreferrer">
+                      <span>{post.linkUrl}</span>
+                      <ExternalLink size={13} />
+                    </a>
+                  ) : null}
 
                   {post.media ? (
                     <div className="scheduled-media">
