@@ -22,6 +22,18 @@ import { ProjectLinks } from "@/components/project-links";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { validatePlatformConfig, type ConfigIssue } from "@/lib/config-validation";
+import {
+  appPostTextLimit,
+  devtoBodyBytesLimit,
+  postLimitIssues,
+  postTextLimitForPlatform,
+  platformLabel,
+  textBytes,
+  textLength,
+  titleLengthForPlatform,
+  titleLimitForPlatform,
+  titleLimitIssues
+} from "@/lib/platform-limits";
 import type {
   ComposeDraft,
   Platform,
@@ -437,6 +449,14 @@ function formatApiError(error: unknown): string {
       return "Link is invalid. Use a URL like https://example.com, or leave Link empty.";
     }
 
+    if (fieldError.fieldErrors?.title?.length) {
+      return fieldError.fieldErrors.title.join(" ");
+    }
+
+    if (fieldError.fieldErrors?.text?.length) {
+      return fieldError.fieldErrors.text.join(" ");
+    }
+
     if (fieldError.fieldErrors?.mediaUrl?.length) {
       return "Media URL is invalid. Upload a local file instead.";
     }
@@ -729,23 +749,6 @@ async function compressVideoMedia(
     type: response.headers.get("content-type") || "video/mp4",
     lastModified: Date.now()
   });
-}
-
-function postTextLength(value: string): number {
-  const Segmenter = (
-    Intl as typeof Intl & {
-      Segmenter?: new (
-        locale: string | undefined,
-        options: { granularity: "grapheme" }
-      ) => { segment(text: string): Iterable<unknown> };
-    }
-  ).Segmenter;
-
-  if (Segmenter) {
-    return Array.from(new Segmenter(undefined, { granularity: "grapheme" }).segment(value)).length;
-  }
-
-  return Array.from(value).length;
 }
 
 function formatDateTime(value: string): string {
@@ -1347,12 +1350,13 @@ export default function Home() {
       return;
     }
 
-    const isBlueskyTooLong =
-      publishPlatforms.includes("bluesky") &&
-      postTextLength(text.trim()) > 300;
+    const limitIssues = [
+      ...titleLimitIssues(publishPlatforms, title),
+      ...postLimitIssues(publishPlatforms, text)
+    ];
 
-    if (isBlueskyTooLong) {
-      setError("Bluesky is over 300 characters. Shorten the post or deselect Bluesky.");
+    if (limitIssues.length > 0) {
+      setError(limitIssues[0].message);
       return;
     }
 
@@ -1447,12 +1451,13 @@ export default function Home() {
       return;
     }
 
-    const isBlueskyTooLong =
-      publishPlatforms.includes("bluesky") &&
-      postTextLength(text.trim()) > 300;
+    const limitIssues = [
+      ...titleLimitIssues(publishPlatforms, title),
+      ...postLimitIssues(publishPlatforms, text)
+    ];
 
-    if (isBlueskyTooLong) {
-      setError("Bluesky is over 300 characters. Shorten the post or deselect Bluesky.");
+    if (limitIssues.length > 0) {
+      setError(limitIssues[0].message);
       return;
     }
 
@@ -1503,19 +1508,79 @@ export default function Home() {
   }
 
   const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
-  const blueskyLength = postTextLength(text.trim());
-  const showBlueskyLimit = selectedPlatforms.includes("bluesky");
+  const postLength = textLength(text.trim());
+  const postBytes = textBytes(text.trim());
+  const titleLimitHints = selectedPlatforms
+    .map((platform) => {
+      const limit = titleLimitForPlatform(platform);
+
+      if (!limit) {
+        return null;
+      }
+
+      const length = titleLengthForPlatform(platform, title);
+
+      return {
+        id: `${platform}-title`,
+        label: platformLabel(platform),
+        length,
+        limit,
+        isWarning: length > limit
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const titleLimitWarnings = titleLimitHints.filter((hint) => hint.isWarning);
+  const postLimitHints = [
+    {
+      id: "app-post",
+      label: "Crossposter",
+      length: postLength,
+      limit: appPostTextLimit,
+      isWarning: postLength > appPostTextLimit
+    },
+    ...selectedPlatforms
+      .map((platform) => {
+        const limit = postTextLimitForPlatform(platform);
+
+        if (!limit) {
+          return null;
+        }
+
+        return {
+          id: `${platform}-post`,
+          label: platformLabel(platform),
+          length: postLength,
+          limit,
+          isWarning: postLength > limit
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+  ];
+  const postLimitWarnings = postLimitHints.filter((hint) => hint.isWarning);
+  const devtoBodyLimitWarning = selectedPlatforms.includes("devto") && postBytes > devtoBodyBytesLimit
+    ? {
+        id: "devto-body",
+        label: "Dev.to body",
+        length: postBytes,
+        limit: devtoBodyBytesLimit,
+        isWarning: true
+      }
+    : null;
   const showHackerNewsLink = selectedPlatforms.includes("hackernews");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
   const hasRequiredPostText = Boolean(text.trim()) || (isHackerNewsOnly && Boolean(title.trim()));
-  const blueskyTooLong = showBlueskyLimit && blueskyLength > 300;
+  const draftLimitIssues = [
+    ...titleLimitIssues(selectedPlatforms, title),
+    ...postLimitIssues(selectedPlatforms, text)
+  ];
+  const hasLimitIssues = draftLimitIssues.length > 0;
   const canSubmitDraft =
     selectedTargets.length > 0 &&
     hasRequiredHackerNewsTitle &&
     hasRequiredPostText &&
     preflightIssues.length === 0 &&
-    !blueskyTooLong &&
+    !hasLimitIssues &&
     !isPublishing &&
     !isScheduling &&
     !isUploadingMedia &&
@@ -1553,6 +1618,38 @@ export default function Home() {
     mediaFile && selectedMediaKind === "image"
       ? imageTargetBytesForPlatforms(selectedPlatforms, mediaFile)
       : undefined;
+  const mediaWarnings = mediaFile
+    ? selectedPlatforms.flatMap((platform) => {
+        if (platform === "devto") {
+          return [
+            {
+              id: "devto-media-ignored",
+              message: "Dev.to ignores local media; the article will publish without this file."
+            }
+          ];
+        }
+
+        if (platform === "nostr") {
+          return [
+            {
+              id: "nostr-media-ignored",
+              message: "Nostr ignores local media; paste public media links into the post text."
+            }
+          ];
+        }
+
+        if (platform === "hackernews") {
+          return [
+            {
+              id: "hackernews-media-ignored",
+              message: "Hacker News ignores local media; use the Link field or post text instead."
+            }
+          ];
+        }
+
+        return [];
+      })
+    : [];
   const compressionProgress = isCompressingMedia ? progress : null;
   const actionProgress = progress && !isCompressingMedia ? progress : null;
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
@@ -1699,7 +1796,9 @@ export default function Home() {
               </h2>
             </div>
             <div className="compose-head-actions">
-              <span className="counter">{text.length}/12000</span>
+              <span className={`counter ${postLength > appPostTextLimit ? "is-warning" : ""}`}>
+                {postLength}/{appPostTextLimit}
+              </span>
               <button
                 className="primary compact-button"
                 disabled={!canPublish}
@@ -1750,6 +1849,18 @@ export default function Home() {
                 }}
                 placeholder="Write title here"
               />
+              {titleLimitWarnings.length > 0 ? (
+                <div className="limit-stack">
+                  {titleLimitWarnings.map((hint) => (
+                    <span
+                      className={`field-hint ${hint.isWarning ? "is-warning" : ""}`}
+                      key={hint.id}
+                    >
+                      {hint.label}: {hint.length}/{hint.limit} characters.
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             {showHackerNewsLink ? (
@@ -1786,12 +1897,25 @@ export default function Home() {
                 }}
                 placeholder="Write the post once."
               />
-              {showBlueskyLimit ? (
-                <span className={`field-hint ${blueskyTooLong ? "is-warning" : ""}`}>
-                  Bluesky: {blueskyLength}/300 characters.
-                </span>
+              {postLimitWarnings.length > 0 || devtoBodyLimitWarning ? (
+                <div className="limit-stack">
+                  {postLimitWarnings.map((hint) => (
+                    <span
+                      className={`field-hint ${hint.isWarning ? "is-warning" : ""}`}
+                      key={hint.id}
+                    >
+                      {hint.label}: {hint.length}/{hint.limit} characters.
+                    </span>
+                  ))}
+                  {devtoBodyLimitWarning ? (
+                    <span className="field-hint is-warning" key={devtoBodyLimitWarning.id}>
+                      {devtoBodyLimitWarning.label}: {formatBytes(devtoBodyLimitWarning.length)}/
+                      {formatBytes(devtoBodyLimitWarning.limit)}.
+                    </span>
+                  ) : null}
+                </div>
               ) : null}
-              {showHackerNewsLink && !showBlueskyLimit ? (
+              {isHackerNewsOnly ? (
                 <span className="field-hint">
                   For Hacker News, Post is optional. Title is required.
                 </span>
@@ -1878,6 +2002,16 @@ export default function Home() {
               <span className="field-hint">
                 Paste an image from the clipboard, drag and drop a file, or choose one manually.
               </span>
+              {mediaWarnings.length > 0 ? (
+                <div className="preflight-list warning-list" role="status">
+                  {mediaWarnings.map((warning) => (
+                    <p className="preflight-item warning-item" key={warning.id}>
+                      <AlertTriangle size={16} />
+                      <span>{warning.message}</span>
+                    </p>
+                  ))}
+                </div>
+              ) : null}
               {canCompressMedia ? (
                 <div className="compression-panel">
                   <div className="compression-heading">

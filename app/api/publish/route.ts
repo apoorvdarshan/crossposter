@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { postLimitIssues, titleLimitIssues } from "@/lib/platform-limits";
 import { runPublish } from "@/lib/publish-runner";
 import type { Platform } from "@/lib/types";
 
@@ -96,6 +97,21 @@ const requestSchema = z
   })
   .refine((value) => value.text.trim() || (isHackerNewsOnly(value) && value.title?.trim()), {
     message: "Write post text, or select only Hacker News and add a title."
+  })
+  .superRefine((value, ctx) => {
+    const platforms = requestedPlatforms(value);
+    const issues = [
+      ...titleLimitIssues(platforms, value.title || ""),
+      ...postLimitIssues(platforms, value.text)
+    ];
+
+    for (const issue of issues) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [issue.field],
+        message: issue.message
+      });
+    }
   });
 
 function validationMessage(error: z.ZodError): string {
@@ -103,6 +119,14 @@ function validationMessage(error: z.ZodError): string {
 
   if (fields.linkUrl?.length) {
     return "Link is invalid. Use a URL like https://example.com, or leave Link empty.";
+  }
+
+  if (fields.title?.length) {
+    return fields.title.join(" ");
+  }
+
+  if (fields.text?.length) {
+    return fields.text.join(" ");
   }
 
   if (fields.mediaUrl?.length) {

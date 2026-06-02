@@ -551,6 +551,11 @@ h2 {
   font-weight: 800;
 }
 
+.counter.is-warning {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
 .composer {
   display: grid;
   gap: 17px;
@@ -627,6 +632,12 @@ textarea {
   font-weight: 900;
 }
 
+.limit-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+}
+
 .preflight-list {
   display: grid;
   gap: 8px;
@@ -634,6 +645,11 @@ textarea {
   border-radius: 7px;
   background: var(--danger-wash);
   padding: 10px;
+}
+
+.preflight-list.warning-list {
+  border-color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
 }
 
 .preflight-item {
@@ -644,6 +660,10 @@ textarea {
   font-size: 0.84rem;
   font-weight: 800;
   line-height: 1.35;
+}
+
+.preflight-item.warning-item {
+  color: var(--warning);
 }
 
 .preflight-item svg {

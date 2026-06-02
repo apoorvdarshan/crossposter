@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getScheduledPosts, upsertScheduledPost } from "@/lib/local-config";
 import { getUploadedMedia } from "@/lib/media-store";
+import { postLimitIssues, titleLimitIssues } from "@/lib/platform-limits";
 import { ensureSchedulerStarted, runScheduledTick } from "@/lib/scheduler";
 import type { Platform, PublishedMedia, PublishTarget, ScheduledPost } from "@/lib/types";
 
@@ -100,7 +101,44 @@ const requestSchema = z
   })
   .refine((value) => Number.isFinite(Date.parse(value.scheduledFor)), {
     message: "Choose a valid scheduled time."
+  })
+  .superRefine((value, ctx) => {
+    const platforms = requestedPlatforms(value);
+    const issues = [
+      ...titleLimitIssues(platforms, value.title || ""),
+      ...postLimitIssues(platforms, value.text)
+    ];
+
+    for (const issue of issues) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [issue.field],
+        message: issue.message
+      });
+    }
   });
+
+function validationMessage(error: z.ZodError): string {
+  const fields = error.flatten().fieldErrors;
+
+  if (fields.linkUrl?.length) {
+    return "Link is invalid. Use a URL like https://example.com, or leave Link empty.";
+  }
+
+  if (fields.title?.length) {
+    return fields.title.join(" ");
+  }
+
+  if (fields.text?.length) {
+    return fields.text.join(" ");
+  }
+
+  if (error.flatten().formErrors.length) {
+    return error.flatten().formErrors.join(" ");
+  }
+
+  return "Schedule request is invalid. Check the fields and try again.";
+}
 
 function uniquePlatforms(targets: PublishTarget[]): Platform[] {
   return Array.from(new Set(targets.map((target) => target.platform)));
@@ -143,7 +181,7 @@ export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(await request.json());
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
   }
 
   const scheduledAt = Date.parse(parsed.data.scheduledFor);

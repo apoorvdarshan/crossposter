@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { appendPublishedPost, getProfileConfigIssues } from "@/lib/local-config";
 import { getUploadedMedia } from "@/lib/media-store";
+import { postLimitIssues, titleLimitIssues } from "@/lib/platform-limits";
 import { providers } from "@/lib/providers";
 import type {
   Platform,
@@ -65,8 +66,16 @@ function publishedMediaFromContext(media: ProviderContext["media"]): PublishedMe
 export async function runPublish(input: PublishRunInput): Promise<PublishRunResult> {
   const targets = defaultTargets(input);
   const platforms = uniquePlatforms(targets);
+  const limitIssues = [
+    ...titleLimitIssues(platforms, input.title || ""),
+    ...postLimitIssues(platforms, input.text)
+  ];
   const now = input.now || new Date();
   let media: ProviderContext["media"] | undefined;
+
+  if (limitIssues.length > 0) {
+    throw new Error(limitIssues[0].message);
+  }
 
   if (input.mediaId) {
     media = await getUploadedMedia(input.mediaId, input.requestUrl);
