@@ -183,6 +183,34 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "After approval, Crossposter fills the access token and a personal author URN automatically.",
       "For Page posting, replace LinkedIn author URN with urn:li:organization:YOUR_PAGE_ORG_ID and save config."
     ]
+  },
+  youtube: {
+    title: "YouTube setup",
+    intro:
+      "YouTube uses a Google OAuth web client and a refresh token. Keep the Google app in Testing for your own account.",
+    links: [
+      { label: "Google Auth Platform", href: "https://console.cloud.google.com/auth/overview" },
+      { label: "OAuth Playground", href: "https://developers.google.com/oauthplayground" },
+      {
+        label: "YouTube upload scope",
+        href: "https://developers.google.com/youtube/v3/guides/auth/server-side-web-apps"
+      }
+    ],
+    steps: [
+      "In Google Cloud, enable YouTube Data API v3 for the project.",
+      "Open Google Auth Platform, then Data Access, and add https://www.googleapis.com/auth/youtube.upload.",
+      "Open Audience, keep Publishing status as Testing, and add your own Google account as a test user.",
+      "Open Clients and create a Web application OAuth client.",
+      "Add https://developers.google.com/oauthplayground as an Authorized redirect URI.",
+      "Copy the OAuth client ID and client secret into this YouTube profile, then save config.",
+      "Open OAuth Playground, click the gear icon, turn on Use your own OAuth credentials, and paste the same client ID and secret.",
+      "There is no Save button in the OAuth Playground gear dialog. Close the dialog; the values are kept for the current flow.",
+      "In OAuth Playground step 1, add https://www.googleapis.com/auth/youtube.upload and click Authorize APIs.",
+      "Sign in with the same Google or YouTube account listed as a test user.",
+      "Click Exchange authorization code for tokens, then copy the left-side Refresh token field, not the ya29... Access token.",
+      "Paste that Refresh token into YouTube refresh token here, and save config.",
+      "On the Dashboard, YouTube publishes local video files. Fill Title and Post before publishing."
+    ]
   }
 };
 
