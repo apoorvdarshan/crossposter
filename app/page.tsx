@@ -61,14 +61,6 @@ const channels: Array<{
     uses: ["Post", "Media"],
     target: "Uses the active LinkedIn profile or Page from Settings.",
     media: "Local images and MP4 video are supported."
-  },
-  {
-    id: "pinterest",
-    label: "Pinterest",
-    note: "Image pin",
-    uses: ["Title", "Post", "Media"],
-    target: "Uses the active Pinterest profile from Settings.",
-    media: "Local image upload is supported."
   }
 ];
 
@@ -89,9 +81,7 @@ const envLabels: Record<string, string> = {
   MASTODON_ACCESS_TOKEN: "access token",
   DEVTO_API_KEY: "API key",
   LINKEDIN_ACCESS_TOKEN: "access token",
-  LINKEDIN_AUTHOR_URN: "author URN",
-  PINTEREST_ACCESS_TOKEN: "access token",
-  PINTEREST_BOARD_ID: "board"
+  LINKEDIN_AUTHOR_URN: "author URN"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -450,17 +440,6 @@ function mediaKindLabel(kind: UploadedMedia["kind"]): string {
 function mediaPreflightIssues(platforms: Platform[], file: File | null): PreflightIssue[] {
   const issues: PreflightIssue[] = [];
   const kind = fileKind(file);
-
-  if (platforms.includes("pinterest")) {
-    if (!file) {
-      issues.push({ id: "pinterest-missing", message: "Pinterest requires an image file." });
-    } else if (kind !== "image") {
-      issues.push({
-        id: "pinterest-kind",
-        message: `Pinterest needs an image file; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    }
-  }
 
   if (!file) {
     return issues;

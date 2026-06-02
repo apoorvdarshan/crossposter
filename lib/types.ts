@@ -2,8 +2,7 @@ export type Platform =
   | "bluesky"
   | "mastodon"
   | "devto"
-  | "linkedin"
-  | "pinterest";
+  | "linkedin";
 
 export type PublishPayload = {
   title?: string;

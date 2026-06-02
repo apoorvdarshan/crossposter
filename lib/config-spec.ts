@@ -100,19 +100,6 @@ export const configFields: ConfigField[] = [
     help: "Optional version header in YYYYMM format. Leave the default unless LinkedIn docs require a newer version.",
     defaultValue: "202605",
     showFor: ["linkedin"]
-  },
-  {
-    name: "PINTEREST_ACCESS_TOKEN",
-    label: "Pinterest access token",
-    help: "Pinterest API token.",
-    secret: true,
-    requiredFor: ["pinterest"]
-  },
-  {
-    name: "PINTEREST_BOARD_ID",
-    label: "Pinterest board",
-    help: "Board ID to create pins in.",
-    requiredFor: ["pinterest"]
   }
 ];
 
@@ -128,7 +115,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     bluesky: [],
     mastodon: [],
     devto: [],
-    linkedin: [],
-    pinterest: []
+    linkedin: []
   } as Record<Platform, string[]>
 );

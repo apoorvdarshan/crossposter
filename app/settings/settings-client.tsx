@@ -84,8 +84,7 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
-  { id: "linkedin", label: "LinkedIn" },
-  { id: "pinterest", label: "Pinterest" }
+  { id: "linkedin", label: "LinkedIn" }
 ];
 
 const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = [

@@ -14,8 +14,7 @@ const tokenFields = new Set([
   "DEVTO_API_KEY",
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
-  "LINKEDIN_ACCESS_TOKEN",
-  "PINTEREST_ACCESS_TOKEN"
+  "LINKEDIN_ACCESS_TOKEN"
 ]);
 
 export function isPlaceholderValue(value: string | undefined): boolean {
@@ -83,8 +82,6 @@ function invalidReason(name: string, value: string): string | null {
       return scopesFor(value).includes("w_member_social")
         ? null
         : "must include w_member_social";
-    case "PINTEREST_BOARD_ID":
-      return /^\d+$/.test(value) ? null : "must be numeric";
     default:
       return null;
   }

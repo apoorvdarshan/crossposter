@@ -10,7 +10,6 @@ This is intentionally not a Postiz copy. Full Postiz needs Docker Compose, Redis
 - Mastodon: text and media
 - Dev.to: Markdown articles
 - LinkedIn: profile or page posts with optional images or MP4 video through an author URN
-- Pinterest: local image pins
 
 ## Run Locally
 
@@ -150,15 +149,6 @@ urn:li:organization:YOUR_PAGE_ORG_ID
 LinkedIn local media upload supports JPG, PNG, and GIF images, plus MP4 videos
 between 75 KB and 500 MB. Other local media types are rejected before
 publishing.
-
-### Pinterest
-
-Pinterest image pins use a local image file encoded directly into the create-pin request. Public Pinterest API access can still require the right app/access tier.
-
-```text
-PINTEREST_ACCESS_TOKEN
-PINTEREST_BOARD_ID
-```
 
 ## Security
 

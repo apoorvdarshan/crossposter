@@ -2,7 +2,6 @@ import {
   siBluesky,
   siDevdotto,
   siMastodon,
-  siPinterest,
   type SimpleIcon
 } from "simple-icons";
 import type { CSSProperties } from "react";
@@ -11,24 +10,21 @@ import type { Platform } from "@/lib/types";
 const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   bluesky: siBluesky,
   mastodon: siMastodon,
-  devto: siDevdotto,
-  pinterest: siPinterest
+  devto: siDevdotto
 };
 
 const socialNames: Record<Platform, string> = {
   bluesky: "Bluesky",
   mastodon: "Mastodon",
   devto: "Dev.to",
-  linkedin: "LinkedIn",
-  pinterest: "Pinterest"
+  linkedin: "LinkedIn"
 };
 
 const brandColors: Record<Platform, string> = {
   bluesky: `#${siBluesky.hex}`,
   mastodon: `#${siMastodon.hex}`,
   devto: `#${siDevdotto.hex}`,
-  linkedin: "#0a66c2",
-  pinterest: `#${siPinterest.hex}`
+  linkedin: "#0a66c2"
 };
 
 type SocialLogoProps = {
