@@ -42,7 +42,12 @@ function uniquePlatforms(targets: PublishTarget[]): Platform[] {
 
 function scheduledList() {
   return getScheduledPosts()
-    .filter((post) => post.status !== "canceled")
+    .filter(
+      (post) =>
+        post.status === "scheduled" ||
+        post.status === "publishing" ||
+        post.status === "failed"
+    )
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 }
 

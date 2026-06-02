@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CalendarClock,
-  CheckCircle2,
   Clock3,
   ExternalLink,
   File as FileIcon,
@@ -105,6 +104,10 @@ function apiError(error: unknown): string {
   return "Could not update the scheduler.";
 }
 
+function isQueuePost(post: ScheduledPost): boolean {
+  return post.status === "scheduled" || post.status === "publishing" || post.status === "failed";
+}
+
 export default function ScheduledPage() {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -122,7 +125,7 @@ export default function ScheduledPage() {
         return;
       }
 
-      const nextPosts = body.scheduledPosts || [];
+      const nextPosts = (body.scheduledPosts || []).filter(isQueuePost);
 
       setPosts(nextPosts);
       setEdits((current) => ({
@@ -311,7 +314,7 @@ export default function ScheduledPage() {
             ) : null}
 
             {sortedPosts.map((post) => {
-              const canEdit = post.status !== "publishing" && post.status !== "published";
+              const canEdit = post.status !== "publishing";
               const okCount = post.results?.filter((result) => result.ok).length || 0;
               const postTargets: PublishTarget[] = post.targets?.length
                 ? post.targets
@@ -332,9 +335,7 @@ export default function ScheduledPage() {
                       <h3>{post.title?.trim() || "Untitled post"}</h3>
                       <time>{formatDateTime(post.scheduledFor)}</time>
                     </div>
-                    {post.status === "published" ? (
-                      <CheckCircle2 size={22} className="scheduled-icon ok" />
-                    ) : post.status === "failed" ? (
+                    {post.status === "failed" ? (
                       <AlertTriangle size={22} className="scheduled-icon err" />
                     ) : (
                       <Clock3 size={22} className="scheduled-icon" />
