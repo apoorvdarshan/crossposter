@@ -128,6 +128,32 @@ async function submitStory({
   return `${hnBaseUrl}/newest`;
 }
 
+function normalizeSubmissionUrl(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const normalized = /^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(normalized);
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("Hacker News Link must use http or https.");
+    }
+
+    return parsed.toString();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("must use http or https")) {
+      throw error;
+    }
+
+    throw new Error("Hacker News Link is invalid. Use a URL like example.com or https://example.com.");
+  }
+}
+
 export async function publishHackerNews(ctx: ProviderContext): Promise<PublishResult> {
   const profileId = ctx.target?.profileId;
   const username = requireEnv("HACKERNEWS_USERNAME", profileId);
@@ -139,7 +165,7 @@ export async function publishHackerNews(ctx: ProviderContext): Promise<PublishRe
   }
 
   const text = compactText([ctx.text]);
-  const linkUrl = ctx.linkUrl?.trim();
+  const linkUrl = normalizeSubmissionUrl(ctx.linkUrl);
   const cookie = await login(username, password);
   const fnid = await readSubmitFnid(cookie);
   const submittedUrl = await submitStory({

@@ -1875,10 +1875,10 @@ export default function Home() {
                   setHasSavedDraft(true);
                   setLinkUrl(event.target.value);
                 }}
-                placeholder="https://example.com"
+                placeholder="example.com or https://example.com"
               />
               <span className="field-hint">
-                Optional. Hacker News uses this as the submitted URL.
+                Optional. Bare domains are sent as https URLs for Hacker News.
               </span>
             </div>
 
