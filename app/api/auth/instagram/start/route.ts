@@ -17,6 +17,14 @@ function redirectToSocials(request: NextRequest, status: string): NextResponse {
   return NextResponse.redirect(url);
 }
 
+function normalizeInstagramScopes(scopes: string): string {
+  return scopes
+    .split(/[\s,]+/)
+    .map((scope) => scope.trim())
+    .filter(Boolean)
+    .join(",");
+}
+
 export function GET(request: NextRequest) {
   if (!isInstagramOAuthAllowed()) {
     return NextResponse.json({ error: "Instagram OAuth setup is local-only" }, { status: 403 });
@@ -48,7 +56,7 @@ export function GET(request: NextRequest) {
   authorizeUrl.searchParams.set("client_id", clientId);
   authorizeUrl.searchParams.set("redirect_uri", redirectUri);
   authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("scope", scopes);
+  authorizeUrl.searchParams.set("scope", normalizeInstagramScopes(scopes));
   authorizeUrl.searchParams.set("state", state);
 
   const response = NextResponse.redirect(authorizeUrl);

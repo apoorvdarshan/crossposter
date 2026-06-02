@@ -48,6 +48,10 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
+function scopesFor(value: string): string[] {
+  return value.split(/[\s,]+/).filter(Boolean);
+}
+
 function invalidReason(name: string, value: string): string | null {
   if (tokenFields.has(name)) {
     return value.length >= 8 && !hasWhitespace(value) ? null : "must be a token/key with no spaces";
@@ -85,12 +89,12 @@ function invalidReason(name: string, value: string): string | null {
     case "LINKEDIN_VERSION":
       return /^\d{6}$/.test(value) ? null : "must be a YYYYMM API version";
     case "LINKEDIN_OAUTH_SCOPES":
-      return value.split(/\s+/).includes("w_member_social")
+      return scopesFor(value).includes("w_member_social")
         ? null
         : "must include w_member_social";
     case "INSTAGRAM_OAUTH_SCOPES":
-      return value.split(/\s+/).includes("instagram_business_basic") &&
-        value.split(/\s+/).includes("instagram_business_content_publish")
+      return scopesFor(value).includes("instagram_business_basic") &&
+        scopesFor(value).includes("instagram_business_content_publish")
         ? null
         : "must include instagram_business_basic and instagram_business_content_publish";
     case "INSTAGRAM_USER_ID":
