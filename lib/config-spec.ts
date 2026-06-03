@@ -168,8 +168,8 @@ export const configFields: ConfigField[] = [
   },
   {
     name: "X_PREMIUM_LONG_POSTS",
-    label: "X Premium long posts",
-    help: "Set true only for X Premium accounts. False uses the normal 280 character limit; true uses 25,000.",
+    label: "X Premium account",
+    help: "Set true only for X Premium accounts. False uses 280 characters and 512 MB video; true uses 25,000 characters and 16 GB video.",
     defaultValue: "false",
     showFor: ["x"]
   },

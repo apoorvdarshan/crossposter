@@ -206,7 +206,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Leave X bird command as bird unless you need an absolute path such as /opt/homebrew/bin/bird.",
       "Optionally set cookie source to chrome, firefox, or safari.",
       "Optionally set Chrome or Firefox profile names if bird check needs them.",
-      "Turn on X Premium long posts only for Premium accounts; otherwise Crossposter uses the normal 280 character limit.",
+      "Turn on X Premium account only for Premium accounts; otherwise Crossposter uses 280 characters and 512 MB video.",
       "Save config, then select X / Twitter on the Dashboard.",
       "Crossposter publishes user-triggered posts only. X may still limit or lock accounts for spammy or automated-looking behavior.",
       "Local images, GIFs, and MP4 video are passed to bird as media attachments."
@@ -1065,8 +1065,8 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                         />
                         <span>
                           {fieldValue === "true"
-                            ? "Premium long posts"
-                            : "Standard 280 characters"}
+                            ? "Premium account limits"
+                            : "Standard 280 chars / 512 MB video"}
                         </span>
                       </span>
                       <span className={`field-hint ${issue ? "is-warning" : ""}`}>

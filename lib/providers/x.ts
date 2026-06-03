@@ -1,7 +1,12 @@
 import { execFile } from "node:child_process";
 import { optionalEnv } from "@/lib/env";
 import { compactText } from "@/lib/http";
-import { textLength, xPostTextLimit } from "@/lib/platform-limits";
+import {
+  formatLimitBytes,
+  textLength,
+  xMediaSizeLimit,
+  xPostTextLimit
+} from "@/lib/platform-limits";
 import type { ProviderContext, PublishResult } from "@/lib/types";
 
 type BirdRunResult = {
@@ -86,11 +91,11 @@ function birdAuthArgs(profileId: string | undefined): string[] {
   return args;
 }
 
-function isPremiumLongPosts(profileId: string | undefined): boolean {
+function isPremiumProfile(profileId: string | undefined): boolean {
   return optionalEnv("X_PREMIUM_LONG_POSTS", profileId)?.trim() === "true";
 }
 
-function mediaArgs(ctx: ProviderContext): string[] {
+function mediaArgs(ctx: ProviderContext, isPremium: boolean): string[] {
   if (!ctx.media) {
     return [];
   }
@@ -107,6 +112,14 @@ function mediaArgs(ctx: ProviderContext): string[] {
 
   if (ctx.media.kind !== "image" && ctx.media.kind !== "video") {
     throw new Error("X local upload supports image, GIF, and MP4 video files only.");
+  }
+
+  const sizeLimit = xMediaSizeLimit(ctx.media.kind, ctx.media.contentType, isPremium);
+
+  if (sizeLimit && ctx.media.size > sizeLimit.bytes) {
+    throw new Error(
+      `${sizeLimit.label} limit is ${formatLimitBytes(sizeLimit.bytes)}; selected file is ${formatLimitBytes(ctx.media.size)}.`
+    );
   }
 
   return [
@@ -155,7 +168,8 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
   const profileId = ctx.target?.profileId;
   const text = compactText([ctx.text]);
   const length = textLength(text);
-  const limit = xPostTextLimit(isPremiumLongPosts(profileId));
+  const isPremium = isPremiumProfile(profileId);
+  const limit = xPostTextLimit(isPremium);
 
   if (!text) {
     throw new Error("X requires post text.");
@@ -170,7 +184,7 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
     ...birdAuthArgs(profileId),
     "tweet",
     text,
-    ...mediaArgs(ctx),
+    ...mediaArgs(ctx, isPremium),
     "--plain",
     "--no-color",
     "--no-emoji"

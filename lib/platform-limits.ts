@@ -5,6 +5,10 @@ export const linkedInPostTextLimit = 3_000;
 export const peerlistPostTextLimit = 2_000;
 export const xFreePostTextLimit = 280;
 export const xPremiumPostTextLimit = 25_000;
+export const xPhotoMediaSizeLimit = 5 * 1024 * 1024;
+export const xGifMediaSizeLimit = 15 * 1024 * 1024;
+export const xFreeVideoMediaSizeLimit = 512 * 1024 * 1024;
+export const xPremiumVideoMediaSizeLimit = 16 * 1024 * 1024 * 1024;
 export const hackerNewsTitleLimit = 80;
 export const devtoTitleLimit = 128;
 export const devtoBodyBytesLimit = 800 * 1024;
@@ -47,6 +51,23 @@ export function textBytes(value: string): number {
   return new TextEncoder().encode(value).length;
 }
 
+export function formatLimitBytes(size: number): string {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  const units = ["KB", "MB", "GB"];
+  let value = size / 1024;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+}
+
 export function devtoTitleLength(value: string): number {
   return textLength(value.replace(/\p{White_Space}+/gu, ""));
 }
@@ -69,6 +90,26 @@ export function titleLimitForPlatform(platform: Platform): number | undefined {
 
 export function xPostTextLimit(isPremium: boolean): number {
   return isPremium ? xPremiumPostTextLimit : xFreePostTextLimit;
+}
+
+export function xMediaSizeLimit(
+  kind: "image" | "video" | "audio" | "file",
+  contentType: string,
+  isPremium: boolean
+): { bytes: number; label: string } | undefined {
+  if (kind === "image") {
+    return contentType === "image/gif"
+      ? { bytes: xGifMediaSizeLimit, label: "X GIF" }
+      : { bytes: xPhotoMediaSizeLimit, label: "X photo" };
+  }
+
+  if (kind === "video") {
+    return isPremium
+      ? { bytes: xPremiumVideoMediaSizeLimit, label: "X Premium video" }
+      : { bytes: xFreeVideoMediaSizeLimit, label: "X video" };
+  }
+
+  return undefined;
 }
 
 export function postTextLimitForPlatform(

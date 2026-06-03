@@ -29,6 +29,7 @@ import {
   platformLabel,
   textBytes,
   textLength,
+  xMediaSizeLimit,
   titleLengthForPlatform,
   titleLimitForPlatform,
   titleLimitIssues
@@ -57,7 +58,7 @@ const channels: Array<{
     note: "Unofficial bird post",
     uses: ["Post", "Media"],
     target: "Uses the active X / Twitter bird profile from Settings.",
-    media: "Local images, GIFs, and MP4 video are passed to bird."
+    media: "Photos up to 5 MB, GIF up to 15 MB, video up to 512 MB or 16 GB with Premium."
   },
   {
     id: "linkedin",
@@ -244,6 +245,11 @@ type PreflightIssue = {
   id: string;
   message: string;
   compress?: "image" | "video";
+};
+
+type MediaPreflightTarget = {
+  platform: Platform;
+  xPremium?: boolean;
 };
 
 type VideoCompressionQuality = "high" | "balanced" | "small";
@@ -537,9 +543,13 @@ function mediaKindLabel(kind: UploadedMedia["kind"]): string {
   return kind === "file" ? "file" : `${kind} file`;
 }
 
-function mediaPreflightIssues(platforms: Platform[], file: File | null): PreflightIssue[] {
+function mediaPreflightIssues(
+  targets: MediaPreflightTarget[],
+  file: File | null
+): PreflightIssue[] {
   const issues: PreflightIssue[] = [];
   const kind = fileKind(file);
+  const platforms = Array.from(new Set(targets.map((target) => target.platform)));
 
   if (!file) {
     return issues;
@@ -573,6 +583,10 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
   }
 
   if (platforms.includes("x")) {
+    const xTargets = targets.filter((target) => target.platform === "x");
+    const xPremium = xTargets.length > 0 && xTargets.every((target) => target.xPremium);
+    const sizeLimit = xMediaSizeLimit(kind, file.type, xPremium);
+
     if (kind === "image" && !xImageTypes.has(file.type)) {
       issues.push({
         id: "x-image-type",
@@ -589,6 +603,13 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
       issues.push({
         id: "x-kind",
         message: `X can upload images, GIFs, and MP4 video only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (sizeLimit && file.size > sizeLimit.bytes) {
+      issues.push({
+        id: "x-media-size",
+        message: `${sizeLimit.label} limit is ${formatBytes(sizeLimit.bytes)}; selected file is ${formatBytes(file.size)}.`,
+        compress:
+          kind === "video" ? "video" : kind === "image" && file.type !== "image/gif" ? "image" : undefined
       });
     }
   }
@@ -1432,7 +1453,7 @@ export default function Home() {
       return;
     }
 
-    const preflightIssues = mediaPreflightIssues(publishPlatforms, mediaFile);
+    const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile);
 
     if (preflightIssues.length > 0) {
       setError(preflightIssues[0].message);
@@ -1533,7 +1554,7 @@ export default function Home() {
       return;
     }
 
-    const preflightIssues = mediaPreflightIssues(publishPlatforms, mediaFile);
+    const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile);
 
     if (preflightIssues.length > 0) {
       setError(preflightIssues[0].message);
@@ -1579,7 +1600,7 @@ export default function Home() {
     }
   }
 
-  const preflightIssues = mediaPreflightIssues(selectedPlatforms, mediaFile);
+  const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile);
   const postLength = textLength(text.trim());
   const postBytes = textBytes(text.trim());
   const titleLimitHints = selectedPlatforms
