@@ -34,7 +34,8 @@ import {
   xMediaSizeLimit,
   titleLengthForPlatform,
   titleLimitForPlatform,
-  titleLimitIssues
+  titleLimitIssues,
+  youtubeVideoMediaSizeLimit
 } from "@/lib/platform-limits";
 import type {
   ComposeDraft,
@@ -95,6 +96,14 @@ const channels: Array<{
     media: "Requires a local JPG, PNG, WebP image up to 8 MB, or MP4/MOV video up to 300 MB."
   },
   {
+    id: "youtube",
+    label: "YouTube",
+    note: "InnerTube video upload",
+    uses: ["Title", "Post", "Media"],
+    target: "Uses the active YouTube.js cookie profile from Settings.",
+    media: "Requires a local video. YouTube accepts common video formats up to 256 GB or 12 hours."
+  },
+  {
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
@@ -143,6 +152,11 @@ const envLabels: Record<string, string> = {
   INSTAGRAM_2FA_CODE: "2FA code",
   INSTAGRAM_PYTHON_COMMAND: "Python command",
   INSTAGRAM_TIMEOUT_MS: "timeout",
+  YOUTUBE_COOKIE_SOURCE: "cookie source",
+  YOUTUBE_CHROME_PROFILE: "Chrome profile",
+  YOUTUBE_COOKIE: "cookie",
+  YOUTUBE_PRIVACY: "privacy",
+  YOUTUBE_TIMEOUT_MS: "timeout",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
   NOSTR_PRIVATE_KEY: "private key",
@@ -235,6 +249,39 @@ const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const instagramImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const instagramVideoTypes = new Set(["video/mp4", "video/quicktime"]);
+const youtubeVideoTypes = new Set([
+  "video/3gpp",
+  "video/avi",
+  "video/mp4",
+  "video/mpeg",
+  "video/quicktime",
+  "video/webm",
+  "video/x-flv",
+  "video/x-m4v",
+  "video/x-matroska",
+  "video/x-ms-wmv",
+  "video/x-msvideo"
+]);
+const youtubeVideoExtensions = new Set([
+  ".3gp",
+  ".avi",
+  ".cineform",
+  ".dnxhr",
+  ".flv",
+  ".hevc",
+  ".m4v",
+  ".mkv",
+  ".mov",
+  ".mp4",
+  ".mpeg",
+  ".mpg",
+  ".mts",
+  ".mxf",
+  ".prores",
+  ".ts",
+  ".webm",
+  ".wmv"
+]);
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -531,6 +578,12 @@ function fileKind(file: File | null): UploadedMedia["kind"] {
   return "file";
 }
 
+function fileExtension(filename: string): string {
+  const dotIndex = filename.lastIndexOf(".");
+
+  return dotIndex >= 0 ? filename.slice(dotIndex).toLowerCase() : "";
+}
+
 function formatBytes(size: number): string {
   if (size < 1024) {
     return `${size} B`;
@@ -668,6 +721,31 @@ function mediaPreflightIssues(
     }
   }
 
+  if (platforms.includes("youtube")) {
+    const extension = fileExtension(file.name);
+    const supportedExtension = youtubeVideoExtensions.has(extension);
+    const supportedContentType = youtubeVideoTypes.has(file.type);
+
+    if (kind !== "video" && !supportedExtension) {
+      issues.push({
+        id: "youtube-kind",
+        message: `YouTube can upload video files only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (!supportedContentType && !supportedExtension) {
+      issues.push({
+        id: "youtube-video-type",
+        message: `YouTube supports common video formats such as MP4, MOV, WebM, AVI, WMV, MPEG, FLV, and 3GPP; selected file is ${file.type || extension || "unknown"}.`,
+        compress: "video"
+      });
+    } else if (file.size > youtubeVideoMediaSizeLimit) {
+      issues.push({
+        id: "youtube-video-size",
+        message: `YouTube video limit is 256 GB; selected file is ${formatBytes(file.size)}.`,
+        compress: "video"
+      });
+    }
+  }
+
   if (platforms.includes("bluesky")) {
     if (kind !== "image") {
       issues.push({
@@ -755,6 +833,10 @@ function videoTargetBytesForPlatforms(platforms: Platform[], file: File, request
 
   if (platforms.includes("instagram") && file.size > instagramVideoMediaSizeLimit) {
     targets.push(instagramVideoTargetSize);
+  }
+
+  if (platforms.includes("youtube") && file.size > youtubeVideoMediaSizeLimit) {
+    targets.push(youtubeVideoMediaSizeLimit);
   }
 
   return Math.min(...targets);
@@ -1503,10 +1585,17 @@ export default function Home() {
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const hasInstagram = publishPlatforms.includes("instagram");
+    const hasYouTube = publishPlatforms.includes("youtube");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
 
-    if (hasHackerNews && !title.trim()) {
-      setError("Hacker News requires a title.");
+    if ((hasHackerNews || hasYouTube) && !title.trim()) {
+      setError(
+        hasHackerNews && hasYouTube
+          ? "Hacker News and YouTube require a title."
+          : hasHackerNews
+            ? "Hacker News requires a title."
+            : "YouTube requires a title."
+      );
       return;
     }
 
@@ -1517,6 +1606,11 @@ export default function Home() {
 
     if (hasInstagram && !mediaFile) {
       setError("Instagram requires a local image or video file.");
+      return;
+    }
+
+    if (hasYouTube && !mediaFile) {
+      setError("YouTube requires a local video file.");
       return;
     }
 
@@ -1614,10 +1708,17 @@ export default function Home() {
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const hasInstagram = publishPlatforms.includes("instagram");
+    const hasYouTube = publishPlatforms.includes("youtube");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
 
-    if (hasHackerNews && !title.trim()) {
-      setError("Hacker News requires a title.");
+    if ((hasHackerNews || hasYouTube) && !title.trim()) {
+      setError(
+        hasHackerNews && hasYouTube
+          ? "Hacker News and YouTube require a title."
+          : hasHackerNews
+            ? "Hacker News requires a title."
+            : "YouTube requires a title."
+      );
       return;
     }
 
@@ -1628,6 +1729,11 @@ export default function Home() {
 
     if (hasInstagram && !mediaFile) {
       setError("Instagram requires a local image or video file.");
+      return;
+    }
+
+    if (hasYouTube && !mediaFile) {
+      setError("YouTube requires a local video file.");
       return;
     }
 
@@ -1768,9 +1874,12 @@ export default function Home() {
     : null;
   const showHackerNewsLink = selectedPlatforms.includes("hackernews");
   const hasInstagram = selectedPlatforms.includes("instagram");
+  const hasYouTube = selectedPlatforms.includes("youtube");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
+  const hasRequiredYouTubeTitle = !hasYouTube || Boolean(title.trim());
   const hasRequiredInstagramMedia = !hasInstagram || Boolean(mediaFile);
+  const hasRequiredYouTubeMedia = !hasYouTube || Boolean(mediaFile);
   const hasRequiredPostText =
     Boolean(text.trim()) ||
     (isHackerNewsOnly && Boolean(title.trim()));
@@ -1782,7 +1891,9 @@ export default function Home() {
   const canSubmitDraft =
     selectedTargets.length > 0 &&
     hasRequiredHackerNewsTitle &&
+    hasRequiredYouTubeTitle &&
     hasRequiredInstagramMedia &&
+    hasRequiredYouTubeMedia &&
     hasRequiredPostText &&
     preflightIssues.length === 0 &&
     !hasLimitIssues &&

@@ -31,6 +31,7 @@ const platformLabels: Record<Platform, string> = {
   bluesky: "Bluesky",
   mastodon: "Mastodon",
   instagram: "Instagram",
+  youtube: "YouTube",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"

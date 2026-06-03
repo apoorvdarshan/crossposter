@@ -89,6 +89,7 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
   { id: "instagram", label: "Instagram" },
+  { id: "youtube", label: "YouTube" },
   { id: "devto", label: "Dev.to" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" }
@@ -229,6 +230,27 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Use the Dashboard Post field as the caption.",
       "Attach one local JPG, PNG, WebP, MP4, or MOV file before publishing.",
       "Avoid parallel or high-volume posting. Instagram may challenge, rate limit, or restrict accounts for suspicious automation."
+    ]
+  },
+  youtube: {
+    title: "YouTube setup",
+    intro:
+      "Unofficial local uploading through YouTube.js and InnerTube. Crossposter can read cookies from your signed-in Chrome profile at publish time.",
+    links: [
+      { label: "YouTube.js", href: "https://github.com/LuanRT/YouTube.js" },
+      { label: "YouTube upload formats", href: "https://support.google.com/youtube/answer/55744" },
+      { label: "YouTube upload limits", href: "https://support.google.com/youtube/answer/71673" },
+      { label: "YouTube terms", href: "https://www.youtube.com/t/terms" }
+    ],
+    steps: [
+      "Log in to YouTube and YouTube Studio in Chrome.",
+      "Add a YouTube profile here.",
+      "Leave YouTube cookie source as chrome to read fresh browser cookies each publish.",
+      "Set YouTube Chrome profile if you do not use Chrome's Default profile.",
+      "Optionally click Import Chrome cookies to save a fallback cookie in poster.config.local.json.",
+      "Set YouTube privacy to PRIVATE, UNLISTED, or PUBLIC.",
+      "On the Dashboard, add a Title, Post text for the description, and attach a local video.",
+      "Avoid high-volume uploads. YouTube may challenge, throttle, or restrict accounts for suspicious automation."
     ]
   },
   nostr: {
@@ -426,6 +448,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
   const [importingHackerNewsCookie, setImportingHackerNewsCookie] = useState("");
+  const [importingYouTubeCookie, setImportingYouTubeCookie] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
   const [settingsView, setSettingsView] = useState<SettingsView>(initialView);
 
@@ -818,6 +841,41 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  async function importYouTubeCookie(profile: ProviderProfile) {
+    setStatus("");
+    setImportingYouTubeCookie(profile.id);
+
+    try {
+      const saved = await saveConfig();
+
+      if (!saved) {
+        return;
+      }
+
+      const response = await fetch("/api/auth/youtube/import-cookie", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ profileId: profile.id })
+      });
+      const body = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not import YouTube cookies from Chrome.");
+        return;
+      }
+
+      await loadConfig();
+      setStatus(body.message || "Imported YouTube cookies from Chrome.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not import YouTube cookies from Chrome.");
+    } finally {
+      setImportingYouTubeCookie("");
+    }
+  }
+
   async function openConfigFile() {
     setStatus("");
 
@@ -1021,6 +1079,19 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                       {importingHackerNewsCookie === profile.id
                         ? "Importing..."
                         : "Import Chrome cookie"}
+                    </button>
+                  ) : null}
+                  {platform.id === "youtube" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void importYouTubeCookie(profile)}
+                      disabled={Boolean(importingYouTubeCookie)}
+                    >
+                      <RefreshCw size={15} />
+                      {importingYouTubeCookie === profile.id
+                        ? "Importing..."
+                        : "Import Chrome cookies"}
                     </button>
                   ) : null}
                   <button

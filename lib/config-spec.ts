@@ -101,6 +101,40 @@ export const configFields: ConfigField[] = [
     showFor: ["instagram"]
   },
   {
+    name: "YOUTUBE_COOKIE_SOURCE",
+    label: "YouTube cookie source",
+    help: "Use chrome to read fresh YouTube cookies from your signed-in Chrome profile. Use manual to use the saved cookie field.",
+    defaultValue: "chrome",
+    requiredFor: ["youtube"]
+  },
+  {
+    name: "YOUTUBE_CHROME_PROFILE",
+    label: "YouTube Chrome profile",
+    help: "Optional Chrome profile name to read YouTube cookies from, for example Default or Profile 1.",
+    showFor: ["youtube"]
+  },
+  {
+    name: "YOUTUBE_COOKIE",
+    label: "YouTube cookie",
+    help: "Optional YouTube cookie header. Used for manual auth, or as fallback if Chrome cookie import fails.",
+    secret: true,
+    showFor: ["youtube"]
+  },
+  {
+    name: "YOUTUBE_PRIVACY",
+    label: "YouTube privacy",
+    help: "Upload privacy for YouTube.js Studio uploads: PRIVATE, UNLISTED, or PUBLIC.",
+    defaultValue: "PRIVATE",
+    showFor: ["youtube"]
+  },
+  {
+    name: "YOUTUBE_TIMEOUT_MS",
+    label: "YouTube timeout",
+    help: "Timeout for YouTube video upload in milliseconds.",
+    defaultValue: "900000",
+    showFor: ["youtube"]
+  },
+  {
     name: "LINKEDIN_CLIENT_ID",
     label: "LinkedIn client ID",
     help: "Client ID from your LinkedIn developer app. Used only to connect this profile locally.",
@@ -228,6 +262,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     bluesky: [],
     mastodon: [],
     instagram: [],
+    youtube: [],
     devto: [],
     hackernews: [],
     nostr: []

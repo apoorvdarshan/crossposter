@@ -15,6 +15,7 @@ const platformSchema = z.enum([
   "bluesky",
   "mastodon",
   "instagram",
+  "youtube",
   "devto",
   "hackernews",
   "nostr"
@@ -117,6 +118,9 @@ const requestSchema = z
   })
   .refine((value) => !requestedPlatforms(value).includes("hackernews") || value.title?.trim(), {
     message: "Hacker News requires a title."
+  })
+  .refine((value) => !requestedPlatforms(value).includes("youtube") || value.title?.trim(), {
+    message: "YouTube requires a title."
   })
   .refine((value) => value.text.trim() || (isHackerNewsOnly(value) && value.title?.trim()), {
     message: "Write post text, or select only Hacker News and add a title."

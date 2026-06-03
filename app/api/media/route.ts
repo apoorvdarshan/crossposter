@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteAllUploadedMedia, saveUploadedMedia } from "@/lib/media-store";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 900;
 
 export async function POST(request: Request) {
   try {

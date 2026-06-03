@@ -6,7 +6,11 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { imageSize } from "image-size";
-import { formatLimitBytes, xPremiumVideoMediaSizeLimit } from "@/lib/platform-limits";
+import {
+  formatLimitBytes,
+  xPremiumVideoMediaSizeLimit,
+  youtubeVideoMediaSizeLimit
+} from "@/lib/platform-limits";
 
 export type MediaKind = "image" | "video" | "audio" | "file";
 
@@ -26,7 +30,7 @@ type StoredMedia = Omit<UploadedMedia, "url">;
 
 const mediaDir = path.join(process.cwd(), ".poster-uploads");
 const mediaIdPattern = /^[a-f0-9-]{36}(?:\.[a-z0-9]{1,12})?$/i;
-const maxMediaSize = xPremiumVideoMediaSizeLimit;
+const maxMediaSize = Math.max(xPremiumVideoMediaSizeLimit, youtubeVideoMediaSizeLimit);
 
 function mediaPath(id: string): string {
   if (!mediaIdPattern.test(id)) {

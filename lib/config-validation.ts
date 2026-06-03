@@ -136,6 +136,29 @@ function invalidReason(name: string, value: string): string | null {
 
       return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
     }
+    case "YOUTUBE_COOKIE_SOURCE":
+      return /^(chrome|manual)$/i.test(value) ? null : "must be chrome or manual";
+    case "YOUTUBE_CHROME_PROFILE":
+      return /^[A-Za-z0-9 _.-]{1,120}$/.test(value)
+        ? null
+        : "must be a Chrome profile name";
+    case "YOUTUBE_COOKIE":
+      return /(^|;\s*)SAPISID=[^;]+/.test(value)
+        ? null
+        : "must include a SAPISID cookie";
+    case "YOUTUBE_PRIVACY":
+      return /^(PRIVATE|UNLISTED|PUBLIC)$/i.test(value)
+        ? null
+        : "must be PRIVATE, UNLISTED, or PUBLIC";
+    case "YOUTUBE_TIMEOUT_MS": {
+      if (!/^\d+$/.test(value)) {
+        return "must be milliseconds";
+      }
+
+      const timeout = Number(value);
+
+      return timeout >= 30_000 && timeout <= 3_600_000 ? null : "must be between 30000 and 3600000";
+    }
     case "NOSTR_RELAYS":
       return invalidNostrRelays(value);
     case "HACKERNEWS_USERNAME":
