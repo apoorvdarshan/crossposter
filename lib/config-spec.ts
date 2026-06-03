@@ -172,33 +172,6 @@ export const configFields: ConfigField[] = [
     help: "Set true only for X Premium accounts. False uses 280 characters and 512 MB video; true uses 25,000 characters and 16 GB video.",
     defaultValue: "false",
     showFor: ["x"]
-  },
-  {
-    name: "PEERLIST_CONTEXT",
-    label: "Peerlist context",
-    help: "Scroll context such as #show, #thought, #ask, or #book. Crossposter defaults to #show.",
-    defaultValue: "#show",
-    showFor: ["peerlist"]
-  },
-  {
-    name: "PEERLIST_USERNAME",
-    label: "Peerlist username",
-    help: "Your Peerlist username without @. Used to show the published profile posts link.",
-    showFor: ["peerlist"]
-  },
-  {
-    name: "PEERLIST_CHROME_PROFILE",
-    label: "Peerlist Chrome profile",
-    help: "Chrome profile folder to read Peerlist cookies from, usually Default.",
-    defaultValue: "Default",
-    showFor: ["peerlist"]
-  },
-  {
-    name: "PEERLIST_CHROME_HEADLESS",
-    label: "Peerlist headless Chrome",
-    help: "Set true to run the short-lived Peerlist automation Chrome without showing a window.",
-    defaultValue: "false",
-    showFor: ["peerlist"]
   }
 ];
 
@@ -216,7 +189,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     bluesky: [],
     mastodon: [],
     devto: [],
-    peerlist: [],
     hackernews: [],
     nostr: []
   } as Record<Platform, string[]>

@@ -145,20 +145,6 @@ function invalidReason(name: string, value: string): string | null {
     }
     case "X_PREMIUM_LONG_POSTS":
       return value === "true" || value === "false" ? null : "must be true or false";
-    case "PEERLIST_CONTEXT":
-      return /^#?[a-z][a-z0-9_-]{1,30}$/i.test(value)
-        ? null
-        : "must be a context like #show";
-    case "PEERLIST_USERNAME":
-      return /^@?[A-Za-z0-9][A-Za-z0-9_-]{1,60}$/.test(value)
-        ? null
-        : "must be your Peerlist username without a URL";
-    case "PEERLIST_CHROME_HEADLESS":
-      return value === "true" || value === "false" ? null : "must be true or false";
-    case "PEERLIST_CHROME_PROFILE":
-      return /^[A-Za-z0-9 _.-]{1,80}$/.test(value)
-        ? null
-        : "must be a Chrome profile folder like Default";
     default:
       return null;
   }

@@ -93,14 +93,6 @@ const channels: Array<{
     media: "Local media is ignored; publish without cover image."
   },
   {
-    id: "peerlist",
-    label: "Peerlist",
-    note: "Scroll post",
-    uses: ["Title", "Post", "Media"],
-    target: "Uses your local Chrome Peerlist session from Settings.",
-    media: "Local images and GIFs are supported; video is not posted."
-  },
-  {
     id: "hackernews",
     label: "Hacker News",
     note: "Submit link or text",
@@ -146,9 +138,7 @@ const envLabels: Record<string, string> = {
   X_BIRD_CHROME_PROFILE: "Chrome profile",
   X_BIRD_FIREFOX_PROFILE: "Firefox profile",
   X_BIRD_TIMEOUT_MS: "timeout",
-  X_PREMIUM_LONG_POSTS: "Premium toggle",
-  PEERLIST_CONTEXT: "context",
-  PEERLIST_CHROME_PROFILE: "Chrome profile"
+  X_PREMIUM_LONG_POSTS: "Premium toggle"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -231,7 +221,6 @@ const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const xVideoTypes = new Set(["video/mp4"]);
-const peerlistImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const linkedInMinVideoSize = 75 * 1024;
 const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const linkedInVideoTargetSize = 490 * 1024 * 1024;
@@ -643,20 +632,6 @@ function mediaPreflightIssues(
         id: "bluesky-size",
         message: `Bluesky image limit is 1 MB; selected file is ${formatBytes(file.size)}.`,
         compress: "image"
-      });
-    }
-  }
-
-  if (platforms.includes("peerlist")) {
-    if (kind !== "image") {
-      issues.push({
-        id: "peerlist-kind",
-        message: `Peerlist can upload images and GIFs only; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    } else if (!peerlistImageTypes.has(file.type)) {
-      issues.push({
-        id: "peerlist-type",
-        message: `Peerlist supports JPG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`
       });
     }
   }
@@ -1467,20 +1442,14 @@ export default function Home() {
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
-    const isPeerlistOnly = publishPlatforms.length === 1 && publishPlatforms[0] === "peerlist";
-    const hasPeerlistMediaContent = isPeerlistOnly && Boolean(mediaFile);
 
     if (hasHackerNews && !title.trim()) {
       setError("Hacker News requires a title.");
       return;
     }
 
-    if (!text.trim() && !(isHackerNewsOnly && title.trim()) && !hasPeerlistMediaContent) {
-      setError(
-        isPeerlistOnly && title.trim()
-          ? "Peerlist cannot publish title only. Add post text or upload an image/GIF."
-          : "Write post text before publishing, upload media for Peerlist only, or select only Hacker News and add a title."
-      );
+    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
+      setError("Write post text before publishing, or select only Hacker News and add a title.");
       return;
     }
 
@@ -1578,20 +1547,14 @@ export default function Home() {
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
-    const isPeerlistOnly = publishPlatforms.length === 1 && publishPlatforms[0] === "peerlist";
-    const hasPeerlistMediaContent = isPeerlistOnly && Boolean(mediaFile);
 
     if (hasHackerNews && !title.trim()) {
       setError("Hacker News requires a title.");
       return;
     }
 
-    if (!text.trim() && !(isHackerNewsOnly && title.trim()) && !hasPeerlistMediaContent) {
-      setError(
-        isPeerlistOnly && title.trim()
-          ? "Peerlist cannot schedule title only. Add post text or upload an image/GIF."
-          : "Write post text before scheduling, upload media for Peerlist only, or select only Hacker News and add a title."
-      );
+    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
+      setError("Write post text before scheduling, or select only Hacker News and add a title.");
       return;
     }
 
@@ -1732,12 +1695,10 @@ export default function Home() {
     : null;
   const showHackerNewsLink = selectedPlatforms.includes("hackernews");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
-  const isPeerlistOnly = selectedPlatforms.length === 1 && selectedPlatforms[0] === "peerlist";
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
   const hasRequiredPostText =
     Boolean(text.trim()) ||
-    (isHackerNewsOnly && Boolean(title.trim())) ||
-    (isPeerlistOnly && Boolean(mediaFile));
+    (isHackerNewsOnly && Boolean(title.trim()));
   const draftLimitIssues = [
     ...titleLimitIssues(selectedPlatforms, title),
     ...postLimitIssuesForTargets(selectedLimitTargets, text)

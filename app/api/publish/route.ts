@@ -14,7 +14,6 @@ const platformSchema = z.enum([
   "bluesky",
   "mastodon",
   "devto",
-  "peerlist",
   "hackernews",
   "nostr"
 ]);
@@ -81,23 +80,6 @@ function isHackerNewsOnly(value: {
   return platforms.length === 1 && platforms[0] === "hackernews";
 }
 
-function isPeerlistOnly(value: {
-  platforms?: Platform[];
-  targets?: Array<{ platform: Platform }>;
-}): boolean {
-  const platforms = requestedPlatforms(value);
-
-  return platforms.length === 1 && platforms[0] === "peerlist";
-}
-
-function hasPeerlistMediaContent(value: {
-  platforms?: Platform[];
-  targets?: Array<{ platform: Platform }>;
-  mediaId?: string;
-}): boolean {
-  return isPeerlistOnly(value) && Boolean(value.mediaId?.trim());
-}
-
 function defaultTargets(value: {
   platforms?: Platform[];
   targets?: PublishTarget[];
@@ -135,8 +117,8 @@ const requestSchema = z
   .refine((value) => !requestedPlatforms(value).includes("hackernews") || value.title?.trim(), {
     message: "Hacker News requires a title."
   })
-  .refine((value) => value.text.trim() || (isHackerNewsOnly(value) && value.title?.trim()) || hasPeerlistMediaContent(value), {
-    message: "Write post text, upload media for Peerlist only, or select only Hacker News and add a title."
+  .refine((value) => value.text.trim() || (isHackerNewsOnly(value) && value.title?.trim()), {
+    message: "Write post text, or select only Hacker News and add a title."
   })
   .superRefine((value, ctx) => {
     const platforms = requestedPlatforms(value);

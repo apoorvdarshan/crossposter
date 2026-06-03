@@ -89,7 +89,6 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
-  { id: "peerlist", label: "Peerlist" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" }
 ];
@@ -254,24 +253,6 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Leave Link empty when you want a discussion/text post.",
       "Local media upload is ignored.",
       "If Hacker News requires CAPTCHA or browser validation, Crossposter will fail with a message and you must submit manually."
-    ]
-  },
-  peerlist: {
-    title: "Peerlist setup",
-    intro:
-      "Crossposter posts to Peerlist Scroll through a short-lived local Chrome session using your existing Peerlist login.",
-    links: [
-      { label: "Peerlist Scroll", href: "https://peerlist.io/scroll" },
-      { label: "Scroll posting guide", href: "https://help.peerlist.io/individual/scroll/what-can-i-post-on-peerlist-scroll" }
-    ],
-    steps: [
-      "Log in to Peerlist in Chrome on this Mac.",
-      "Add a Peerlist profile here.",
-      "Add your Peerlist username without @ so published output links to your posts page.",
-      "Keep Peerlist context as #show unless you want another Scroll context.",
-      "Save config, then select Peerlist on the Dashboard.",
-      "Write the link inside Post text if you want to share one. Peerlist does not use the Dashboard Link field.",
-      "Images and GIFs can be uploaded. Videos are not posted."
     ]
   }
 };

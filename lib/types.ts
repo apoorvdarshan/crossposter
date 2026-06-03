@@ -4,7 +4,6 @@ export type Platform =
   | "bluesky"
   | "mastodon"
   | "devto"
-  | "peerlist"
   | "hackernews"
   | "nostr";
 

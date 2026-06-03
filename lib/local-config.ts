@@ -45,7 +45,6 @@ const platforms: Platform[] = [
   "bluesky",
   "mastodon",
   "devto",
-  "peerlist",
   "hackernews",
   "nostr"
 ];

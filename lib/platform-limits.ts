@@ -2,7 +2,6 @@ import type { Platform } from "@/lib/types";
 
 export const blueskyPostTextLimit = 300;
 export const linkedInPostTextLimit = 3_000;
-export const peerlistPostTextLimit = 2_000;
 export const xFreePostTextLimit = 280;
 export const xPremiumPostTextLimit = 25_000;
 export const xPhotoMediaSizeLimit = 5 * 1024 * 1024;
@@ -19,7 +18,6 @@ const platformLabels: Record<Platform, string> = {
   bluesky: "Bluesky",
   mastodon: "Mastodon",
   devto: "Dev.to",
-  peerlist: "Peerlist",
   hackernews: "Hacker News",
   nostr: "Nostr"
 };
@@ -122,10 +120,6 @@ export function postTextLimitForPlatform(
 
   if (platform === "linkedin") {
     return linkedInPostTextLimit;
-  }
-
-  if (platform === "peerlist") {
-    return peerlistPostTextLimit;
   }
 
   if (platform === "x") {
