@@ -430,49 +430,142 @@ async function attachMedia(client: CdpClient, mediaPath: string) {
     nodeId: inputNodeId,
     files: [mediaPath]
   });
-  await client.send("Runtime.evaluate", {
-    expression: `
-      (() => {
-        const input = document.querySelector('input[type=file][accept*="image"], input[type=file]');
-        if (!input) return false;
-        input.dispatchEvent(new Event("input", { bubbles: true }));
-        input.dispatchEvent(new Event("change", { bubbles: true }));
-        return Boolean(input.files?.length);
-      })()
-    `
-  });
 }
 
-async function waitForMediaAttachment(client: CdpClient) {
-  await waitForExpression(
-    client,
-    `
+const composerRootExpression = `
+  (() => {
+    const titleInput = document.querySelector('textarea[placeholder="Title (optional)"]');
+    const editor = document.querySelector('.ProseMirror[contenteditable="true"], [contenteditable="true"].ProseMirror');
+    const candidates = [
+      titleInput?.closest('[role="dialog"]'),
+      titleInput?.closest("form"),
+      titleInput?.parentElement?.parentElement?.parentElement?.parentElement,
+      document.body
+    ].filter(Boolean);
+
+    return candidates.find((candidate) =>
+      candidate.contains(editor) &&
+      [...candidate.querySelectorAll("button")].some((button) => button.innerText.trim() === "Post")
+    ) || document.body;
+  })()
+`;
+
+async function composerMediaPreviewCount(client: CdpClient): Promise<number> {
+  const result = await client.send<{
+    result: {
+      value?: number;
+    };
+  }>("Runtime.evaluate", {
+    returnByValue: true,
+    expression: `
       (() => {
-        const titleInput = document.querySelector('textarea[placeholder="Title (optional)"]');
-        const root = titleInput?.closest('[role="dialog"]') || document.body;
-        const postButton = [...root.querySelectorAll("button")]
-          .filter((button) => button.innerText.trim() === "Post")
-          .at(-1);
-        const hasSelectedFile = [...root.querySelectorAll("input[type=file]")]
-          .some((input) => input.files?.length);
-        const hasPreview = [...root.querySelectorAll("img, video")]
-          .some((item) => {
+        const root = ${composerRootExpression};
+
+        return [...root.querySelectorAll("img, video")]
+          .filter((item) => {
             const source = item.currentSrc || item.src || "";
 
             return source.startsWith("blob:") ||
               source.startsWith("data:") ||
               /cloudfront|peerlist|amazonaws/i.test(source);
-          });
+          }).length;
+      })()
+    `
+  });
+
+  return Number(result.result.value) || 0;
+}
+
+async function waitForMediaAttachment(client: CdpClient, previousPreviewCount: number) {
+  await waitForExpression(
+    client,
+    `
+      (() => {
+        const root = ${composerRootExpression};
+        const postButton = [...root.querySelectorAll("button")]
+          .filter((button) => button.innerText.trim() === "Post")
+          .at(-1);
+        const previewCount = [...root.querySelectorAll("img, video")]
+          .filter((item) => {
+            const source = item.currentSrc || item.src || "";
+
+            return source.startsWith("blob:") ||
+              source.startsWith("data:") ||
+              /cloudfront|peerlist|amazonaws/i.test(source);
+          }).length;
         const hasBusyMarker =
           Boolean(root.querySelector('[aria-busy="true"], [role="progressbar"], .animate-spin, [class*="spinner"], [class*="loader"]')) ||
           /uploading|processing|attaching/i.test(root.innerText);
 
-        return Boolean((hasSelectedFile || hasPreview) && postButton && !postButton.disabled && !hasBusyMarker);
+        return Boolean(previewCount > ${previousPreviewCount} && postButton && !postButton.disabled && !hasBusyMarker);
       })()
     `,
     90_000,
     "Peerlist media upload did not finish. Try a smaller image or GIF, then publish again."
   );
+}
+
+async function readPeerlistProfilePostsUrl(client: CdpClient): Promise<string | undefined> {
+  const result = await client.send<{
+    result: {
+      value?: string;
+    };
+  }>("Runtime.evaluate", {
+    returnByValue: true,
+    expression: `
+      (() => {
+        const reserved = new Set([
+          "about",
+          "advertise",
+          "articles",
+          "bookmarks",
+          "companies",
+          "collections",
+          "inbox",
+          "jobs",
+          "launchpad",
+          "people",
+          "posts",
+          "rewards",
+          "resume",
+          "scroll",
+          "search",
+          "settings",
+          "work"
+        ]);
+        const links = [...document.querySelectorAll("a[href]")]
+          .map((link) => {
+            try {
+              return new URL(link.href, location.href);
+            } catch {
+              return null;
+            }
+          })
+          .filter((url) => url && url.hostname === "peerlist.io");
+        const profilePosts = links.find((url) => {
+          const parts = url.pathname.split("/").filter(Boolean);
+
+          return parts.length === 2 && parts[1] === "posts" && !reserved.has(parts[0]);
+        });
+
+        if (profilePosts) {
+          profilePosts.search = "";
+          profilePosts.hash = "";
+          return profilePosts.href;
+        }
+
+        const profile = links.find((url) => {
+          const parts = url.pathname.split("/").filter(Boolean);
+
+          return parts.length === 1 && !reserved.has(parts[0]);
+        });
+
+        return profile ? location.origin + "/" + profile.pathname.split("/").filter(Boolean)[0] + "/posts" : "";
+      })()
+    `
+  });
+
+  return result.result.value || undefined;
 }
 
 async function publishThroughPeerlistChrome({
@@ -565,9 +658,13 @@ async function publishThroughPeerlistChrome({
       `
     });
 
+    let profilePostsUrl = await readPeerlistProfilePostsUrl(client);
+    let previousMediaPreviewCount = 0;
+
     if (mediaPath) {
+      previousMediaPreviewCount = await composerMediaPreviewCount(client);
       await attachMedia(client, mediaPath);
-      await waitForMediaAttachment(client);
+      await waitForMediaAttachment(client, previousMediaPreviewCount);
     }
 
     await waitForExpression(
@@ -592,23 +689,9 @@ async function publishThroughPeerlistChrome({
       mediaPath ? 90_000 : 30_000,
       "Peerlist did not confirm the post. Check Peerlist in Chrome before trying again."
     );
-    const result = await client.send<{
-      result: {
-        value?: {
-          url?: string;
-        };
-      };
-    }>("Runtime.evaluate", {
-      returnByValue: true,
-      expression: `
-        (() => {
-          const links = [...document.querySelectorAll('a[href*="/scroll/post/"]')].map((link) => link.href);
-          return { url: links[0] || location.href };
-        })()
-      `
-    });
+    profilePostsUrl = (await readPeerlistProfilePostsUrl(client)) || profilePostsUrl;
 
-    return result.result.value?.url || `${peerlistBaseUrl}/scroll`;
+    return profilePostsUrl || `${peerlistBaseUrl}/scroll`;
   } finally {
     client?.close();
     await chrome.cleanup();
