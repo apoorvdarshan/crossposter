@@ -656,8 +656,9 @@ async function publishThroughPeerlistChrome({
     }
 
     await client.send("Runtime.evaluate", {
+      awaitPromise: true,
       expression: `
-        (() => {
+        (async () => {
           const titleInput = document.querySelector('textarea[placeholder="Title (optional)"]');
           if (titleInput) {
             titleInput.value = ${jsString(title)};
@@ -665,10 +666,45 @@ async function publishThroughPeerlistChrome({
           }
           const editor = document.querySelector('.ProseMirror[contenteditable="true"], [contenteditable="true"].ProseMirror');
           if (!editor) throw new Error("Peerlist editor was not found.");
-          editor.focus();
-          document.execCommand("selectAll", false);
-          document.execCommand("insertText", false, ${jsString(text)});
-          editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: ${jsString(text)} }));
+          const text = ${jsString(text)};
+          const expectedStart = text.slice(0, 80).replace(/\\s+/g, " ").trim();
+          const hasExpectedText = () => {
+            const current = editor.innerText.replace(/\\s+/g, " ").trim();
+
+            return expectedStart ? current.includes(expectedStart) : !current;
+          };
+          const selectEditorText = () => {
+            editor.focus();
+            const selection = window.getSelection();
+            if (!selection) throw new Error("Peerlist editor selection was not available.");
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          };
+
+          selectEditorText();
+          const clipboardData = new DataTransfer();
+          clipboardData.setData("text/plain", text);
+          editor.dispatchEvent(new ClipboardEvent("paste", {
+            bubbles: true,
+            cancelable: true,
+            clipboardData
+          }));
+          await new Promise((resolve) => setTimeout(resolve, 350));
+
+          if (hasExpectedText()) {
+            return;
+          }
+
+          selectEditorText();
+          document.execCommand("insertText", false, text);
+          editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
+          await new Promise((resolve) => setTimeout(resolve, 150));
+
+          if (!hasExpectedText()) {
+            throw new Error("Peerlist editor did not accept the post text.");
+          }
         })()
       `
     });
