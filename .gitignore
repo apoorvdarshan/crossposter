@@ -2,7 +2,9 @@
 .env
 .env*.local
 poster.config.local.json
+.instagram-sessions
 .poster-uploads
+.venv
 .next
 node_modules
 out

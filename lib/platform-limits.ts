@@ -1,6 +1,7 @@
 import type { Platform } from "@/lib/types";
 
 export const blueskyPostTextLimit = 300;
+export const instagramPostTextLimit = 2_200;
 export const linkedInPostTextLimit = 3_000;
 export const xFreePostTextLimit = 280;
 export const xPremiumPostTextLimit = 25_000;
@@ -8,6 +9,8 @@ export const xPhotoMediaSizeLimit = 5 * 1024 * 1024;
 export const xGifMediaSizeLimit = 15 * 1024 * 1024;
 export const xFreeVideoMediaSizeLimit = 512 * 1024 * 1024;
 export const xPremiumVideoMediaSizeLimit = 16 * 1024 * 1024 * 1024;
+export const instagramPhotoMediaSizeLimit = 8 * 1024 * 1024;
+export const instagramVideoMediaSizeLimit = 300 * 1024 * 1024;
 export const hackerNewsTitleLimit = 80;
 export const devtoTitleLimit = 128;
 export const devtoBodyBytesLimit = 800 * 1024;
@@ -17,6 +20,7 @@ const platformLabels: Record<Platform, string> = {
   linkedin: "LinkedIn",
   bluesky: "Bluesky",
   mastodon: "Mastodon",
+  instagram: "Instagram",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"
@@ -116,6 +120,10 @@ export function postTextLimitForPlatform(
 ): number | undefined {
   if (platform === "bluesky") {
     return blueskyPostTextLimit;
+  }
+
+  if (platform === "instagram") {
+    return instagramPostTextLimit;
   }
 
   if (platform === "linkedin") {

@@ -3,6 +3,7 @@ export type Platform =
   | "linkedin"
   | "bluesky"
   | "mastodon"
+  | "instagram"
   | "devto"
   | "hackernews"
   | "nostr";

@@ -62,6 +62,45 @@ export const configFields: ConfigField[] = [
     requiredFor: ["devto"]
   },
   {
+    name: "INSTAGRAM_USERNAME",
+    label: "Instagram username",
+    help: "Instagram username for this profile. Use one profile per account.",
+    requiredFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_PASSWORD",
+    label: "Instagram password",
+    help: "Saved locally. instagrapi uses this with the saved session to refresh the mobile API login.",
+    secret: true,
+    requiredFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_SESSION_FILE",
+    label: "Instagram session file",
+    help: "Path to this account's instagrapi session JSON, for example .instagram-sessions/apoorvdarshan.json.",
+    requiredFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_2FA_CODE",
+    label: "Instagram 2FA code",
+    help: "Optional one-time code for first login or challenge recovery. Clear it after the session is saved.",
+    secret: true,
+    showFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_PYTHON_COMMAND",
+    label: "Instagram Python command",
+    help: "Python command with instagrapi installed. Leave blank to use .venv/bin/python when present, then python3.",
+    showFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_TIMEOUT_MS",
+    label: "Instagram timeout",
+    help: "Timeout for instagrapi publishing in milliseconds.",
+    defaultValue: "300000",
+    showFor: ["instagram"]
+  },
+  {
     name: "LINKEDIN_CLIENT_ID",
     label: "LinkedIn client ID",
     help: "Client ID from your LinkedIn developer app. Used only to connect this profile locally.",
@@ -188,6 +227,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     linkedin: [],
     bluesky: [],
     mastodon: [],
+    instagram: [],
     devto: [],
     hackernews: [],
     nostr: []

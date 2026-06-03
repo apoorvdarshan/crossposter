@@ -14,6 +14,7 @@ const platformSchema = z.enum([
   "linkedin",
   "bluesky",
   "mastodon",
+  "instagram",
   "devto",
   "hackernews",
   "nostr"

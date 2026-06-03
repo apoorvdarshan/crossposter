@@ -24,6 +24,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { validatePlatformConfig, type ConfigIssue } from "@/lib/config-validation";
 import {
   devtoBodyBytesLimit,
+  instagramPhotoMediaSizeLimit,
+  instagramVideoMediaSizeLimit,
   postLimitIssuesForTargets,
   postTextLimitForPlatform,
   platformLabel,
@@ -85,6 +87,14 @@ const channels: Array<{
     media: "Local image, video, audio, or file upload is supported."
   },
   {
+    id: "instagram",
+    label: "Instagram",
+    note: "Private API media post",
+    uses: ["Post", "Media"],
+    target: "Uses the active Instagram instagrapi profile from Settings.",
+    media: "Requires a local JPG, PNG, WebP image up to 8 MB, or MP4/MOV video up to 300 MB."
+  },
+  {
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
@@ -127,6 +137,12 @@ const envLabels: Record<string, string> = {
   MASTODON_INSTANCE: "instance",
   MASTODON_ACCESS_TOKEN: "access token",
   DEVTO_API_KEY: "API key",
+  INSTAGRAM_USERNAME: "username",
+  INSTAGRAM_PASSWORD: "password",
+  INSTAGRAM_SESSION_FILE: "session file",
+  INSTAGRAM_2FA_CODE: "2FA code",
+  INSTAGRAM_PYTHON_COMMAND: "Python command",
+  INSTAGRAM_TIMEOUT_MS: "timeout",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
   NOSTR_PRIVATE_KEY: "private key",
@@ -217,6 +233,8 @@ const platformIds = channels.map((channel) => channel.id);
 const blueskyMaxImageSize = 1_000_000;
 const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const instagramImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const instagramVideoTypes = new Set(["video/mp4", "video/quicktime"]);
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -224,6 +242,8 @@ const xVideoTypes = new Set(["video/mp4"]);
 const linkedInMinVideoSize = 75 * 1024;
 const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const linkedInVideoTargetSize = 490 * 1024 * 1024;
+const instagramImageTargetSize = 7.5 * 1024 * 1024;
+const instagramVideoTargetSize = 290 * 1024 * 1024;
 const mastodonImageSizeLimit = 16_777_216;
 const mastodonVideoSizeLimit = 103_809_024;
 const mastodonImageTargetSize = 15 * 1024 * 1024;
@@ -615,6 +635,39 @@ function mediaPreflightIssues(
     }
   }
 
+  if (platforms.includes("instagram")) {
+    if (kind === "image" && !instagramImageTypes.has(file.type)) {
+      issues.push({
+        id: "instagram-image-type",
+        message: `Instagram supports JPG, PNG, and WebP images through instagrapi; selected file is ${file.type || "unknown"}.`,
+        compress: file.type === "image/gif" ? undefined : "image"
+      });
+    } else if (kind === "image" && file.size > instagramPhotoMediaSizeLimit) {
+      issues.push({
+        id: "instagram-image-size",
+        message: `Instagram photo limit is 8 MB; selected file is ${formatBytes(file.size)}.`,
+        compress: "image"
+      });
+    } else if (kind === "video" && !instagramVideoTypes.has(file.type)) {
+      issues.push({
+        id: "instagram-video-type",
+        message: `Instagram supports MP4 and MOV videos through instagrapi; selected file is ${file.type || "unknown"}.`,
+        compress: "video"
+      });
+    } else if (kind === "video" && file.size > instagramVideoMediaSizeLimit) {
+      issues.push({
+        id: "instagram-video-size",
+        message: `Instagram video limit is 300 MB; selected file is ${formatBytes(file.size)}.`,
+        compress: "video"
+      });
+    } else if (kind !== "image" && kind !== "video") {
+      issues.push({
+        id: "instagram-kind",
+        message: `Instagram can upload images and videos only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    }
+  }
+
   if (platforms.includes("bluesky")) {
     if (kind !== "image") {
       issues.push({
@@ -678,6 +731,10 @@ function imageTargetBytesForPlatforms(platforms: Platform[], file: File): number
     targets.push(blueskyCompressTargetSize);
   }
 
+  if (platforms.includes("instagram") && file.size > instagramPhotoMediaSizeLimit) {
+    targets.push(instagramImageTargetSize);
+  }
+
   if (platforms.includes("mastodon") && file.size > mastodonImageSizeLimit) {
     targets.push(mastodonImageTargetSize);
   }
@@ -694,6 +751,10 @@ function videoTargetBytesForPlatforms(platforms: Platform[], file: File, request
 
   if (platforms.includes("linkedin") && file.size > linkedInMaxVideoSize) {
     targets.push(linkedInVideoTargetSize);
+  }
+
+  if (platforms.includes("instagram") && file.size > instagramVideoMediaSizeLimit) {
+    targets.push(instagramVideoTargetSize);
   }
 
   return Math.min(...targets);
@@ -1441,6 +1502,7 @@ export default function Home() {
     }
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
+    const hasInstagram = publishPlatforms.includes("instagram");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
 
     if (hasHackerNews && !title.trim()) {
@@ -1450,6 +1512,11 @@ export default function Home() {
 
     if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
       setError("Write post text before publishing, or select only Hacker News and add a title.");
+      return;
+    }
+
+    if (hasInstagram && !mediaFile) {
+      setError("Instagram requires a local image or video file.");
       return;
     }
 
@@ -1546,6 +1613,7 @@ export default function Home() {
     }
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
+    const hasInstagram = publishPlatforms.includes("instagram");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
 
     if (hasHackerNews && !title.trim()) {
@@ -1555,6 +1623,11 @@ export default function Home() {
 
     if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
       setError("Write post text before scheduling, or select only Hacker News and add a title.");
+      return;
+    }
+
+    if (hasInstagram && !mediaFile) {
+      setError("Instagram requires a local image or video file.");
       return;
     }
 
@@ -1694,8 +1767,10 @@ export default function Home() {
       }
     : null;
   const showHackerNewsLink = selectedPlatforms.includes("hackernews");
+  const hasInstagram = selectedPlatforms.includes("instagram");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
+  const hasRequiredInstagramMedia = !hasInstagram || Boolean(mediaFile);
   const hasRequiredPostText =
     Boolean(text.trim()) ||
     (isHackerNewsOnly && Boolean(title.trim()));
@@ -1707,6 +1782,7 @@ export default function Home() {
   const canSubmitDraft =
     selectedTargets.length > 0 &&
     hasRequiredHackerNewsTitle &&
+    hasRequiredInstagramMedia &&
     hasRequiredPostText &&
     preflightIssues.length === 0 &&
     !hasLimitIssues &&

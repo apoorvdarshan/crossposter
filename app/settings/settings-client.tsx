@@ -88,6 +88,7 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "linkedin", label: "LinkedIn" },
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
+  { id: "instagram", label: "Instagram" },
   { id: "devto", label: "Dev.to" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" }
@@ -209,6 +210,25 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Save config, then select X / Twitter on the Dashboard.",
       "Crossposter publishes user-triggered posts only. X may still limit or lock accounts for spammy or automated-looking behavior.",
       "Local images, GIFs, and MP4 video are passed to bird as media attachments."
+    ]
+  },
+  instagram: {
+    title: "Instagram setup",
+    intro:
+      "Unofficial local posting through instagrapi. Crossposter saves one mobile API session JSON per Instagram profile.",
+    links: [
+      { label: "instagrapi", href: "https://github.com/subzeroid/instagrapi" },
+      { label: "Instagram terms", href: "https://help.instagram.com/581066165581870" }
+    ],
+    steps: [
+      "Install instagrapi in Terminal with python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt.",
+      "Add one Instagram profile here for each Instagram account.",
+      "Set Instagram username and password for that account. They stay in poster.config.local.json.",
+      "Set Instagram session file to a unique JSON path, for example .instagram-sessions/apoorvdarshan.json.",
+      "If Instagram asks for 2FA on first publish, paste the current code into Instagram 2FA code, save, publish once, then clear it.",
+      "Use the Dashboard Post field as the caption.",
+      "Attach one local JPG, PNG, WebP, MP4, or MOV file before publishing.",
+      "Avoid parallel or high-volume posting. Instagram may challenge, rate limit, or restrict accounts for suspicious automation."
     ]
   },
   nostr: {

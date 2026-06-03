@@ -1,6 +1,7 @@
 import {
   siBluesky,
   siDevdotto,
+  siInstagram,
   siMastodon,
   siX,
   siYcombinator,
@@ -13,6 +14,7 @@ const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   x: siX,
   bluesky: siBluesky,
   mastodon: siMastodon,
+  instagram: siInstagram,
   devto: siDevdotto,
   hackernews: siYcombinator
 };
@@ -22,6 +24,7 @@ const socialNames: Record<Platform, string> = {
   linkedin: "LinkedIn",
   bluesky: "Bluesky",
   mastodon: "Mastodon",
+  instagram: "Instagram",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"
@@ -32,6 +35,7 @@ const brandColors: Record<Platform, string> = {
   linkedin: "#0a66c2",
   bluesky: `#${siBluesky.hex}`,
   mastodon: `#${siMastodon.hex}`,
+  instagram: `#${siInstagram.hex}`,
   devto: `#${siDevdotto.hex}`,
   hackernews: `#${siYcombinator.hex}`,
   nostr: "#8f3ffc"

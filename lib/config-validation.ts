@@ -113,6 +113,29 @@ function invalidReason(name: string, value: string): string | null {
       return scopesFor(value).includes("w_member_social")
         ? null
         : "must include w_member_social";
+    case "INSTAGRAM_USERNAME":
+      return /^[A-Za-z0-9._]{1,30}$/.test(value) && !value.startsWith(".") && !value.endsWith(".")
+        ? null
+        : "must be an Instagram username without @";
+    case "INSTAGRAM_SESSION_FILE":
+      return /^[^\0\r\n]{1,500}\.json$/i.test(value)
+        ? null
+        : "must be a session JSON path like .instagram-sessions/account.json";
+    case "INSTAGRAM_2FA_CODE":
+      return /^\d{6,8}$/.test(value) ? null : "must be the current 6-8 digit code";
+    case "INSTAGRAM_PYTHON_COMMAND":
+      return /^[A-Za-z0-9_./-]+$/.test(value)
+        ? null
+        : "must be a command name or path without spaces";
+    case "INSTAGRAM_TIMEOUT_MS": {
+      if (!/^\d+$/.test(value)) {
+        return "must be milliseconds";
+      }
+
+      const timeout = Number(value);
+
+      return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
+    }
     case "NOSTR_RELAYS":
       return invalidNostrRelays(value);
     case "HACKERNEWS_USERNAME":
