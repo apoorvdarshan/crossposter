@@ -8,6 +8,26 @@ import type { ProviderContext, PublishResult } from "@/lib/types";
 
 const hnBaseUrl = "https://news.ycombinator.com";
 
+function hackerNewsRedirectError(location: string): string | undefined {
+  const parsed = new URL(location, hnBaseUrl);
+
+  if (parsed.hostname !== "news.ycombinator.com") {
+    return undefined;
+  }
+
+  if (parsed.pathname !== "/x") {
+    return undefined;
+  }
+
+  const fnop = parsed.searchParams.get("fnop");
+
+  if (fnop === "toonew") {
+    return "Hacker News did not publish this submission. It returned a too-new/too-soon rejection page; wait before trying again or submit manually in the browser.";
+  }
+
+  return `Hacker News did not publish this submission. It returned a confirmation/rejection page${fnop ? ` (${fnop})` : ""}; submit manually in the browser.`;
+}
+
 function cookieHeaderFromResponse(response: Response): string {
   const setCookie = response.headers.get("set-cookie") || "";
   const userCookie = setCookie
@@ -106,13 +126,24 @@ async function submitStory({
   const location = response.headers.get("location") || undefined;
 
   if (response.status >= 300 && response.status < 400) {
-    return location ? new URL(location, hnBaseUrl).toString() : `${hnBaseUrl}/newest`;
+    if (!location) {
+      throw new Error("Hacker News did not return a publish confirmation URL.");
+    }
+
+    const redirectedUrl = new URL(location, hnBaseUrl).toString();
+    const redirectError = hackerNewsRedirectError(redirectedUrl);
+
+    if (redirectError) {
+      throw new Error(redirectError);
+    }
+
+    return redirectedUrl;
   }
 
   const html = await response.text().catch(() => "");
 
   if (/already been submitted/i.test(html)) {
-    return `${hnBaseUrl}/from?site=${encodeURIComponent(new URL(url || hnBaseUrl).hostname)}`;
+    throw new Error("Hacker News says this URL has already been submitted. Use a different link or submit manually in the browser.");
   }
 
   if (/title is too long/i.test(html)) {
@@ -127,7 +158,7 @@ async function submitStory({
     throw new Error(`Hacker News submit failed: ${response.status} ${response.statusText}`);
   }
 
-  return `${hnBaseUrl}/newest`;
+  throw new Error("Hacker News did not confirm the submission. Check Hacker News in the browser before trying again.");
 }
 
 function normalizeSubmissionUrl(value: string | undefined): string | undefined {
