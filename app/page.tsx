@@ -543,6 +543,18 @@ function mediaKindLabel(kind: UploadedMedia["kind"]): string {
   return kind === "file" ? "file" : `${kind} file`;
 }
 
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) {
+    return error.name === "AbortError";
+  }
+
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  return "name" in error && (error as { name?: unknown }).name === "AbortError";
+}
+
 function mediaPreflightIssues(
   targets: MediaPreflightTarget[],
   file: File | null
@@ -891,16 +903,24 @@ function futureScheduleValue(value: string): string {
 
 function ProgressBox({
   progress,
-  className = ""
+  className = "",
+  onCancel
 }: {
   progress: ProgressState;
   className?: string;
+  onCancel?: () => void;
 }) {
   return (
     <div className={`progress-box ${className}`.trim()} role="status" aria-live="polite">
       <div className="progress-copy">
         <strong>{progress.label}</strong>
         <span>{Math.round(progress.value)}%</span>
+        {onCancel ? (
+          <button className="progress-cancel" type="button" onClick={onCancel}>
+            <X size={14} />
+            Cancel
+          </button>
+        ) : null}
       </div>
       <div className="progress-track">
         <span style={{ width: `${Math.max(3, Math.min(100, progress.value))}%` }} />
@@ -934,6 +954,7 @@ export default function Home() {
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
   const [progress, setProgress] = useState<ProgressState | null>(null);
   const [progressPlacement, setProgressPlacement] = useState<ProgressPlacement>("bottom");
+  const publishAbortRef = useRef<AbortController | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [configHydrated, setConfigHydrated] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
@@ -1385,7 +1406,20 @@ export default function Home() {
     }
   }
 
-  async function uploadSelectedMedia(): Promise<UploadedMedia | undefined> {
+  function cancelPublishAction() {
+    const controller = publishAbortRef.current;
+
+    if (!controller) {
+      return;
+    }
+
+    setProgress((current) =>
+      current ? { ...current, label: "Cancelling" } : { label: "Cancelling", value: 10 }
+    );
+    controller.abort();
+  }
+
+  async function uploadSelectedMedia(signal: AbortSignal): Promise<UploadedMedia | undefined> {
     if (!mediaFile) {
       return undefined;
     }
@@ -1400,7 +1434,8 @@ export default function Home() {
 
       const response = await fetch("/api/media", {
         method: "POST",
-        body: formData
+        body: formData,
+        signal
       });
       const body = (await response.json()) as MediaUploadResponse;
 
@@ -1462,13 +1497,17 @@ export default function Home() {
 
     setIsPublishing(true);
     setProgress({ label: mediaFile ? "Preparing media upload" : "Preparing publish", value: 8 });
+    const controller = new AbortController();
+
+    publishAbortRef.current = controller;
 
     try {
-      uploadedMedia = await uploadSelectedMedia();
+      uploadedMedia = await uploadSelectedMedia(controller.signal);
       setProgress({ label: "Sending to selected channels", value: uploadedMedia ? 45 : 25 });
       const response = await fetch("/api/publish", {
         method: "POST",
         headers: { "content-type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           title: title.trim() || undefined,
           text,
@@ -1498,8 +1537,18 @@ export default function Home() {
       }
       setProgress({ label: "Publish complete", value: 100 });
     } catch (publishError) {
-      setError(publishError instanceof Error ? publishError.message : "Publish failed");
+      setError(
+        isAbortError(publishError)
+          ? "Publish cancelled."
+          : publishError instanceof Error
+            ? publishError.message
+            : "Publish failed"
+      );
     } finally {
+      if (publishAbortRef.current === controller) {
+        publishAbortRef.current = null;
+      }
+
       setIsPublishing(false);
       window.setTimeout(() => setProgress(null), 500);
     }
@@ -1563,13 +1612,17 @@ export default function Home() {
 
     setIsScheduling(true);
     setProgress({ label: mediaFile ? "Preparing scheduled media" : "Saving schedule", value: 8 });
+    const controller = new AbortController();
+
+    publishAbortRef.current = controller;
 
     try {
-      uploadedMedia = await uploadSelectedMedia();
+      uploadedMedia = await uploadSelectedMedia(controller.signal);
       setProgress({ label: "Writing scheduled post", value: uploadedMedia ? 58 : 35 });
       const response = await fetch("/api/scheduled", {
         method: "POST",
         headers: { "content-type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           title: title.trim() || undefined,
           text,
@@ -1593,8 +1646,18 @@ export default function Home() {
       setScheduledForInput(datetimeLocalValue());
       setSchedulePanelPlacement(null);
     } catch (scheduleError) {
-      setError(scheduleError instanceof Error ? scheduleError.message : "Scheduling failed");
+      setError(
+        isAbortError(scheduleError)
+          ? "Schedule cancelled."
+          : scheduleError instanceof Error
+            ? scheduleError.message
+            : "Scheduling failed"
+      );
     } finally {
+      if (publishAbortRef.current === controller) {
+        publishAbortRef.current = null;
+      }
+
       setIsScheduling(false);
       window.setTimeout(() => setProgress(null), 500);
     }
@@ -1744,6 +1807,10 @@ export default function Home() {
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
   const bottomActionProgress =
     actionProgress && progressPlacement === "bottom" ? actionProgress : null;
+  const cancelProgressAction =
+    publishAbortRef.current && (isPublishing || isScheduling || isUploadingMedia)
+      ? cancelPublishAction
+      : undefined;
 
   function renderSchedulePopup(placement: ProgressPlacement) {
     return (
@@ -1912,7 +1979,13 @@ export default function Home() {
               >
                 Clear draft
               </button>
-              {topActionProgress ? <ProgressBox className="head-progress" progress={topActionProgress} /> : null}
+              {topActionProgress ? (
+                <ProgressBox
+                  className="head-progress"
+                  onCancel={cancelProgressAction}
+                  progress={topActionProgress}
+                />
+              ) : null}
             </div>
           </div>
 
@@ -2311,7 +2384,12 @@ export default function Home() {
                 {scheduleStatus}
               </p>
             ) : null}
-            {bottomActionProgress ? <ProgressBox progress={bottomActionProgress} /> : null}
+            {bottomActionProgress ? (
+              <ProgressBox
+                onCancel={cancelProgressAction}
+                progress={bottomActionProgress}
+              />
+            ) : null}
           </div>
         </section>
 

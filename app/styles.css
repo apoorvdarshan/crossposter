@@ -1300,9 +1300,36 @@ textarea {
   font-size: 0.84rem;
 }
 
+.progress-copy strong {
+  min-width: 0;
+  flex: 1;
+}
+
 .progress-copy strong,
 .progress-copy span {
   font-weight: 900;
+}
+
+.progress-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.progress-cancel:hover {
+  border-color: var(--danger);
+  background: var(--danger-wash);
+  color: var(--danger);
 }
 
 .progress-track {
