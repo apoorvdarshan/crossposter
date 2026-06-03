@@ -93,14 +93,6 @@ const channels: Array<{
     media: "Unofficial personal automation; local media is ignored; the Link field becomes the submitted URL."
   },
   {
-    id: "peerlist",
-    label: "Peerlist",
-    note: "Scroll post",
-    uses: ["Title", "Post", "Media"],
-    target: "Uses your local Chrome Peerlist session from Settings.",
-    media: "Local images and GIFs are supported; video is not posted."
-  },
-  {
     id: "nostr",
     label: "Nostr",
     note: "Text note",
@@ -131,9 +123,7 @@ const envLabels: Record<string, string> = {
   NOSTR_PRIVATE_KEY: "private key",
   NOSTR_RELAYS: "relays",
   HACKERNEWS_USERNAME: "username",
-  HACKERNEWS_PASSWORD: "password",
-  PEERLIST_CONTEXT: "context",
-  PEERLIST_CHROME_PROFILE: "Chrome profile"
+  HACKERNEWS_PASSWORD: "password"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -214,7 +204,6 @@ const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
-const peerlistImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const linkedInMinVideoSize = 75 * 1024;
 const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const linkedInVideoTargetSize = 490 * 1024 * 1024;
@@ -573,20 +562,6 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
         id: "bluesky-size",
         message: `Bluesky image limit is 1 MB; selected file is ${formatBytes(file.size)}.`,
         compress: "image"
-      });
-    }
-  }
-
-  if (platforms.includes("peerlist")) {
-    if (kind !== "image") {
-      issues.push({
-        id: "peerlist-kind",
-        message: `Peerlist can upload images and GIFs only; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    } else if (!peerlistImageTypes.has(file.type)) {
-      issues.push({
-        id: "peerlist-type",
-        message: `Peerlist supports JPG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`
       });
     }
   }

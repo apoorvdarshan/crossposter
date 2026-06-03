@@ -45,7 +45,6 @@ const platforms: Platform[] = [
   "devto",
   "linkedin",
   "hackernews",
-  "peerlist",
   "nostr"
 ];
 const fieldPlatform = new Map<string, Platform>(

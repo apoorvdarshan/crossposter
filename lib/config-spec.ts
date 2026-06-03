@@ -133,20 +133,6 @@ export const configFields: ConfigField[] = [
     help: "Optional user=... cookie from a browser session. If set, Crossposter uses it before trying password login.",
     secret: true,
     showFor: ["hackernews"]
-  },
-  {
-    name: "PEERLIST_CONTEXT",
-    label: "Peerlist context",
-    help: "Scroll context such as #show, #thought, #ask, or #book. Crossposter defaults to #show.",
-    defaultValue: "#show",
-    showFor: ["peerlist"]
-  },
-  {
-    name: "PEERLIST_CHROME_PROFILE",
-    label: "Peerlist Chrome profile",
-    help: "Chrome profile folder to read Peerlist cookies from, usually Default.",
-    defaultValue: "Default",
-    showFor: ["peerlist"]
   }
 ];
 
@@ -164,7 +150,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     devto: [],
     linkedin: [],
     hackernews: [],
-    peerlist: [],
     nostr: []
   } as Record<Platform, string[]>
 );
