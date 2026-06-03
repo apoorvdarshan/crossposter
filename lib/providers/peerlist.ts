@@ -229,8 +229,17 @@ function createCdpClient(webSocketUrl: string): Promise<CdpClient> {
     {
       resolve: (value: unknown) => void;
       reject: (error: Error) => void;
+      timer: ReturnType<typeof setTimeout>;
     }
   >();
+
+  function rejectPending(error: Error) {
+    for (const [callId, callbacks] of pending) {
+      clearTimeout(callbacks.timer);
+      callbacks.reject(error);
+      pending.delete(callId);
+    }
+  }
 
   socket.onmessage = (event) => {
     const message = JSON.parse(String(event.data)) as {
@@ -250,6 +259,8 @@ function createCdpClient(webSocketUrl: string): Promise<CdpClient> {
       return;
     }
 
+    clearTimeout(callbacks.timer);
+
     if (message.error) {
       callbacks.reject(new Error(JSON.stringify(message.error)));
       return;
@@ -267,9 +278,15 @@ function createCdpClient(webSocketUrl: string): Promise<CdpClient> {
           socket.send(JSON.stringify({ id: callId, method, params }));
 
           return new Promise<T>((resolve, reject) => {
+            const timer = setTimeout(() => {
+              pending.delete(callId);
+              reject(new Error(`Chrome command ${method} timed out.`));
+            }, 30_000);
+
             pending.set(callId, {
               resolve: (value) => resolve(value as T),
-              reject
+              reject,
+              timer
             });
           });
         },
@@ -279,6 +296,7 @@ function createCdpClient(webSocketUrl: string): Promise<CdpClient> {
       });
     };
     socket.onerror = () => reject(new Error("Could not connect to Chrome debugging socket."));
+    socket.onclose = () => rejectPending(new Error("Chrome debugging socket closed."));
   });
 }
 
@@ -368,26 +386,93 @@ async function setPeerlistCookies(client: CdpClient, cookies: ChromeCookie[]) {
 }
 
 async function attachMedia(client: CdpClient, mediaPath: string) {
-  const document = await client.send<{
-    root: {
+  async function findInputNodeId(): Promise<number> {
+    const document = await client.send<{
+      root: {
+        nodeId: number;
+      };
+    }>("DOM.getDocument", {});
+    const input = await client.send<{
       nodeId: number;
-    };
-  }>("DOM.getDocument", {});
-  const input = await client.send<{
-    nodeId: number;
-  }>("DOM.querySelector", {
-    nodeId: document.root.nodeId,
-    selector: "input[type=file]"
-  });
+    }>("DOM.querySelector", {
+      nodeId: document.root.nodeId,
+      selector: 'input[type=file][accept*="image"], input[type=file]'
+    });
 
-  if (!input.nodeId) {
+    return input.nodeId || 0;
+  }
+
+  let inputNodeId = await findInputNodeId();
+
+  if (!inputNodeId) {
+    await client.send("Runtime.evaluate", {
+      expression: `
+        (() => {
+          const root = document.querySelector('textarea[placeholder="Title (optional)"]')?.closest('[role="dialog"]') || document.body;
+          const buttons = [...root.querySelectorAll('button')];
+          const mediaButton = buttons.find((button) => {
+            const label = [button.ariaLabel, button.title, button.innerText].filter(Boolean).join(" ");
+            return /image|media|photo|upload/i.test(label);
+          });
+          mediaButton?.click();
+        })()
+      `
+    });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    inputNodeId = await findInputNodeId();
+  }
+
+  if (!inputNodeId) {
     throw new Error("Peerlist composer did not expose a media upload input.");
   }
 
   await client.send("DOM.setFileInputFiles", {
-    nodeId: input.nodeId,
+    nodeId: inputNodeId,
     files: [mediaPath]
   });
+  await client.send("Runtime.evaluate", {
+    expression: `
+      (() => {
+        const input = document.querySelector('input[type=file][accept*="image"], input[type=file]');
+        if (!input) return false;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        return Boolean(input.files?.length);
+      })()
+    `
+  });
+}
+
+async function waitForMediaAttachment(client: CdpClient) {
+  await waitForExpression(
+    client,
+    `
+      (() => {
+        const titleInput = document.querySelector('textarea[placeholder="Title (optional)"]');
+        const root = titleInput?.closest('[role="dialog"]') || document.body;
+        const postButton = [...root.querySelectorAll("button")]
+          .filter((button) => button.innerText.trim() === "Post")
+          .at(-1);
+        const hasSelectedFile = [...root.querySelectorAll("input[type=file]")]
+          .some((input) => input.files?.length);
+        const hasPreview = [...root.querySelectorAll("img, video")]
+          .some((item) => {
+            const source = item.currentSrc || item.src || "";
+
+            return source.startsWith("blob:") ||
+              source.startsWith("data:") ||
+              /cloudfront|peerlist|amazonaws/i.test(source);
+          });
+        const hasBusyMarker =
+          Boolean(root.querySelector('[aria-busy="true"], [role="progressbar"], .animate-spin, [class*="spinner"], [class*="loader"]')) ||
+          /uploading|processing|attaching/i.test(root.innerText);
+
+        return Boolean((hasSelectedFile || hasPreview) && postButton && !postButton.disabled && !hasBusyMarker);
+      })()
+    `,
+    90_000,
+    "Peerlist media upload did not finish. Try a smaller image or GIF, then publish again."
+  );
 }
 
 async function publishThroughPeerlistChrome({
@@ -482,13 +567,13 @@ async function publishThroughPeerlistChrome({
 
     if (mediaPath) {
       await attachMedia(client, mediaPath);
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await waitForMediaAttachment(client);
     }
 
     await waitForExpression(
       client,
       `[...document.querySelectorAll("button")].filter((button) => button.innerText.trim() === "Post").at(-1) && ![...document.querySelectorAll("button")].filter((button) => button.innerText.trim() === "Post").at(-1).disabled`,
-      20_000,
+      mediaPath ? 90_000 : 20_000,
       "Peerlist Post button was not ready."
     );
     await client.send("Runtime.evaluate", {
@@ -504,7 +589,7 @@ async function publishThroughPeerlistChrome({
     await waitForExpression(
       client,
       `!document.querySelector('textarea[placeholder="Title (optional)"]') && document.body.innerText.includes(${jsString(text.slice(0, 80))})`,
-      30_000,
+      mediaPath ? 90_000 : 30_000,
       "Peerlist did not confirm the post. Check Peerlist in Chrome before trying again."
     );
     const result = await client.send<{
