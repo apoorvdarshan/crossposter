@@ -13,6 +13,7 @@ def emit(payload, code=0):
 def error_message(exc):
     name = exc.__class__.__name__
     text = str(exc).strip()
+    lowered = f"{name} {text}".lower()
 
     if name == "TwoFactorRequired":
         return (
@@ -20,19 +21,22 @@ def error_message(exc):
             "profile, save config, publish once, then clear the code."
         )
 
-    if name == "ChallengeRequired":
-        return (
-            "Instagram requires account verification. Open Instagram for this account, "
-            "complete the challenge, then try again."
-        )
-
-    if name == "ChallengeUnknownStep" or (
-        "challenge" in text.lower() and "unknown step" in text.lower()
+    if any(
+        marker in lowered
+        for marker in [
+            "challenge",
+            "checkpoint",
+            "challenge_context",
+            "bloks_action",
+            "suspicious",
+            "verification"
+        ]
     ):
         return (
-            "Instagram requires a newer verification challenge that instagrapi cannot solve "
-            "automatically. Open Instagram for this account, complete the verification, then "
-            "try again. If it repeats, wait a while or recreate this account's session file."
+            "Instagram verification is required for this account. Open Instagram for this "
+            "account, complete the challenge or checkpoint, then try again. If it repeats, "
+            "wait a while or delete this account's session JSON file so Crossposter can "
+            "create a fresh session."
         )
 
     if name in {"PleaseWaitFewMinutes", "FeedbackRequired"}:
