@@ -547,14 +547,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
     return "Off. Turn this on once so macOS starts Crossposter after login and restarts it if it exits.";
   }, [displayLocalUrl, localService]);
-  const socialColumns = useMemo(
-    () => [
-      platforms.filter((_, index) => index % 2 === 0),
-      platforms.filter((_, index) => index % 2 === 1)
-    ],
-    []
-  );
-
   function fieldsFor(platform: Platform): ConfigField[] {
     return fields.filter(
       (field) => field.requiredFor?.includes(platform) || field.showFor?.includes(platform)
@@ -1373,11 +1365,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
         {settingsView === "socials" ? (
           <div className="socials-masonry">
-            {socialColumns.map((column, index) => (
-              <div className="socials-column" key={index === 0 ? "primary" : "secondary"}>
-                {column.map((platform) => renderSocialPanel(platform))}
-              </div>
-            ))}
+            {platforms.map((platform) => renderSocialPanel(platform))}
           </div>
         ) : null}
       </section>
