@@ -16,6 +16,8 @@ type BirdRunResult = {
 
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const xVideoTypes = new Set(["video/mp4"]);
+const defaultBirdTimeoutMs = 60_000;
+const videoBirdTimeoutMs = 300_000;
 
 function splitList(value: string | undefined): string[] {
   return (value || "")
@@ -52,19 +54,25 @@ function birdCommand(profileId: string | undefined): string {
   return command;
 }
 
-function birdTimeout(profileId: string | undefined): number {
+function configuredBirdTimeout(profileId: string | undefined): number {
   const value = optionalEnv("X_BIRD_TIMEOUT_MS", profileId)?.trim();
 
   if (!value) {
-    return 60_000;
+    return defaultBirdTimeoutMs;
   }
 
   const timeout = Number(value);
 
-  return Number.isFinite(timeout) && timeout > 0 ? timeout : 60_000;
+  return Number.isFinite(timeout) && timeout > 0 ? timeout : defaultBirdTimeoutMs;
 }
 
-function birdAuthArgs(profileId: string | undefined): string[] {
+function birdTimeout(profileId: string | undefined, ctx: ProviderContext): number {
+  const timeout = configuredBirdTimeout(profileId);
+
+  return ctx.media?.kind === "video" ? Math.max(timeout, videoBirdTimeoutMs) : timeout;
+}
+
+function birdAuthArgs(profileId: string | undefined, timeout: number): string[] {
   const args: string[] = [];
 
   for (const source of splitList(optionalEnv("X_BIRD_COOKIE_SOURCE", profileId))) {
@@ -82,11 +90,7 @@ function birdAuthArgs(profileId: string | undefined): string[] {
     args.push("--firefox-profile", firefoxProfile);
   }
 
-  const timeout = optionalEnv("X_BIRD_TIMEOUT_MS", profileId)?.trim();
-
-  if (timeout) {
-    args.push("--timeout", timeout);
-  }
+  args.push("--timeout", String(timeout));
 
   return args;
 }
@@ -180,8 +184,9 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
   }
 
   const command = birdCommand(profileId);
+  const timeout = birdTimeout(profileId, ctx);
   const args = [
-    ...birdAuthArgs(profileId),
+    ...birdAuthArgs(profileId, timeout),
     "tweet",
     text,
     ...mediaArgs(ctx, isPremium),
@@ -189,7 +194,7 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
     "--no-color",
     "--no-emoji"
   ];
-  const result = await runBird(command, args, birdTimeout(profileId));
+  const result = await runBird(command, args, timeout);
   const output = [result.stdout, result.stderr].join("\n");
 
   return {

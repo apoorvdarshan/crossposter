@@ -162,7 +162,7 @@ export const configFields: ConfigField[] = [
   {
     name: "X_BIRD_TIMEOUT_MS",
     label: "X request timeout",
-    help: "Timeout for bird requests in milliseconds.",
+    help: "Timeout for bird text and image requests in milliseconds. X video posts automatically use at least 300000 ms.",
     defaultValue: "60000",
     showFor: ["x"]
   },
