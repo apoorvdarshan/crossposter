@@ -660,16 +660,56 @@ async function publishThroughPeerlistChrome({
       expression: `
         (async () => {
           const titleInput = document.querySelector('textarea[placeholder="Title (optional)"]');
-          if (titleInput) {
-            titleInput.value = ${jsString(title)};
-            titleInput.dispatchEvent(new Event("input", { bubbles: true }));
+          const titleText = ${jsString(title)};
+          const normalize = (value) => value.replace(/\\s+/g, " ").trim();
+          const setNativeTextareaValue = (element, value) => {
+            const descriptor =
+              Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), "value") ||
+              Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+
+            if (descriptor?.set) {
+              descriptor.set.call(element, value);
+            } else {
+              element.value = value;
+            }
+
+            element.dispatchEvent(new InputEvent("input", {
+              bubbles: true,
+              inputType: "insertText",
+              data: value
+            }));
+            element.dispatchEvent(new Event("change", { bubbles: true }));
+          };
+
+          if (titleText || titleInput?.value) {
+            if (!titleInput) throw new Error("Peerlist title field was not found.");
+
+            setNativeTextareaValue(titleInput, titleText);
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            if (normalize(titleInput.value) !== normalize(titleText)) {
+              titleInput.focus();
+              titleInput.select();
+              document.execCommand("insertText", false, titleText);
+              titleInput.dispatchEvent(new InputEvent("input", {
+                bubbles: true,
+                inputType: "insertText",
+                data: titleText
+              }));
+              titleInput.dispatchEvent(new Event("change", { bubbles: true }));
+              await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+
+            if (normalize(titleInput.value) !== normalize(titleText)) {
+              throw new Error("Peerlist title field did not accept the title.");
+            }
           }
           const editor = document.querySelector('.ProseMirror[contenteditable="true"], [contenteditable="true"].ProseMirror');
           if (!editor) throw new Error("Peerlist editor was not found.");
           const text = ${jsString(text)};
-          const expectedStart = text.slice(0, 80).replace(/\\s+/g, " ").trim();
+          const expectedStart = normalize(text.slice(0, 80));
           const hasExpectedText = () => {
-            const current = editor.innerText.replace(/\\s+/g, " ").trim();
+            const current = normalize(editor.innerText);
 
             return expectedStart ? current.includes(expectedStart) : !current;
           };
