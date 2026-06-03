@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import sys
+import time
 from pathlib import Path
+
+
+MAX_MEDIA_UPLOAD_ATTEMPTS = 2
 
 
 def emit(payload, code=0):
@@ -54,6 +57,12 @@ def error_message(exc):
             "`./scripts/install-instagram-deps.sh` in Terminal, then try again."
         )
 
+    if "media_needs_reupload" in lowered:
+        return (
+            "Instagram rejected the video after upload and asked for a re-upload. "
+            "Crossposter retried once; try again later or use a shorter standard MP4/Reel video."
+        )
+
     if len(text) > 240:
         text = f"{text[:237]}..."
 
@@ -90,6 +99,37 @@ def media_code(media):
         return media.get("code")
 
     return None
+
+
+def is_media_reupload_error(exc):
+    text = f"{exc.__class__.__name__} {str(exc)}".lower()
+
+    return "media_needs_reupload" in text
+
+
+def remove_generated_thumbnail(media_path):
+    Path(f"{media_path}.jpg").unlink(missing_ok=True)
+
+
+def upload_media(client, args, media_path):
+    if args.kind == "image":
+        return client.photo_upload(media_path, caption=args.caption)
+
+    last_error = None
+
+    for attempt in range(MAX_MEDIA_UPLOAD_ATTEMPTS):
+        try:
+            remove_generated_thumbnail(media_path)
+            return client.clip_upload(media_path, caption=args.caption, configure_timeout=6)
+        except Exception as exc:
+            last_error = exc
+
+            if not is_media_reupload_error(exc) or attempt + 1 >= MAX_MEDIA_UPLOAD_ATTEMPTS:
+                raise
+
+            time.sleep(4)
+
+    raise last_error
 
 
 def main():
@@ -132,10 +172,7 @@ def main():
         client.login(args.username, args.password, **login_kwargs)
         client.dump_settings(str(session_path))
 
-        if args.kind == "image":
-            media = client.photo_upload(media_path, caption=args.caption)
-        else:
-            media = client.video_upload(media_path, caption=args.caption)
+        media = upload_media(client, args, media_path)
 
         client.dump_settings(str(session_path))
     except Exception as exc:
@@ -147,7 +184,11 @@ def main():
         {
             "ok": True,
             "message": f"Published with {args.kind}",
-            **({"url": f"https://www.instagram.com/p/{code}/"} if code else {}),
+            **(
+                {"url": f"https://www.instagram.com/{'reel' if args.kind == 'video' else 'p'}/{code}/"}
+                if code
+                else {}
+            ),
             **({"code": code} if code else {}),
         }
     )
