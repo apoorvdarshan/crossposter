@@ -806,8 +806,8 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
   const headless = peerlistHeadlessEnabled(optionalEnv("PEERLIST_CHROME_HEADLESS", profileId));
   const chromeProfile = optionalEnv("PEERLIST_CHROME_PROFILE", profileId)?.trim() || "Default";
 
-  if (!text) {
-    throw new Error("Peerlist requires post text");
+  if (!text && !ctx.media) {
+    throw new Error("Peerlist requires post text or image/GIF media. Title alone cannot be posted.");
   }
 
   if (ctx.media) {

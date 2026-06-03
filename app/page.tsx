@@ -1467,14 +1467,20 @@ export default function Home() {
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
+    const isPeerlistOnly = publishPlatforms.length === 1 && publishPlatforms[0] === "peerlist";
+    const hasPeerlistMediaContent = isPeerlistOnly && Boolean(mediaFile);
 
     if (hasHackerNews && !title.trim()) {
       setError("Hacker News requires a title.");
       return;
     }
 
-    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
-      setError("Write post text before publishing, or select only Hacker News and add a title.");
+    if (!text.trim() && !(isHackerNewsOnly && title.trim()) && !hasPeerlistMediaContent) {
+      setError(
+        isPeerlistOnly && title.trim()
+          ? "Peerlist cannot publish title only. Add post text or upload an image/GIF."
+          : "Write post text before publishing, upload media for Peerlist only, or select only Hacker News and add a title."
+      );
       return;
     }
 
@@ -1572,14 +1578,20 @@ export default function Home() {
 
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
+    const isPeerlistOnly = publishPlatforms.length === 1 && publishPlatforms[0] === "peerlist";
+    const hasPeerlistMediaContent = isPeerlistOnly && Boolean(mediaFile);
 
     if (hasHackerNews && !title.trim()) {
       setError("Hacker News requires a title.");
       return;
     }
 
-    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
-      setError("Write post text before scheduling, or select only Hacker News and add a title.");
+    if (!text.trim() && !(isHackerNewsOnly && title.trim()) && !hasPeerlistMediaContent) {
+      setError(
+        isPeerlistOnly && title.trim()
+          ? "Peerlist cannot schedule title only. Add post text or upload an image/GIF."
+          : "Write post text before scheduling, upload media for Peerlist only, or select only Hacker News and add a title."
+      );
       return;
     }
 
@@ -1720,8 +1732,12 @@ export default function Home() {
     : null;
   const showHackerNewsLink = selectedPlatforms.includes("hackernews");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
+  const isPeerlistOnly = selectedPlatforms.length === 1 && selectedPlatforms[0] === "peerlist";
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
-  const hasRequiredPostText = Boolean(text.trim()) || (isHackerNewsOnly && Boolean(title.trim()));
+  const hasRequiredPostText =
+    Boolean(text.trim()) ||
+    (isHackerNewsOnly && Boolean(title.trim())) ||
+    (isPeerlistOnly && Boolean(mediaFile));
   const draftLimitIssues = [
     ...titleLimitIssues(selectedPlatforms, title),
     ...postLimitIssuesForTargets(selectedLimitTargets, text)
