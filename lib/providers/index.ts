@@ -4,17 +4,19 @@ import { publishHackerNews } from "@/lib/providers/hackernews";
 import { publishLinkedIn } from "@/lib/providers/linkedin";
 import { publishMastodon } from "@/lib/providers/mastodon";
 import { publishNostr } from "@/lib/providers/nostr";
+import { publishPeerlist } from "@/lib/providers/peerlist";
 import { publishX } from "@/lib/providers/x";
 import type { Platform, ProviderContext, PublishResult } from "@/lib/types";
 
 type Provider = (ctx: ProviderContext) => Promise<PublishResult>;
 
 export const providers: Record<Platform, Provider> = {
+  x: publishX,
+  linkedin: publishLinkedIn,
   bluesky: publishBluesky,
   mastodon: publishMastodon,
   devto: publishDevto,
-  linkedin: publishLinkedIn,
+  peerlist: publishPeerlist,
   hackernews: publishHackerNews,
-  x: publishX,
   nostr: publishNostr
 };

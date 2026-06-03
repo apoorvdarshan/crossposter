@@ -23,9 +23,8 @@ import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { validatePlatformConfig, type ConfigIssue } from "@/lib/config-validation";
 import {
-  appPostTextLimit,
   devtoBodyBytesLimit,
-  postLimitIssues,
+  postLimitIssuesForTargets,
   postTextLimitForPlatform,
   platformLabel,
   textBytes,
@@ -53,6 +52,22 @@ const channels: Array<{
   media: string;
 }> = [
   {
+    id: "x",
+    label: "X / Twitter",
+    note: "Unofficial bird post",
+    uses: ["Post", "Media"],
+    target: "Uses the active X / Twitter bird profile from Settings.",
+    media: "Local images, GIFs, and MP4 video are passed to bird."
+  },
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    note: "Profile or page post",
+    uses: ["Post", "Media"],
+    target: "Uses the active LinkedIn profile or Page from Settings.",
+    media: "Local images and MP4 video are supported."
+  },
+  {
     id: "bluesky",
     label: "Bluesky",
     note: "Text and images",
@@ -77,20 +92,12 @@ const channels: Array<{
     media: "Local media is ignored; publish without cover image."
   },
   {
-    id: "linkedin",
-    label: "LinkedIn",
-    note: "Profile or page post",
-    uses: ["Post", "Media"],
-    target: "Uses the active LinkedIn profile or Page from Settings.",
-    media: "Local images and MP4 video are supported."
-  },
-  {
-    id: "x",
-    label: "X / Twitter",
-    note: "Unofficial bird post",
-    uses: ["Post", "Media"],
-    target: "Uses the active X / Twitter bird profile from Settings.",
-    media: "Local images, GIFs, and MP4 video are passed to bird."
+    id: "peerlist",
+    label: "Peerlist",
+    note: "Scroll post",
+    uses: ["Title", "Post", "Media"],
+    target: "Uses your local Chrome Peerlist session from Settings.",
+    media: "Local images and GIFs are supported; video is not posted."
   },
   {
     id: "hackernews",
@@ -116,6 +123,7 @@ type ChannelTarget = ChannelDefinition & {
   targetId: string;
   profileId: string;
   profileLabel: string;
+  profileValues: Record<string, string>;
   ready: boolean;
   issues: ConfigIssue[];
 };
@@ -136,7 +144,10 @@ const envLabels: Record<string, string> = {
   X_BIRD_COOKIE_SOURCE: "cookie source",
   X_BIRD_CHROME_PROFILE: "Chrome profile",
   X_BIRD_FIREFOX_PROFILE: "Firefox profile",
-  X_BIRD_TIMEOUT_MS: "timeout"
+  X_BIRD_TIMEOUT_MS: "timeout",
+  X_PREMIUM_LONG_POSTS: "Premium toggle",
+  PEERLIST_CONTEXT: "context",
+  PEERLIST_CHROME_PROFILE: "Chrome profile"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -219,6 +230,7 @@ const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const xVideoTypes = new Set(["video/mp4"]);
+const peerlistImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const linkedInMinVideoSize = 75 * 1024;
 const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const linkedInVideoTargetSize = 490 * 1024 * 1024;
@@ -602,6 +614,20 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
     }
   }
 
+  if (platforms.includes("peerlist")) {
+    if (kind !== "image") {
+      issues.push({
+        id: "peerlist-kind",
+        message: `Peerlist can upload images and GIFs only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (!peerlistImageTypes.has(file.type)) {
+      issues.push({
+        id: "peerlist-type",
+        message: `Peerlist supports JPG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`
+      });
+    }
+  }
+
   if (platforms.includes("mastodon")) {
     if (kind === "image" && file.size > mastodonImageSizeLimit) {
       issues.push({
@@ -906,6 +932,7 @@ export default function Home() {
             targetId: `${channel.id}:${profile.id}`,
             profileId: profile.id,
             profileLabel: profile.label,
+            profileValues: profile.values,
             ready: issues.length === 0,
             issues
           };
@@ -957,6 +984,15 @@ export default function Home() {
 
   const selectedPlatforms = useMemo(
     () => Array.from(new Set(selectedTargets.map((target) => target.id))),
+    [selectedTargets]
+  );
+  const selectedLimitTargets = useMemo(
+    () =>
+      selectedTargets.map((target) => ({
+        platform: target.id,
+        profileLabel: target.profileLabel,
+        xPremium: target.id === "x" && target.profileValues.X_PREMIUM_LONG_POSTS === "true"
+      })),
     [selectedTargets]
   );
 
@@ -1388,7 +1424,7 @@ export default function Home() {
 
     const limitIssues = [
       ...titleLimitIssues(publishPlatforms, title),
-      ...postLimitIssues(publishPlatforms, text)
+      ...postLimitIssuesForTargets(selectedLimitTargets, text)
     ];
 
     if (limitIssues.length > 0) {
@@ -1489,7 +1525,7 @@ export default function Home() {
 
     const limitIssues = [
       ...titleLimitIssues(publishPlatforms, title),
-      ...postLimitIssues(publishPlatforms, text)
+      ...postLimitIssuesForTargets(selectedLimitTargets, text)
     ];
 
     if (limitIssues.length > 0) {
@@ -1566,32 +1602,28 @@ export default function Home() {
     })
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const titleLimitWarnings = titleLimitHints.filter((hint) => hint.isWarning);
-  const postLimitHints = [
-    {
-      id: "app-post",
-      label: "Crossposter",
-      length: postLength,
-      limit: appPostTextLimit,
-      isWarning: postLength > appPostTextLimit
-    },
-    ...selectedPlatforms
-      .map((platform) => {
-        const limit = postTextLimitForPlatform(platform);
+  const postLimitHints = selectedLimitTargets
+    .map((target) => {
+      const limit = postTextLimitForPlatform(target.platform, { xPremium: target.xPremium });
 
-        if (!limit) {
-          return null;
-        }
+      if (!limit) {
+        return null;
+      }
 
-        return {
-          id: `${platform}-post`,
-          label: platformLabel(platform),
-          length: postLength,
-          limit,
-          isWarning: postLength > limit
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => Boolean(item))
-  ];
+      const label =
+        target.platform === "x" && target.profileLabel
+          ? `${platformLabel(target.platform)} · ${target.profileLabel}`
+          : platformLabel(target.platform);
+
+      return {
+        id: `${target.platform}:${target.profileLabel || "default"}-post`,
+        label,
+        length: postLength,
+        limit,
+        isWarning: postLength > limit
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const postLimitWarnings = postLimitHints.filter((hint) => hint.isWarning);
   const devtoBodyLimitWarning = selectedPlatforms.includes("devto") && postBytes > devtoBodyBytesLimit
     ? {
@@ -1608,7 +1640,7 @@ export default function Home() {
   const hasRequiredPostText = Boolean(text.trim()) || (isHackerNewsOnly && Boolean(title.trim()));
   const draftLimitIssues = [
     ...titleLimitIssues(selectedPlatforms, title),
-    ...postLimitIssues(selectedPlatforms, text)
+    ...postLimitIssuesForTargets(selectedLimitTargets, text)
   ];
   const hasLimitIssues = draftLimitIssues.length > 0;
   const canSubmitDraft =
@@ -1832,8 +1864,8 @@ export default function Home() {
               </h2>
             </div>
             <div className="compose-head-actions">
-              <span className={`counter ${postLength > appPostTextLimit ? "is-warning" : ""}`}>
-                {postLength}/{appPostTextLimit}
+              <span className="counter">
+                {postLength} chars
               </span>
               <button
                 className="primary compact-button"

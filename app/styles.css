@@ -1992,6 +1992,22 @@ a.history-platform.ok:hover {
   border-color: var(--danger-line);
 }
 
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.check-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
 .secret-input {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 42px;

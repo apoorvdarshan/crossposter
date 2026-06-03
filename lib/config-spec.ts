@@ -165,6 +165,27 @@ export const configFields: ConfigField[] = [
     help: "Timeout for bird requests in milliseconds.",
     defaultValue: "60000",
     showFor: ["x"]
+  },
+  {
+    name: "X_PREMIUM_LONG_POSTS",
+    label: "X Premium long posts",
+    help: "Set true only for X Premium accounts. False uses the normal 280 character limit; true uses 25,000.",
+    defaultValue: "false",
+    showFor: ["x"]
+  },
+  {
+    name: "PEERLIST_CONTEXT",
+    label: "Peerlist context",
+    help: "Scroll context such as #show, #thought, #ask, or #book. Crossposter defaults to #show.",
+    defaultValue: "#show",
+    showFor: ["peerlist"]
+  },
+  {
+    name: "PEERLIST_CHROME_PROFILE",
+    label: "Peerlist Chrome profile",
+    help: "Chrome profile folder to read Peerlist cookies from, usually Default.",
+    defaultValue: "Default",
+    showFor: ["peerlist"]
   }
 ];
 
@@ -177,12 +198,13 @@ export const requiredConfigByPlatform = configFields.reduce(
     return acc;
   },
   {
+    x: [],
+    linkedin: [],
     bluesky: [],
     mastodon: [],
     devto: [],
-    linkedin: [],
+    peerlist: [],
     hackernews: [],
-    x: [],
     nostr: []
   } as Record<Platform, string[]>
 );

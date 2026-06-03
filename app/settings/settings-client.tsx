@@ -84,11 +84,12 @@ type SetupGuide = {
 };
 
 const platforms: Array<{ id: Platform; label: string }> = [
+  { id: "x", label: "X / Twitter" },
+  { id: "linkedin", label: "LinkedIn" },
   { id: "bluesky", label: "Bluesky" },
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
-  { id: "linkedin", label: "LinkedIn" },
-  { id: "x", label: "X / Twitter" },
+  { id: "peerlist", label: "Peerlist" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" }
 ];
@@ -205,6 +206,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Leave X bird command as bird unless you need an absolute path such as /opt/homebrew/bin/bird.",
       "Optionally set cookie source to chrome, firefox, or safari.",
       "Optionally set Chrome or Firefox profile names if bird check needs them.",
+      "Turn on X Premium long posts only for Premium accounts; otherwise Crossposter uses the normal 280 character limit.",
       "Save config, then select X / Twitter on the Dashboard.",
       "Crossposter publishes user-triggered posts only. X may still limit or lock accounts for spammy or automated-looking behavior.",
       "Local images, GIFs, and MP4 video are passed to bird as media attachments."
@@ -252,6 +254,23 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Leave Link empty when you want a discussion/text post.",
       "Local media upload is ignored.",
       "If Hacker News requires CAPTCHA or browser validation, Crossposter will fail with a message and you must submit manually."
+    ]
+  },
+  peerlist: {
+    title: "Peerlist setup",
+    intro:
+      "Crossposter posts to Peerlist Scroll through a short-lived local Chrome session using your existing Peerlist login.",
+    links: [
+      { label: "Peerlist Scroll", href: "https://peerlist.io/scroll" },
+      { label: "Scroll posting guide", href: "https://help.peerlist.io/individual/scroll/what-can-i-post-on-peerlist-scroll" }
+    ],
+    steps: [
+      "Log in to Peerlist in Chrome on this Mac.",
+      "Add a Peerlist profile here.",
+      "Keep Peerlist context as #show unless you want another Scroll context.",
+      "Save config, then select Peerlist on the Dashboard.",
+      "Write the link inside Post text if you want to share one. Peerlist does not use the Dashboard Link field.",
+      "Images and GIFs can be uploaded. Videos are not posted."
     ]
   }
 };
@@ -1016,11 +1035,46 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               </label>
               {providerFields.map((field) => {
                 const fieldValue = profile.values[field.name] || field.defaultValue || "";
+                const isBooleanField = field.name === "X_PREMIUM_LONG_POSTS";
                 const issue = validateConfigField(
                   field,
                   fieldValue,
                   Boolean(field.requiredFor?.includes(platform.id))
                 );
+
+                if (isBooleanField) {
+                  return (
+                    <label
+                      className={`config-field ${issue ? "is-invalid" : ""}`}
+                      key={field.name}
+                    >
+                      <span>{field.label}</span>
+                      <span className="check-row">
+                        <input
+                          checked={fieldValue === "true"}
+                          onChange={(event) =>
+                            updateProfile(platform.id, profile.id, {
+                              ...profile,
+                              values: {
+                                ...profile.values,
+                                [field.name]: event.target.checked ? "true" : "false"
+                              }
+                            })
+                          }
+                          type="checkbox"
+                        />
+                        <span>
+                          {fieldValue === "true"
+                            ? "Premium long posts"
+                            : "Standard 280 characters"}
+                        </span>
+                      </span>
+                      <span className={`field-hint ${issue ? "is-warning" : ""}`}>
+                        {issue?.message || field.help}
+                      </span>
+                    </label>
+                  );
+                }
 
                 return (
                   <label

@@ -40,14 +40,16 @@ const fieldDefaults = new Map(
     .map((field) => [field.name, field.defaultValue as string])
 );
 const platforms: Platform[] = [
+  "x",
+  "linkedin",
   "bluesky",
   "mastodon",
   "devto",
-  "linkedin",
+  "peerlist",
   "hackernews",
-  "x",
   "nostr"
 ];
+const storedPostTextLimit = 100_000;
 const fieldPlatform = new Map<string, Platform>(
   configFields.flatMap((field) =>
     [...(field.requiredFor || []), ...(field.showFor || [])].map(
@@ -180,7 +182,7 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
 
   return {
     title: stringValue(record.title, 300),
-    text: stringValue(record.text, 12000),
+    text: stringValue(record.text, storedPostTextLimit),
     linkUrl: stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048),
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
@@ -259,7 +261,7 @@ function normalizePublishedPost(value: unknown): PublishedPost | null {
     ...(typeof record.title === "string" && record.title
       ? { title: record.title.slice(0, 300) }
       : {}),
-    text: stringValue(record.text, 12000),
+    text: stringValue(record.text, storedPostTextLimit),
     ...(stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048)
       ? { linkUrl: stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048) }
       : {}),
@@ -300,7 +302,7 @@ function normalizeScheduledPost(value: unknown): ScheduledPost | null {
   const scheduledFor = stringValue(record.scheduledFor, 40);
   const scheduledAt = Date.parse(scheduledFor);
   const title = stringValue(record.title, 300);
-  const text = stringValue(record.text, 12000);
+  const text = stringValue(record.text, storedPostTextLimit);
   const isHackerNewsOnly = platforms.length === 1 && platforms[0] === "hackernews";
   const results = Array.isArray(record.results)
     ? record.results.map(normalizePublishResult).filter((item): item is PublishResult => Boolean(item))

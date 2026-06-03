@@ -1,21 +1,22 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getScheduledPosts, upsertScheduledPost } from "@/lib/local-config";
+import { getConfigValue, getScheduledPosts, upsertScheduledPost } from "@/lib/local-config";
 import { getUploadedMedia } from "@/lib/media-store";
-import { postLimitIssues, titleLimitIssues } from "@/lib/platform-limits";
+import { postLimitIssuesForTargets, titleLimitIssues } from "@/lib/platform-limits";
 import { ensureSchedulerStarted, runScheduledTick } from "@/lib/scheduler";
 import type { Platform, PublishedMedia, PublishTarget, ScheduledPost } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 const platformSchema = z.enum([
+  "x",
+  "linkedin",
   "bluesky",
   "mastodon",
   "devto",
-  "linkedin",
+  "peerlist",
   "hackernews",
-  "x",
   "nostr"
 ]);
 const targetSchema = z.object({
@@ -81,10 +82,30 @@ function isHackerNewsOnly(value: {
   return platforms.length === 1 && platforms[0] === "hackernews";
 }
 
+function defaultTargets(value: {
+  platforms?: Platform[];
+  targets?: PublishTarget[];
+}): PublishTarget[] {
+  return value.targets?.length
+    ? value.targets
+    : (value.platforms || []).map((platform) => ({
+        id: platform,
+        platform
+      }));
+}
+
+function targetLimitInput(target: PublishTarget) {
+  return {
+    platform: target.platform,
+    profileLabel: target.profileLabel,
+    xPremium: target.platform === "x" && getConfigValue("X_PREMIUM_LONG_POSTS", target.profileId) === "true"
+  };
+}
+
 const requestSchema = z
   .object({
     title: z.string().max(300).optional(),
-    text: z.string().max(12000).default(""),
+    text: z.string().max(100_000).default(""),
     linkUrl: optionalUrlSchema,
     mediaId: z.string().max(80).optional().or(z.literal("")),
     platforms: z.array(platformSchema).max(30).optional(),
@@ -105,9 +126,10 @@ const requestSchema = z
   })
   .superRefine((value, ctx) => {
     const platforms = requestedPlatforms(value);
+    const targets = defaultTargets(value);
     const issues = [
       ...titleLimitIssues(platforms, value.title || ""),
-      ...postLimitIssues(platforms, value.text)
+      ...postLimitIssuesForTargets(targets.map(targetLimitInput), value.text)
     ];
 
     for (const issue of issues) {

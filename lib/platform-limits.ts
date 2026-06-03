@@ -1,20 +1,22 @@
 import type { Platform } from "@/lib/types";
 
-export const appPostTextLimit = 12_000;
 export const blueskyPostTextLimit = 300;
 export const linkedInPostTextLimit = 3_000;
-export const xPostTextLimit = 280;
+export const peerlistPostTextLimit = 2_000;
+export const xFreePostTextLimit = 280;
+export const xPremiumPostTextLimit = 25_000;
 export const hackerNewsTitleLimit = 80;
 export const devtoTitleLimit = 128;
 export const devtoBodyBytesLimit = 800 * 1024;
 
 const platformLabels: Record<Platform, string> = {
+  x: "X / Twitter",
+  linkedin: "LinkedIn",
   bluesky: "Bluesky",
   mastodon: "Mastodon",
   devto: "Dev.to",
-  linkedin: "LinkedIn",
+  peerlist: "Peerlist",
   hackernews: "Hacker News",
-  x: "X / Twitter",
   nostr: "Nostr"
 };
 
@@ -65,7 +67,14 @@ export function titleLimitForPlatform(platform: Platform): number | undefined {
   return undefined;
 }
 
-export function postTextLimitForPlatform(platform: Platform): number | undefined {
+export function xPostTextLimit(isPremium: boolean): number {
+  return isPremium ? xPremiumPostTextLimit : xFreePostTextLimit;
+}
+
+export function postTextLimitForPlatform(
+  platform: Platform,
+  options?: { xPremium?: boolean }
+): number | undefined {
   if (platform === "bluesky") {
     return blueskyPostTextLimit;
   }
@@ -74,8 +83,12 @@ export function postTextLimitForPlatform(platform: Platform): number | undefined
     return linkedInPostTextLimit;
   }
 
+  if (platform === "peerlist") {
+    return peerlistPostTextLimit;
+  }
+
   if (platform === "x") {
-    return xPostTextLimit;
+    return xPostTextLimit(Boolean(options?.xPremium));
   }
 
   return undefined;
@@ -110,31 +123,53 @@ export function titleLimitIssues(platforms: Platform[], title: string): DraftLim
 }
 
 export function postLimitIssues(platforms: Platform[], text: string): DraftLimitIssue[] {
+  return postLimitIssuesForTargets(
+    Array.from(new Set(platforms)).map((platform) => ({ platform })),
+    text
+  );
+}
+
+export function postLimitIssuesForTargets(
+  targets: Array<{ platform: Platform; profileLabel?: string; xPremium?: boolean }>,
+  text: string
+): DraftLimitIssue[] {
   const textValue = text.trim();
   const length = textLength(textValue);
   const issues: DraftLimitIssue[] = [];
+  const seen = new Set<string>();
 
-  if (length > appPostTextLimit) {
-    issues.push({
-      id: "app-post-limit",
-      field: "text",
-      message: `Post is ${length}/${appPostTextLimit} characters. Shorten it before publishing.`
-    });
-  }
+  for (const target of targets) {
+    const key =
+      target.platform === "x"
+        ? `${target.platform}:${target.xPremium ? "premium" : "free"}`
+        : target.platform;
 
-  for (const platform of Array.from(new Set(platforms))) {
-    const limit = postTextLimitForPlatform(platform);
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+
+    const limit = postTextLimitForPlatform(target.platform, { xPremium: target.xPremium });
 
     if (limit && length > limit) {
+      const label =
+        target.platform === "x" && target.profileLabel
+          ? `${platformLabel(target.platform)} · ${target.profileLabel}`
+          : platformLabel(target.platform);
+
       issues.push({
-        id: `${platform}-post-limit`,
+        id: `${key}-post-limit`,
         field: "text",
-        message: `${platformLabel(platform)} post is ${length}/${limit} characters. Shorten the post or deselect ${platformLabel(platform)}.`
+        message: `${label} post is ${length}/${limit} characters. Shorten the post or deselect ${label}.`
       });
     }
   }
 
-  if (platforms.includes("devto") && textBytes(textValue) > devtoBodyBytesLimit) {
+  if (
+    targets.some((target) => target.platform === "devto") &&
+    textBytes(textValue) > devtoBodyBytesLimit
+  ) {
     issues.push({
       id: "devto-body-limit",
       field: "text",

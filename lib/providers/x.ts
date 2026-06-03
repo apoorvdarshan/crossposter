@@ -86,6 +86,10 @@ function birdAuthArgs(profileId: string | undefined): string[] {
   return args;
 }
 
+function isPremiumLongPosts(profileId: string | undefined): boolean {
+  return optionalEnv("X_PREMIUM_LONG_POSTS", profileId)?.trim() === "true";
+}
+
 function mediaArgs(ctx: ProviderContext): string[] {
   if (!ctx.media) {
     return [];
@@ -151,13 +155,14 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
   const profileId = ctx.target?.profileId;
   const text = compactText([ctx.text]);
   const length = textLength(text);
+  const limit = xPostTextLimit(isPremiumLongPosts(profileId));
 
   if (!text) {
     throw new Error("X requires post text.");
   }
 
-  if (length > xPostTextLimit) {
-    throw new Error(`X allows ${xPostTextLimit} characters; this post is ${length}.`);
+  if (length > limit) {
+    throw new Error(`X allows ${limit} characters for this profile; this post is ${length}.`);
   }
 
   const command = birdCommand(profileId);

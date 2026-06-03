@@ -1,10 +1,11 @@
 export type Platform =
+  | "x"
+  | "linkedin"
   | "bluesky"
   | "mastodon"
   | "devto"
-  | "linkedin"
+  | "peerlist"
   | "hackernews"
-  | "x"
   | "nostr";
 
 export type PublishPayload = {
