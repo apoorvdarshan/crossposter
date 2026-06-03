@@ -51,14 +51,6 @@ function peerlistHeadlessEnabled(value: string | undefined): boolean {
   return value?.trim() === "true";
 }
 
-function peerlistOffscreenEnabled(value: string | undefined): boolean {
-  return value?.trim() === "true";
-}
-
-function peerlistUseRealProfile(value: string | undefined): boolean {
-  return value?.trim() === "true";
-}
-
 function chromeRoot(): string {
   return path.join(os.homedir(), "Library", "Application Support", "Google", "Chrome");
 }
@@ -324,32 +316,18 @@ function createCdpClient(webSocketUrl: string): Promise<CdpClient> {
   });
 }
 
-async function startPeerlistChrome({
-  headless,
-  offscreen,
-  profileLabel,
-  useRealProfile
-}: {
-  headless: boolean;
-  offscreen: boolean;
-  profileLabel: string;
-  useRealProfile: boolean;
-}) {
+async function startPeerlistChrome({ headless }: { headless: boolean }) {
   const port = await freePort();
-  const userDataDir = useRealProfile
-    ? chromeRoot()
-    : mkdtempSync(path.join(os.tmpdir(), "crossposter-peerlist-chrome-"));
+  const userDataDir = mkdtempSync(path.join(os.tmpdir(), "crossposter-peerlist-chrome-"));
   const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
   const chromeArgs = [
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${userDataDir}`,
-    ...(useRealProfile ? [`--profile-directory=${profileLabel}`] : []),
     "--no-first-run",
     "--no-default-browser-check",
     "--disable-background-networking",
     "--window-size=1200,900",
     ...(headless ? ["--headless=new", "--disable-gpu"] : []),
-    ...(!headless && offscreen ? ["--start-minimized", "--window-position=-32000,-32000"] : []),
     "about:blank"
   ];
   const chromeProcess = spawn(
@@ -368,9 +346,7 @@ async function startPeerlistChrome({
       } catch {}
 
       await new Promise((resolve) => setTimeout(resolve, 600));
-      if (!useRealProfile) {
-        rmSync(userDataDir, { recursive: true, force: true });
-      }
+      rmSync(userDataDir, { recursive: true, force: true });
     }
   };
 }
@@ -412,37 +388,6 @@ async function waitForExpression(
   }
 
   throw new Error(timeoutMessage);
-}
-
-async function movePeerlistChromeOffscreen(client: CdpClient, offscreen: boolean) {
-  if (!offscreen) {
-    return;
-  }
-
-  try {
-    const { windowId } = await client.send<{ windowId: number }>("Browser.getWindowForTarget");
-
-    await client
-      .send("Browser.setWindowBounds", {
-        windowId,
-        bounds: {
-          windowState: "normal",
-          left: -32000,
-          top: -32000,
-          width: 1200,
-          height: 900
-        }
-      })
-      .catch(() => undefined);
-    await client
-      .send("Browser.setWindowBounds", {
-        windowId,
-        bounds: {
-          windowState: "minimized"
-        }
-      })
-      .catch(() => undefined);
-  } catch {}
 }
 
 function jsString(value: string): string {
@@ -660,8 +605,6 @@ async function publishThroughPeerlistChrome({
   mediaPath,
   profilePostsUrl: configuredProfilePostsUrl,
   headless,
-  offscreen,
-  useRealProfile,
   profileLabel
 }: {
   title: string;
@@ -670,8 +613,6 @@ async function publishThroughPeerlistChrome({
   mediaPath?: string;
   profilePostsUrl?: string;
   headless: boolean;
-  offscreen: boolean;
-  useRealProfile: boolean;
   profileLabel: string;
 }): Promise<string | undefined> {
   const cookies = readPeerlistChromeCookies(profileLabel);
@@ -681,33 +622,11 @@ async function publishThroughPeerlistChrome({
     throw new Error("Peerlist Chrome session was not found. Log in to Peerlist in Chrome, then try again.");
   }
 
-  let activeHeadless = headless;
-  let activeOffscreen = offscreen;
-  let chrome = await startPeerlistChrome({ headless, offscreen, profileLabel, useRealProfile });
+  const chrome = await startPeerlistChrome({ headless });
   let client: CdpClient | undefined;
 
   try {
-    try {
-      client = await openPeerlistChromeTab(chrome, useRealProfile ? 6_000 : 20_000);
-    } catch (error) {
-      await chrome.cleanup();
-
-      if (!useRealProfile) {
-        throw error;
-      }
-
-      chrome = await startPeerlistChrome({
-        headless: false,
-        offscreen: true,
-        profileLabel,
-        useRealProfile: false
-      });
-      activeHeadless = false;
-      activeOffscreen = true;
-      client = await openPeerlistChromeTab(chrome);
-    }
-
-    await movePeerlistChromeOffscreen(client, !activeHeadless && activeOffscreen);
+    client = await openPeerlistChromeTab(chrome);
     await client.send("Network.enable");
     await setPeerlistCookies(client, cookies);
     await client.send("Page.enable");
@@ -891,8 +810,6 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
   const context = normalizePeerlistContext(optionalEnv("PEERLIST_CONTEXT", profileId));
   const username = normalizePeerlistUsername(optionalEnv("PEERLIST_USERNAME", profileId));
   const headless = peerlistHeadlessEnabled(optionalEnv("PEERLIST_CHROME_HEADLESS", profileId));
-  const offscreen = peerlistOffscreenEnabled(optionalEnv("PEERLIST_CHROME_OFFSCREEN", profileId));
-  const useRealProfile = peerlistUseRealProfile(optionalEnv("PEERLIST_CHROME_USE_REAL_PROFILE", profileId));
   const chromeProfile = optionalEnv("PEERLIST_CHROME_PROFILE", profileId)?.trim() || "Default";
 
   if (!text && !ctx.media) {
@@ -912,8 +829,6 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
     ...(ctx.media ? { mediaPath: ctx.media.path } : {}),
     ...(username ? { profilePostsUrl: peerlistProfilePostsUrl(username) } : {}),
     headless,
-    offscreen,
-    useRealProfile,
     profileLabel: chromeProfile
   });
 

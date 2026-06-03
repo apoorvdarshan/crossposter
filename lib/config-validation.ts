@@ -154,8 +154,6 @@ function invalidReason(name: string, value: string): string | null {
         ? null
         : "must be your Peerlist username without a URL";
     case "PEERLIST_CHROME_HEADLESS":
-    case "PEERLIST_CHROME_OFFSCREEN":
-    case "PEERLIST_CHROME_USE_REAL_PROFILE":
       return value === "true" || value === "false" ? null : "must be true or false";
     case "PEERLIST_CHROME_PROFILE":
       return /^[A-Za-z0-9 _.-]{1,80}$/.test(value)
