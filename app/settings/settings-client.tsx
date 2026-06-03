@@ -221,7 +221,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       { label: "Instagram terms", href: "https://help.instagram.com/581066165581870" }
     ],
     steps: [
-      "Install instagrapi in Terminal with python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt.",
+      "Install instagrapi and video support in Terminal with ./scripts/install-instagram-deps.sh.",
       "Add one Instagram profile here for each Instagram account.",
       "Set Instagram username and password for that account. They stay in poster.config.local.json.",
       "Set Instagram session file to a unique JSON path, for example .instagram-sessions/apoorvdarshan.json.",

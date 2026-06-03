@@ -48,6 +48,12 @@ def error_message(exc):
     if name == "BadPassword":
         return "Instagram password is invalid for this profile."
 
+    if any(marker in lowered for marker in ["moviepy", "ffmpeg", "video thumbnail"]):
+        return (
+            "Instagram video upload dependencies are missing. Run "
+            "`./scripts/install-instagram-deps.sh` in Terminal, then try again."
+        )
+
     if len(text) > 240:
         text = f"{text[:237]}..."
 
@@ -102,8 +108,7 @@ def main():
                 "ok": False,
                 "message": (
                     "instagrapi is not installed. Run "
-                    "`python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt` "
-                    "in Terminal."
+                    "`./scripts/install-instagram-deps.sh` in Terminal."
                 ),
             },
             2,
