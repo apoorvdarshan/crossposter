@@ -181,6 +181,12 @@ export const configFields: ConfigField[] = [
     showFor: ["peerlist"]
   },
   {
+    name: "PEERLIST_USERNAME",
+    label: "Peerlist username",
+    help: "Your Peerlist username without @. Used to show the published profile posts link.",
+    showFor: ["peerlist"]
+  },
+  {
     name: "PEERLIST_CHROME_PROFILE",
     label: "Peerlist Chrome profile",
     help: "Chrome profile folder to read Peerlist cookies from, usually Default.",

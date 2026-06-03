@@ -149,6 +149,10 @@ function invalidReason(name: string, value: string): string | null {
       return /^#?[a-z][a-z0-9_-]{1,30}$/i.test(value)
         ? null
         : "must be a context like #show";
+    case "PEERLIST_USERNAME":
+      return /^@?[A-Za-z0-9][A-Za-z0-9_-]{1,60}$/.test(value)
+        ? null
+        : "must be your Peerlist username without a URL";
     case "PEERLIST_CHROME_PROFILE":
       return /^[A-Za-z0-9 _.-]{1,80}$/.test(value)
         ? null

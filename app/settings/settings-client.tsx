@@ -267,6 +267,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     steps: [
       "Log in to Peerlist in Chrome on this Mac.",
       "Add a Peerlist profile here.",
+      "Add your Peerlist username without @ so published output links to your posts page.",
       "Keep Peerlist context as #show unless you want another Scroll context.",
       "Save config, then select Peerlist on the Dashboard.",
       "Write the link inside Post text if you want to share one. Peerlist does not use the Dashboard Link field.",

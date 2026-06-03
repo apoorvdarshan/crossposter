@@ -35,6 +35,18 @@ function normalizePeerlistContext(value: string | undefined): string {
   return context.startsWith("#") ? context : `#${context}`;
 }
 
+function normalizePeerlistUsername(value: string | undefined): string | undefined {
+  const username = value?.trim().replace(/^@/, "");
+
+  return username && /^[A-Za-z0-9][A-Za-z0-9_-]{1,60}$/.test(username) ? username : undefined;
+}
+
+function peerlistProfilePostsUrl(username: string | undefined): string | undefined {
+  const normalized = normalizePeerlistUsername(username);
+
+  return normalized ? `${peerlistBaseUrl}/${normalized}/posts` : undefined;
+}
+
 function chromeRoot(): string {
   return path.join(os.homedir(), "Library", "Application Support", "Google", "Chrome");
 }
@@ -517,6 +529,7 @@ async function readPeerlistProfilePostsUrl(client: CdpClient): Promise<string | 
         const reserved = new Set([
           "about",
           "advertise",
+          "ads",
           "articles",
           "bookmarks",
           "companies",
@@ -573,12 +586,14 @@ async function publishThroughPeerlistChrome({
   text,
   context,
   mediaPath,
+  profilePostsUrl: configuredProfilePostsUrl,
   profileLabel
 }: {
   title: string;
   text: string;
   context: string;
   mediaPath?: string;
+  profilePostsUrl?: string;
   profileLabel: string;
 }): Promise<string | undefined> {
   const cookies = readPeerlistChromeCookies(profileLabel);
@@ -658,7 +673,7 @@ async function publishThroughPeerlistChrome({
       `
     });
 
-    let profilePostsUrl = await readPeerlistProfilePostsUrl(client);
+    let profilePostsUrl = configuredProfilePostsUrl || await readPeerlistProfilePostsUrl(client);
     let previousMediaPreviewCount = 0;
 
     if (mediaPath) {
@@ -689,7 +704,7 @@ async function publishThroughPeerlistChrome({
       mediaPath ? 90_000 : 30_000,
       "Peerlist did not confirm the post. Check Peerlist in Chrome before trying again."
     );
-    profilePostsUrl = (await readPeerlistProfilePostsUrl(client)) || profilePostsUrl;
+    profilePostsUrl = configuredProfilePostsUrl || (await readPeerlistProfilePostsUrl(client)) || profilePostsUrl;
 
     return profilePostsUrl || `${peerlistBaseUrl}/scroll`;
   } finally {
@@ -703,6 +718,7 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
   const title = ctx.title?.trim() || "";
   const text = compactText([ctx.text]);
   const context = normalizePeerlistContext(optionalEnv("PEERLIST_CONTEXT", profileId));
+  const username = normalizePeerlistUsername(optionalEnv("PEERLIST_USERNAME", profileId));
   const chromeProfile = optionalEnv("PEERLIST_CHROME_PROFILE", profileId)?.trim() || "Default";
 
   if (!text) {
@@ -720,6 +736,7 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
     text,
     context,
     ...(ctx.media ? { mediaPath: ctx.media.path } : {}),
+    ...(username ? { profilePostsUrl: peerlistProfilePostsUrl(username) } : {}),
     profileLabel: chromeProfile
   });
 
