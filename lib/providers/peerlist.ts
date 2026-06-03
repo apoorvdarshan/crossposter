@@ -375,6 +375,17 @@ async function startPeerlistChrome({
   };
 }
 
+type PeerlistChrome = Awaited<ReturnType<typeof startPeerlistChrome>>;
+
+async function openPeerlistChromeTab(chrome: PeerlistChrome, timeoutMs = 20_000): Promise<CdpClient> {
+  await waitJson(`http://127.0.0.1:${chrome.port}/json/version`, timeoutMs);
+  const tab = await fetch(`http://127.0.0.1:${chrome.port}/json/new?about:blank`, {
+    method: "PUT"
+  }).then((response) => response.json() as Promise<{ webSocketDebuggerUrl: string }>);
+
+  return createCdpClient(tab.webSocketDebuggerUrl);
+}
+
 async function waitForExpression(
   client: CdpClient,
   expression: string,
@@ -670,17 +681,33 @@ async function publishThroughPeerlistChrome({
     throw new Error("Peerlist Chrome session was not found. Log in to Peerlist in Chrome, then try again.");
   }
 
-  const chrome = await startPeerlistChrome({ headless, offscreen, profileLabel, useRealProfile });
+  let activeHeadless = headless;
+  let activeOffscreen = offscreen;
+  let chrome = await startPeerlistChrome({ headless, offscreen, profileLabel, useRealProfile });
   let client: CdpClient | undefined;
 
   try {
-    await waitJson(`http://127.0.0.1:${chrome.port}/json/version`);
-    const tab = await fetch(`http://127.0.0.1:${chrome.port}/json/new?about:blank`, {
-      method: "PUT"
-    }).then((response) => response.json() as Promise<{ webSocketDebuggerUrl: string }>);
+    try {
+      client = await openPeerlistChromeTab(chrome, useRealProfile ? 6_000 : 20_000);
+    } catch (error) {
+      await chrome.cleanup();
 
-    client = await createCdpClient(tab.webSocketDebuggerUrl);
-    await movePeerlistChromeOffscreen(client, !headless && offscreen);
+      if (!useRealProfile) {
+        throw error;
+      }
+
+      chrome = await startPeerlistChrome({
+        headless: false,
+        offscreen: true,
+        profileLabel,
+        useRealProfile: false
+      });
+      activeHeadless = false;
+      activeOffscreen = true;
+      client = await openPeerlistChromeTab(chrome);
+    }
+
+    await movePeerlistChromeOffscreen(client, !activeHeadless && activeOffscreen);
     await client.send("Network.enable");
     await setPeerlistCookies(client, cookies);
     await client.send("Page.enable");
