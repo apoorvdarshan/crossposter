@@ -268,7 +268,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Log in to Peerlist in Chrome on this Mac.",
       "Add a Peerlist profile here.",
       "Add your Peerlist username without @ so published output links to your posts page.",
-      "Set Peerlist headless Chrome to true if you do not want the automation window to appear.",
+      "Use offscreen Chrome if you want normal Chrome automation without keeping the window on screen.",
       "Keep Peerlist context as #show unless you want another Scroll context.",
       "Save config, then select Peerlist on the Dashboard.",
       "Write the link inside Post text if you want to share one. Peerlist does not use the Dashboard Link field.",

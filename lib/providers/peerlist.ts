@@ -51,6 +51,10 @@ function peerlistHeadlessEnabled(value: string | undefined): boolean {
   return value?.trim() === "true";
 }
 
+function peerlistOffscreenEnabled(value: string | undefined): boolean {
+  return value?.trim() === "true";
+}
+
 function chromeRoot(): string {
   return path.join(os.homedir(), "Library", "Application Support", "Google", "Chrome");
 }
@@ -316,7 +320,13 @@ function createCdpClient(webSocketUrl: string): Promise<CdpClient> {
   });
 }
 
-async function startPeerlistChrome({ headless }: { headless: boolean }) {
+async function startPeerlistChrome({
+  headless,
+  offscreen
+}: {
+  headless: boolean;
+  offscreen: boolean;
+}) {
   const port = await freePort();
   const userDataDir = mkdtempSync(path.join(os.tmpdir(), "crossposter-peerlist-chrome-"));
   const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -328,6 +338,7 @@ async function startPeerlistChrome({ headless }: { headless: boolean }) {
     "--disable-background-networking",
     "--window-size=1200,900",
     ...(headless ? ["--headless=new", "--disable-gpu"] : []),
+    ...(!headless && offscreen ? ["--start-minimized", "--window-position=-32000,-32000"] : []),
     "about:blank"
   ];
   const chromeProcess = spawn(
@@ -594,6 +605,7 @@ async function publishThroughPeerlistChrome({
   mediaPath,
   profilePostsUrl: configuredProfilePostsUrl,
   headless,
+  offscreen,
   profileLabel
 }: {
   title: string;
@@ -602,6 +614,7 @@ async function publishThroughPeerlistChrome({
   mediaPath?: string;
   profilePostsUrl?: string;
   headless: boolean;
+  offscreen: boolean;
   profileLabel: string;
 }): Promise<string | undefined> {
   const cookies = readPeerlistChromeCookies(profileLabel);
@@ -611,7 +624,7 @@ async function publishThroughPeerlistChrome({
     throw new Error("Peerlist Chrome session was not found. Log in to Peerlist in Chrome, then try again.");
   }
 
-  const chrome = await startPeerlistChrome({ headless });
+  const chrome = await startPeerlistChrome({ headless, offscreen });
   let client: CdpClient | undefined;
 
   try {
@@ -804,6 +817,7 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
   const context = normalizePeerlistContext(optionalEnv("PEERLIST_CONTEXT", profileId));
   const username = normalizePeerlistUsername(optionalEnv("PEERLIST_USERNAME", profileId));
   const headless = peerlistHeadlessEnabled(optionalEnv("PEERLIST_CHROME_HEADLESS", profileId));
+  const offscreen = peerlistOffscreenEnabled(optionalEnv("PEERLIST_CHROME_OFFSCREEN", profileId));
   const chromeProfile = optionalEnv("PEERLIST_CHROME_PROFILE", profileId)?.trim() || "Default";
 
   if (!text && !ctx.media) {
@@ -823,6 +837,7 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
     ...(ctx.media ? { mediaPath: ctx.media.path } : {}),
     ...(username ? { profilePostsUrl: peerlistProfilePostsUrl(username) } : {}),
     headless,
+    offscreen,
     profileLabel: chromeProfile
   });
 

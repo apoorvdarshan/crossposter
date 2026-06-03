@@ -199,6 +199,13 @@ export const configFields: ConfigField[] = [
     help: "Set true to run the short-lived Peerlist automation Chrome without showing a window.",
     defaultValue: "false",
     showFor: ["peerlist"]
+  },
+  {
+    name: "PEERLIST_CHROME_OFFSCREEN",
+    label: "Peerlist offscreen Chrome",
+    help: "Set true to keep Peerlist automation in normal Chrome but start the window minimized and offscreen.",
+    defaultValue: "false",
+    showFor: ["peerlist"]
   }
 ];
 
