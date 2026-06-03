@@ -1807,6 +1807,13 @@ export default function Home() {
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
   const bottomActionProgress =
     actionProgress && progressPlacement === "bottom" ? actionProgress : null;
+  const publishButtonLabel = isCompressingMedia
+    ? "Compressing..."
+    : isUploadingMedia
+      ? "Uploading..."
+      : isPublishing
+        ? "Publishing..."
+        : "Publish draft";
   const cancelProgressAction =
     publishAbortRef.current && (isPublishing || isScheduling || isUploadingMedia)
       ? cancelPublishAction
@@ -1961,7 +1968,7 @@ export default function Home() {
                 onClick={() => void publish("top")}
               >
                 <Send size={16} />
-                Publish draft
+                {publishButtonLabel}
               </button>
               <button
                 className="secondary compact-button"
@@ -2352,13 +2359,7 @@ export default function Home() {
             <div className="actions">
               <button className="primary" disabled={!canPublish} onClick={() => void publish("bottom")}>
                 <Send size={18} />
-                {isCompressingMedia
-                  ? "Compressing..."
-                  : isUploadingMedia
-                    ? "Uploading..."
-                    : isPublishing
-                      ? "Publishing..."
-                      : "Publish now"}
+                {publishButtonLabel}
               </button>
               <button
                 className="secondary"
