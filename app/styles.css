@@ -449,15 +449,16 @@ h2 {
 
 .socials-masonry {
   grid-column: 1 / -1;
-  column-count: 2;
-  column-gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
 }
 
-.socials-masonry > .info-panel {
-  display: inline-block;
-  width: 100%;
-  margin: 0 0 18px;
-  break-inside: avoid;
+.socials-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
 }
 
 .compose-panel,
@@ -2293,6 +2294,7 @@ a.history-platform.ok:hover {
   .dashboard,
   .settings-grid,
   .scheduler-grid,
+  .socials-masonry,
   .channel-grid,
   .compression-grid,
   .schedule-popup-head,
@@ -2301,10 +2303,6 @@ a.history-platform.ok:hover {
   .media-picker {
     display: grid;
     grid-template-columns: 1fr;
-  }
-
-  .socials-masonry {
-    column-count: 1;
   }
 
   .media-picker .media-preview {

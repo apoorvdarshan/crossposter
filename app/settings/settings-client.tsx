@@ -547,6 +547,30 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
     return "Off. Turn this on once so macOS starts Crossposter after login and restarts it if it exits.";
   }, [displayLocalUrl, localService]);
+  const socialColumns = useMemo(() => {
+    const columns: Array<{ platforms: typeof platforms; weight: number }> = [
+      { platforms: [], weight: 0 },
+      { platforms: [], weight: 0 }
+    ];
+
+    for (const platform of platforms) {
+      const providerProfiles = profiles[platform.id] || [];
+      const providerFieldCount = fields.filter(
+        (field) => field.requiredFor?.includes(platform.id) || field.showFor?.includes(platform.id)
+      ).length;
+      const guide = setupGuides[platform.id];
+      const profileWeight = Math.max(1, providerProfiles.length) * (providerFieldCount + 4);
+      const guideWeight = openGuides[platform.id] && guide ? guide.steps.length * 0.6 + 4 : 0;
+      const panelWeight = 5 + profileWeight + guideWeight;
+      const target = columns[0].weight <= columns[1].weight ? columns[0] : columns[1];
+
+      target.platforms.push(platform);
+      target.weight += panelWeight;
+    }
+
+    return columns.map((column) => column.platforms);
+  }, [fields, openGuides, profiles]);
+
   function fieldsFor(platform: Platform): ConfigField[] {
     return fields.filter(
       (field) => field.requiredFor?.includes(platform) || field.showFor?.includes(platform)
@@ -1365,7 +1389,11 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
         {settingsView === "socials" ? (
           <div className="socials-masonry">
-            {platforms.map((platform) => renderSocialPanel(platform))}
+            {socialColumns.map((column, index) => (
+              <div className="socials-column" key={index === 0 ? "primary" : "secondary"}>
+                {column.map((platform) => renderSocialPanel(platform))}
+              </div>
+            ))}
           </div>
         ) : null}
       </section>
