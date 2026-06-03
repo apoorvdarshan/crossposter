@@ -47,6 +47,10 @@ function peerlistProfilePostsUrl(username: string | undefined): string | undefin
   return normalized ? `${peerlistBaseUrl}/${normalized}/posts` : undefined;
 }
 
+function peerlistHeadlessEnabled(value: string | undefined): boolean {
+  return value?.trim() === "true";
+}
+
 function chromeRoot(): string {
   return path.join(os.homedir(), "Library", "Application Support", "Google", "Chrome");
 }
@@ -312,21 +316,23 @@ function createCdpClient(webSocketUrl: string): Promise<CdpClient> {
   });
 }
 
-async function startPeerlistChrome() {
+async function startPeerlistChrome({ headless }: { headless: boolean }) {
   const port = await freePort();
   const userDataDir = mkdtempSync(path.join(os.tmpdir(), "crossposter-peerlist-chrome-"));
   const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  const chromeArgs = [
+    `--remote-debugging-port=${port}`,
+    `--user-data-dir=${userDataDir}`,
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--window-size=1200,900",
+    ...(headless ? ["--headless=new", "--disable-gpu"] : []),
+    "about:blank"
+  ];
   const chromeProcess = spawn(
     chromePath,
-    [
-      `--remote-debugging-port=${port}`,
-      `--user-data-dir=${userDataDir}`,
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--disable-background-networking",
-      "--window-size=1200,900",
-      "about:blank"
-    ],
+    chromeArgs,
     { stdio: "ignore" }
   );
 
@@ -587,6 +593,7 @@ async function publishThroughPeerlistChrome({
   context,
   mediaPath,
   profilePostsUrl: configuredProfilePostsUrl,
+  headless,
   profileLabel
 }: {
   title: string;
@@ -594,6 +601,7 @@ async function publishThroughPeerlistChrome({
   context: string;
   mediaPath?: string;
   profilePostsUrl?: string;
+  headless: boolean;
   profileLabel: string;
 }): Promise<string | undefined> {
   const cookies = readPeerlistChromeCookies(profileLabel);
@@ -603,7 +611,7 @@ async function publishThroughPeerlistChrome({
     throw new Error("Peerlist Chrome session was not found. Log in to Peerlist in Chrome, then try again.");
   }
 
-  const chrome = await startPeerlistChrome();
+  const chrome = await startPeerlistChrome({ headless });
   let client: CdpClient | undefined;
 
   try {
@@ -795,6 +803,7 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
   const text = compactText([ctx.text]);
   const context = normalizePeerlistContext(optionalEnv("PEERLIST_CONTEXT", profileId));
   const username = normalizePeerlistUsername(optionalEnv("PEERLIST_USERNAME", profileId));
+  const headless = peerlistHeadlessEnabled(optionalEnv("PEERLIST_CHROME_HEADLESS", profileId));
   const chromeProfile = optionalEnv("PEERLIST_CHROME_PROFILE", profileId)?.trim() || "Default";
 
   if (!text) {
@@ -813,6 +822,7 @@ export async function publishPeerlist(ctx: ProviderContext): Promise<PublishResu
     context,
     ...(ctx.media ? { mediaPath: ctx.media.path } : {}),
     ...(username ? { profilePostsUrl: peerlistProfilePostsUrl(username) } : {}),
+    headless,
     profileLabel: chromeProfile
   });
 

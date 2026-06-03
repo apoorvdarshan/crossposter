@@ -192,6 +192,13 @@ export const configFields: ConfigField[] = [
     help: "Chrome profile folder to read Peerlist cookies from, usually Default.",
     defaultValue: "Default",
     showFor: ["peerlist"]
+  },
+  {
+    name: "PEERLIST_CHROME_HEADLESS",
+    label: "Peerlist headless Chrome",
+    help: "Set true to run the short-lived Peerlist automation Chrome without showing a window.",
+    defaultValue: "false",
+    showFor: ["peerlist"]
   }
 ];
 
