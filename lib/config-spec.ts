@@ -206,6 +206,13 @@ export const configFields: ConfigField[] = [
     help: "Set true to keep Peerlist automation in normal Chrome but start the window minimized and offscreen.",
     defaultValue: "false",
     showFor: ["peerlist"]
+  },
+  {
+    name: "PEERLIST_CHROME_USE_REAL_PROFILE",
+    label: "Peerlist real Chrome profile",
+    help: "Set true to launch automation with the real Chrome user-data folder and selected profile.",
+    defaultValue: "false",
+    showFor: ["peerlist"]
   }
 ];
 
