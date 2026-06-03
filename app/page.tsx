@@ -1592,7 +1592,6 @@ export default function Home() {
       }
     : null;
   const showHackerNewsLink = selectedPlatforms.includes("hackernews");
-  const peerlistIgnoresLink = selectedPlatforms.includes("peerlist") && Boolean(linkUrl.trim());
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
   const hasRequiredPostText = Boolean(text.trim()) || (isHackerNewsOnly && Boolean(title.trim()));
@@ -1906,11 +1905,6 @@ export default function Home() {
               <span className="field-hint">
                 Optional. Hacker News uses this as the submitted URL.
               </span>
-              {peerlistIgnoresLink ? (
-                <span className="field-hint is-warning">
-                  Peerlist ignores Link. Put links in Post text for Peerlist.
-                </span>
-              ) : null}
             </div>
 
             <div className="field">
