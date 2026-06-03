@@ -26,6 +26,15 @@ def error_message(exc):
             "complete the challenge, then try again."
         )
 
+    if name == "ChallengeUnknownStep" or (
+        "challenge" in text.lower() and "unknown step" in text.lower()
+    ):
+        return (
+            "Instagram requires a newer verification challenge that instagrapi cannot solve "
+            "automatically. Open Instagram for this account, complete the verification, then "
+            "try again. If it repeats, wait a while or recreate this account's session file."
+        )
+
     if name in {"PleaseWaitFewMinutes", "FeedbackRequired"}:
         return "Instagram rate-limited this account. Wait a while before publishing again."
 
@@ -34,6 +43,9 @@ def error_message(exc):
 
     if name == "BadPassword":
         return "Instagram password is invalid for this profile."
+
+    if len(text) > 240:
+        text = f"{text[:237]}..."
 
     return f"{name}: {text}" if text else name
 
@@ -86,7 +98,8 @@ def main():
                 "ok": False,
                 "message": (
                     "instagrapi is not installed. Run "
-                    "`python3 -m pip install --user instagrapi` in Terminal."
+                    "`python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt` "
+                    "in Terminal."
                 ),
             },
             2,
