@@ -390,6 +390,37 @@ async function waitForExpression(
   throw new Error(timeoutMessage);
 }
 
+async function movePeerlistChromeOffscreen(client: CdpClient, offscreen: boolean) {
+  if (!offscreen) {
+    return;
+  }
+
+  try {
+    const { windowId } = await client.send<{ windowId: number }>("Browser.getWindowForTarget");
+
+    await client
+      .send("Browser.setWindowBounds", {
+        windowId,
+        bounds: {
+          windowState: "normal",
+          left: -32000,
+          top: -32000,
+          width: 1200,
+          height: 900
+        }
+      })
+      .catch(() => undefined);
+    await client
+      .send("Browser.setWindowBounds", {
+        windowId,
+        bounds: {
+          windowState: "minimized"
+        }
+      })
+      .catch(() => undefined);
+  } catch {}
+}
+
 function jsString(value: string): string {
   return JSON.stringify(value);
 }
@@ -634,6 +665,7 @@ async function publishThroughPeerlistChrome({
     }).then((response) => response.json() as Promise<{ webSocketDebuggerUrl: string }>);
 
     client = await createCdpClient(tab.webSocketDebuggerUrl);
+    await movePeerlistChromeOffscreen(client, !headless && offscreen);
     await client.send("Network.enable");
     await setPeerlistCookies(client, cookies);
     await client.send("Page.enable");
