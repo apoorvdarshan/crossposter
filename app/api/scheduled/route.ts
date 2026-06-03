@@ -15,6 +15,7 @@ const platformSchema = z.enum([
   "devto",
   "linkedin",
   "hackernews",
+  "peerlist",
   "nostr"
 ]);
 const targetSchema = z.object({

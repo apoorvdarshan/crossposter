@@ -2,6 +2,7 @@ import {
   siBluesky,
   siDevdotto,
   siMastodon,
+  siPeerlist,
   siYcombinator,
   type SimpleIcon
 } from "simple-icons";
@@ -12,7 +13,8 @@ const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   bluesky: siBluesky,
   mastodon: siMastodon,
   devto: siDevdotto,
-  hackernews: siYcombinator
+  hackernews: siYcombinator,
+  peerlist: siPeerlist
 };
 
 const socialNames: Record<Platform, string> = {
@@ -20,8 +22,9 @@ const socialNames: Record<Platform, string> = {
   mastodon: "Mastodon",
   devto: "Dev.to",
   linkedin: "LinkedIn",
-  nostr: "Nostr",
-  hackernews: "Hacker News"
+  hackernews: "Hacker News",
+  peerlist: "Peerlist",
+  nostr: "Nostr"
 };
 
 const brandColors: Record<Platform, string> = {
@@ -29,8 +32,9 @@ const brandColors: Record<Platform, string> = {
   mastodon: `#${siMastodon.hex}`,
   devto: `#${siDevdotto.hex}`,
   linkedin: "#0a66c2",
-  nostr: "#8f3ffc",
-  hackernews: `#${siYcombinator.hex}`
+  hackernews: `#${siYcombinator.hex}`,
+  peerlist: `#${siPeerlist.hex}`,
+  nostr: "#8f3ffc"
 };
 
 type SocialLogoProps = {

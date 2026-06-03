@@ -3,6 +3,7 @@ import type { Platform } from "@/lib/types";
 export const appPostTextLimit = 12_000;
 export const blueskyPostTextLimit = 300;
 export const linkedInPostTextLimit = 3_000;
+export const peerlistPostTextLimit = 2_000;
 export const hackerNewsTitleLimit = 80;
 export const devtoTitleLimit = 128;
 export const devtoBodyBytesLimit = 800 * 1024;
@@ -13,6 +14,7 @@ const platformLabels: Record<Platform, string> = {
   devto: "Dev.to",
   linkedin: "LinkedIn",
   hackernews: "Hacker News",
+  peerlist: "Peerlist",
   nostr: "Nostr"
 };
 
@@ -70,6 +72,10 @@ export function postTextLimitForPlatform(platform: Platform): number | undefined
 
   if (platform === "linkedin") {
     return linkedInPostTextLimit;
+  }
+
+  if (platform === "peerlist") {
+    return peerlistPostTextLimit;
   }
 
   return undefined;
