@@ -88,6 +88,7 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "mastodon", label: "Mastodon" },
   { id: "devto", label: "Dev.to" },
   { id: "linkedin", label: "LinkedIn" },
+  { id: "x", label: "X / Twitter" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" }
 ];
@@ -185,6 +186,28 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "For Page posting, use scopes openid profile w_member_social w_organization_social, then click Connect LinkedIn as a Page admin or content admin.",
       "After approval, Crossposter fills the access token and a personal author URN automatically.",
       "For Page posting, replace LinkedIn author URN with urn:li:organization:YOUR_PAGE_ORG_ID and save config."
+    ]
+  },
+  x: {
+    title: "X / Twitter setup",
+    intro:
+      "Unofficial local posting through @steipete/bird. Crossposter calls bird locally and bird uses your existing browser cookies.",
+    links: [
+      { label: "bird.fast", href: "https://bird.fast/" },
+      { label: "@steipete/bird", href: "https://www.npmjs.com/package/@steipete/bird" },
+      { label: "X automation rules", href: "https://help.x.com/articles/76915-automation-rules-and-best-practices" }
+    ],
+    steps: [
+      "Install bird in Terminal with npm install -g @steipete/bird.",
+      "Log in to x.com in Chrome, Firefox, or Safari.",
+      "Run bird check in Terminal and confirm it says Ready to tweet.",
+      "Add an X / Twitter profile here.",
+      "Leave X bird command as bird unless you need an absolute path such as /opt/homebrew/bin/bird.",
+      "Optionally set cookie source to chrome, firefox, or safari.",
+      "Optionally set Chrome or Firefox profile names if bird check needs them.",
+      "Save config, then select X / Twitter on the Dashboard.",
+      "Crossposter publishes user-triggered posts only. X may still limit or lock accounts for spammy or automated-looking behavior.",
+      "Local images, GIFs, and MP4 video are passed to bird as media attachments."
     ]
   },
   nostr: {

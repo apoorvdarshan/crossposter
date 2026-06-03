@@ -4,6 +4,7 @@ export type Platform =
   | "devto"
   | "linkedin"
   | "hackernews"
+  | "x"
   | "nostr";
 
 export type PublishPayload = {

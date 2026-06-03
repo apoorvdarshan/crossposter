@@ -133,6 +133,38 @@ export const configFields: ConfigField[] = [
     help: "Optional user=... cookie from a browser session. If set, Crossposter uses it before trying password login.",
     secret: true,
     showFor: ["hackernews"]
+  },
+  {
+    name: "X_BIRD_COMMAND",
+    label: "X bird command",
+    help: "Command or absolute path for @steipete/bird. Leave as bird when it is on PATH.",
+    defaultValue: "bird",
+    showFor: ["x"]
+  },
+  {
+    name: "X_BIRD_COOKIE_SOURCE",
+    label: "X cookie source",
+    help: "Optional browser source for bird, such as chrome, firefox, or safari. Leave blank to use bird defaults/config.",
+    showFor: ["x"]
+  },
+  {
+    name: "X_BIRD_CHROME_PROFILE",
+    label: "X Chrome profile",
+    help: "Optional Chrome profile name for bird, for example Default or Profile 1.",
+    showFor: ["x"]
+  },
+  {
+    name: "X_BIRD_FIREFOX_PROFILE",
+    label: "X Firefox profile",
+    help: "Optional Firefox profile name for bird, for example default-release.",
+    showFor: ["x"]
+  },
+  {
+    name: "X_BIRD_TIMEOUT_MS",
+    label: "X request timeout",
+    help: "Timeout for bird requests in milliseconds.",
+    defaultValue: "60000",
+    showFor: ["x"]
   }
 ];
 
@@ -150,6 +182,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     devto: [],
     linkedin: [],
     hackernews: [],
+    x: [],
     nostr: []
   } as Record<Platform, string[]>
 );

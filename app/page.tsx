@@ -85,6 +85,14 @@ const channels: Array<{
     media: "Local images and MP4 video are supported."
   },
   {
+    id: "x",
+    label: "X / Twitter",
+    note: "Unofficial bird post",
+    uses: ["Post", "Media"],
+    target: "Uses the active X / Twitter bird profile from Settings.",
+    media: "Local images, GIFs, and MP4 video are passed to bird."
+  },
+  {
     id: "hackernews",
     label: "Hacker News",
     note: "Submit link or text",
@@ -123,7 +131,12 @@ const envLabels: Record<string, string> = {
   NOSTR_PRIVATE_KEY: "private key",
   NOSTR_RELAYS: "relays",
   HACKERNEWS_USERNAME: "username",
-  HACKERNEWS_PASSWORD: "password"
+  HACKERNEWS_PASSWORD: "password",
+  X_BIRD_COMMAND: "bird command",
+  X_BIRD_COOKIE_SOURCE: "cookie source",
+  X_BIRD_CHROME_PROFILE: "Chrome profile",
+  X_BIRD_FIREFOX_PROFILE: "Firefox profile",
+  X_BIRD_TIMEOUT_MS: "timeout"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -204,6 +217,8 @@ const blueskyCompressTargetSize = 950_000;
 const blueskyImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
+const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const xVideoTypes = new Set(["video/mp4"]);
 const linkedInMinVideoSize = 75 * 1024;
 const linkedInMaxVideoSize = 500 * 1024 * 1024;
 const linkedInVideoTargetSize = 490 * 1024 * 1024;
@@ -541,6 +556,27 @@ function mediaPreflightIssues(platforms: Platform[], file: File | null): Preflig
       issues.push({
         id: "linkedin-kind",
         message: `LinkedIn can upload images and MP4 videos only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    }
+  }
+
+  if (platforms.includes("x")) {
+    if (kind === "image" && !xImageTypes.has(file.type)) {
+      issues.push({
+        id: "x-image-type",
+        message: `X supports JPG, PNG, WebP, and GIF images through bird; selected file is ${file.type || "unknown"}.`,
+        compress: "image"
+      });
+    } else if (kind === "video" && !xVideoTypes.has(file.type)) {
+      issues.push({
+        id: "x-video-type",
+        message: `X supports MP4 video through bird; selected file is ${file.type || "unknown"}.`,
+        compress: "video"
+      });
+    } else if (kind !== "image" && kind !== "video") {
+      issues.push({
+        id: "x-kind",
+        message: `X can upload images, GIFs, and MP4 video only; selected media is a ${mediaKindLabel(kind)}.`
       });
     }
   }
