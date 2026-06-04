@@ -225,18 +225,16 @@ pre code {
 
 .nav-button:hover,
 .button.primary:hover {
-  background: var(--green-dark);
-  border-color: var(--green-dark);
-  color: var(--paper);
+  background: var(--green);
+  border-color: var(--green);
+  color: #06110a;
 }
 
 .hero {
   background:
-    linear-gradient(90deg, rgba(5, 10, 7, 0.96) 0%, rgba(5, 10, 7, 0.78) 44%, rgba(5, 10, 7, 0.36) 100%),
-    linear-gradient(0deg, rgba(5, 10, 7, 0.72), rgba(5, 10, 7, 0.12)),
-    url("assets/step-compose-preview.png");
-  background-position: center top;
-  background-size: cover;
+    linear-gradient(118deg, rgba(56, 232, 137, 0.12), transparent 38%),
+    linear-gradient(90deg, rgba(5, 10, 7, 0.98) 0%, rgba(5, 10, 7, 0.9) 58%, rgba(5, 10, 7, 0.82) 100%),
+    var(--dark);
   color: #f6f5ea;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
@@ -255,17 +253,6 @@ pre code {
   inset: 0;
   pointer-events: none;
   position: absolute;
-}
-
-.hero::after {
-  background: linear-gradient(180deg, transparent, var(--paper));
-  bottom: -1px;
-  content: "";
-  height: 120px;
-  left: 0;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
 }
 
 .hero-content,
@@ -446,7 +433,9 @@ pre code {
 }
 
 .gallery-grid figure {
-  background: var(--panel);
+  background:
+    linear-gradient(135deg, rgba(56, 232, 137, 0.11), transparent 44%),
+    var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--tight-shadow);
@@ -456,29 +445,23 @@ pre code {
   overflow: hidden;
 }
 
-.shot-frame {
-  background: #08100b;
-  border-bottom: 1px solid var(--line);
-  height: clamp(180px, 20vw, 260px);
-  overflow: hidden;
+.gallery-grid figure:nth-child(2) {
+  background:
+    linear-gradient(135deg, rgba(53, 184, 255, 0.1), transparent 44%),
+    var(--panel);
 }
 
-.shot-frame img {
-  display: block;
-  height: 100%;
-  object-fit: contain;
-  object-position: left top;
-  width: 100%;
-}
-
-.gallery-grid figure:nth-child(3) .shot-frame img {
-  object-position: left center;
+.gallery-grid figure:nth-child(3) {
+  background:
+    linear-gradient(135deg, rgba(255, 109, 77, 0.1), transparent 44%),
+    var(--panel);
 }
 
 .gallery-grid figcaption {
   display: grid;
   gap: 6px;
-  padding: 18px;
+  min-height: 210px;
+  padding: 22px;
 }
 
 .gallery-grid figcaption span {
@@ -1122,10 +1105,6 @@ tbody tr:last-child td {
   .platform-strip h2,
   .doc-section h2 {
     font-size: clamp(2.45rem, 13vw, 3.7rem);
-  }
-
-  .shot-frame {
-    height: 220px;
   }
 
   .docs-shell {
