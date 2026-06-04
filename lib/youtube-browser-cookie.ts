@@ -44,15 +44,30 @@ const youtubeCookieNames = [
   "SSID",
   "APISID",
   "SAPISID",
+  "SIDCC",
   "__Secure-1PSID",
   "__Secure-3PSID",
   "__Secure-1PAPISID",
   "__Secure-3PAPISID",
+  "__Secure-1PSIDCC",
+  "__Secure-3PSIDCC",
+  "__Secure-1PSIDTS",
+  "__Secure-3PSIDTS",
   "LOGIN_INFO",
   "VISITOR_INFO1_LIVE",
   "VISITOR_PRIVACY_METADATA",
   "PREF"
 ];
+const youtubeHostPriority = new Map([
+  [".youtube.com", 0],
+  ["youtube.com", 1],
+  ["www.youtube.com", 2],
+  ["studio.youtube.com", 3],
+  [".google.com", 4],
+  ["google.com", 5],
+  ["accounts.google.com", 6],
+  [".accounts.google.com", 7]
+]);
 
 function chromeRoot(): string {
   return path.join(os.homedir(), "Library", "Application Support", "Google", "Chrome");
@@ -230,7 +245,13 @@ function decryptChromeCookie(row: ChromeCookieRow): string {
 function cookieHeader(rows: ChromeCookieRow[]): string {
   const cookies = new Map<string, string>();
 
-  for (const row of rows) {
+  for (const row of [...rows].sort((a, b) => {
+    const hostRank =
+      (youtubeHostPriority.get(a.hostKey) ?? 99) -
+      (youtubeHostPriority.get(b.hostKey) ?? 99);
+
+    return hostRank || a.name.localeCompare(b.name);
+  })) {
     if (cookies.has(row.name)) {
       continue;
     }

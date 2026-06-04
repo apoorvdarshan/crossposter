@@ -202,6 +202,10 @@ function formatYouTubeError(error: unknown): string {
     return "YouTube did not accept these cookies. Log in to YouTube in Chrome, then try again.";
   }
 
+  if (/status code 401|upload\.youtube\.com/i.test(message)) {
+    return "YouTube rejected the upload cookies. Open YouTube Studio in Chrome with this profile, confirm you are signed in to the correct channel, then import Chrome cookies again or try publishing once more.";
+  }
+
   if (/initial upload data|upload video|process video|createvideo/i.test(message)) {
     return `${message} Refresh YouTube cookies from Chrome or try a different video file.`;
   }
