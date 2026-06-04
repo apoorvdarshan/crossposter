@@ -141,26 +141,12 @@ pre code {
 }
 
 .hero {
-  min-height: min(780px, calc(100vh - 40px));
+  background:
+    linear-gradient(135deg, rgba(39, 201, 118, 0.12), transparent 42%),
+    linear-gradient(90deg, var(--dark), #09100b);
+  min-height: min(620px, calc(100vh - 140px));
   overflow: hidden;
   position: relative;
-}
-
-.hero-image {
-  height: 100%;
-  inset: 0;
-  object-fit: cover;
-  object-position: center top;
-  position: absolute;
-  width: 100%;
-}
-
-.hero-shade {
-  background:
-    linear-gradient(90deg, rgba(7, 12, 8, 0.92), rgba(7, 12, 8, 0.64) 42%, rgba(7, 12, 8, 0.14)),
-    linear-gradient(180deg, rgba(7, 12, 8, 0.16), rgba(7, 12, 8, 0.76));
-  inset: 0;
-  position: absolute;
 }
 
 .hero-content {
@@ -212,6 +198,22 @@ pre code {
 .button.secondary {
   border-color: rgba(246, 248, 239, 0.34);
   color: #f6f8ef;
+}
+
+.product-preview {
+  background: var(--dark);
+  padding: 0 clamp(18px, 4vw, 46px) clamp(24px, 4vw, 46px);
+}
+
+.product-preview img {
+  border: 1px solid rgba(246, 248, 239, 0.18);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  max-width: 1320px;
+  width: 100%;
 }
 
 .quick-facts {
@@ -650,17 +652,7 @@ tbody tr:last-child td {
   }
 
   .hero {
-    min-height: 760px;
-  }
-
-  .hero-shade {
-    background:
-      linear-gradient(180deg, rgba(7, 12, 8, 0.9), rgba(7, 12, 8, 0.62) 56%, rgba(7, 12, 8, 0.86)),
-      linear-gradient(90deg, rgba(7, 12, 8, 0.7), rgba(7, 12, 8, 0.24));
-  }
-
-  .hero-image {
-    object-position: 28% top;
+    min-height: 0;
   }
 
   .hero-content {
