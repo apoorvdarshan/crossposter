@@ -91,10 +91,10 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "instagram", label: "Instagram" },
   { id: "youtube", label: "YouTube" },
   { id: "devto", label: "Dev.to" },
+  { id: "pinterest", label: "Pinterest" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" },
-  { id: "dribbble", label: "Dribbble" },
-  { id: "pinterest", label: "Pinterest" }
+  { id: "dribbble", label: "Dribbble" }
 ];
 
 const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = [

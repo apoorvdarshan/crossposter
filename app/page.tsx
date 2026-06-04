@@ -116,6 +116,14 @@ const channels: Array<{
     media: "Local media is ignored; publish without cover image."
   },
   {
+    id: "pinterest",
+    label: "Pinterest",
+    note: "Unofficial Pin upload",
+    uses: ["Title", "Link", "Post", "Media"],
+    target: "Uses the active Pinterest py3-pinterest profile from Settings.",
+    media: "Title becomes the Pin title. Post becomes the description. Link becomes the destination URL. Requires a local image or MP4/MOV video."
+  },
+  {
     id: "hackernews",
     label: "Hacker News",
     note: "Submit link or text",
@@ -138,14 +146,6 @@ const channels: Array<{
     uses: ["Title", "Post", "Media"],
     target: "Uses the active Dribbble OAuth token profile from Settings.",
     media: "Title becomes the shot title. Post becomes the description. Requires a JPG, PNG, or GIF exactly 400x300 or 800x600."
-  },
-  {
-    id: "pinterest",
-    label: "Pinterest",
-    note: "Unofficial Pin upload",
-    uses: ["Title", "Link", "Post", "Media"],
-    target: "Uses the active Pinterest py3-pinterest profile from Settings.",
-    media: "Title becomes the Pin title. Post becomes the description. Link becomes the destination URL. Requires a local image or MP4/MOV video."
   }
 ];
 
