@@ -248,7 +248,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Leave YouTube cookie source as chrome to read fresh browser cookies each publish.",
       "Set YouTube Chrome profile if you do not use Chrome's Default profile.",
       "Optionally click Import Chrome cookies to save a fallback cookie in poster.config.local.json.",
-      "Set YouTube privacy to PRIVATE, UNLISTED, or PUBLIC.",
+      "YouTube privacy defaults to PUBLIC. Change it to UNLISTED or PRIVATE only when needed.",
       "On the Dashboard, add a Title, Post text for the description, and attach a local video.",
       "Avoid high-volume uploads. YouTube may challenge, throttle, or restrict accounts for suspicious automation."
     ]

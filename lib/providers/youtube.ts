@@ -75,7 +75,7 @@ function privacy(profileId: string | undefined): YouTubePrivacy {
 
   return value === "PUBLIC" || value === "UNLISTED" || value === "PRIVATE"
     ? value
-    : "PRIVATE";
+    : "PUBLIC";
 }
 
 function fileExtension(filename: string): string {

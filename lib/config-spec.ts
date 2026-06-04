@@ -124,7 +124,7 @@ export const configFields: ConfigField[] = [
     name: "YOUTUBE_PRIVACY",
     label: "YouTube privacy",
     help: "Upload privacy for YouTube.js Studio uploads: PRIVATE, UNLISTED, or PUBLIC.",
-    defaultValue: "PRIVATE",
+    defaultValue: "PUBLIC",
     showFor: ["youtube"]
   },
   {

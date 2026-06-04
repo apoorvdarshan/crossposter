@@ -101,7 +101,7 @@ const channels: Array<{
     note: "InnerTube video upload",
     uses: ["Title", "Post", "Media"],
     target: "Uses the active YouTube.js cookie profile from Settings.",
-    media: "Requires a local video. YouTube accepts common video formats up to 256 GB or 12 hours."
+    media: "Title becomes the video title. Post becomes the description. Requires a local video up to 256 GB or 12 hours."
   },
   {
     id: "devto",
