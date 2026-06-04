@@ -105,14 +105,6 @@ const channels: Array<{
     media: "Title becomes the video title. Post becomes the description. Requires a local video up to 256 GB or 12 hours."
   },
   {
-    id: "dribbble",
-    label: "Dribbble",
-    note: "Shot upload",
-    uses: ["Title", "Post", "Media"],
-    target: "Uses the active Dribbble OAuth token profile from Settings.",
-    media: "Title becomes the shot title. Post becomes the description. Requires a JPG, PNG, or GIF exactly 400x300 or 800x600."
-  },
-  {
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
@@ -135,6 +127,14 @@ const channels: Array<{
     uses: ["Post"],
     target: "Uses the active Nostr profile from Settings.",
     media: "Local media is ignored; paste public media links into the post text."
+  },
+  {
+    id: "dribbble",
+    label: "Dribbble",
+    note: "Shot upload",
+    uses: ["Title", "Post", "Media"],
+    target: "Uses the active Dribbble OAuth token profile from Settings.",
+    media: "Title becomes the shot title. Post becomes the description. Requires a JPG, PNG, or GIF exactly 400x300 or 800x600."
   }
 ];
 
