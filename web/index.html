@@ -5,544 +5,274 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta
       name="description"
-      content="Crossposter is a private local crossposting dashboard for publishing to X, LinkedIn, Bluesky, Mastodon, Instagram, YouTube, Dev.to, Pinterest, Peerlist, Hacker News, Nostr, and Dribbble."
+      content="Crossposter is a local-first crossposting dashboard for publishing to X, LinkedIn, Bluesky, Mastodon, Instagram, YouTube, Dev.to, Pinterest, Peerlist, Hacker News, Nostr, and Dribbble."
     >
+    <meta property="og:title" content="Crossposter">
+    <meta property="og:description" content="Private local social publishing for accounts you control.">
+    <meta property="og:image" content="assets/dashboard-preview.png">
     <link rel="icon" href="assets/logo-crossposter.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/logo-crossposter.png">
     <link rel="stylesheet" href="styles.css">
-    <title>Crossposter Docs</title>
+    <title>Crossposter</title>
   </head>
   <body>
-    <a class="skip-link" href="#content">Skip to content</a>
+    <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="site-header">
-      <a class="brand" href="#overview" aria-label="Crossposter home">
+      <a class="brand" href="#top" aria-label="Crossposter home">
         <img src="assets/logo-crossposter.png" alt="" width="40" height="40">
-        <span>
-          <strong>Crossposter</strong>
-          <small>Local social publishing</small>
-        </span>
+        <span>Crossposter</span>
       </a>
-      <nav class="top-nav" aria-label="Primary navigation">
-        <a href="#quickstart">Quickstart</a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">
+        Menu
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+        <a href="#start">Start</a>
         <a href="#providers">Providers</a>
         <a href="#limits">Limits</a>
-        <a href="#privacy">Privacy</a>
-        <a href="https://x.com/apoorvdarshan" rel="noreferrer" target="_blank">X</a>
-        <a href="mailto:apoorvdarshan@gmail.com">Email</a>
-        <a class="nav-cta" href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">GitHub</a>
+        <a href="#policy">Policy</a>
+        <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank">Report issue</a>
+        <a class="nav-button" href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">GitHub</a>
       </nav>
     </header>
 
-    <div class="shell">
-      <aside class="sidebar" aria-label="Documentation navigation">
-        <label class="search-label" for="doc-search">Search docs</label>
-        <input id="doc-search" class="doc-search" type="search" placeholder="Search sections">
-
-        <nav class="side-nav" aria-label="Page sections">
-          <p>Start</p>
-          <a href="#overview">Overview</a>
-          <a href="#quickstart">Quickstart</a>
-          <a href="#configuration">Configuration</a>
-
-          <p>Publishing</p>
-          <a href="#providers">Supported providers</a>
-          <a href="#setup">Provider setup</a>
-          <a href="#limits">Limits</a>
-          <a href="#media">Media handling</a>
-
-          <p>Reference</p>
-          <a href="#security">Security</a>
-          <a href="#privacy">Privacy</a>
-          <a href="#terms">Terms</a>
-          <a href="#project">Project</a>
-        </nav>
-      </aside>
-
-      <main id="content" class="content">
-        <section id="overview" class="hero doc-section" data-search="overview local first crossposting dashboard github">
-          <div class="hero-copy">
-            <p class="eyebrow">Local-first social publishing</p>
-            <h1>One private control room for every account you run.</h1>
-            <p class="lead">
-              Crossposter is a small local or self-hosted publishing dashboard.
-              Compose once, attach media, publish now, or schedule posts from the
-              server you control.
-            </p>
-            <div class="actions" aria-label="Primary actions">
-              <a class="button primary" href="#quickstart">Start locally</a>
-              <a class="button" href="#providers">See providers</a>
-              <a class="button ghost" href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">Open GitHub</a>
-            </div>
-            <ul class="signal-list" aria-label="Project signals">
-              <li>Open source</li>
-              <li>Local config</li>
-              <li>Multi-profile</li>
-              <li>Scheduled posts</li>
-              <li>Media preflight</li>
-            </ul>
+    <main id="main">
+      <section id="top" class="hero" aria-labelledby="hero-title">
+        <img class="hero-image" src="assets/dashboard-preview.png" alt="Crossposter dashboard composer and publish output">
+        <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-content">
+          <p class="eyebrow">Local-first social publishing</p>
+          <h1 id="hero-title">Publish everywhere from one private dashboard.</h1>
+          <p class="hero-copy">
+            Compose once, attach media, publish now, or schedule posts from a
+            local/self-hosted server you control.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#start">Run locally</a>
+            <a class="button secondary" href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">View source</a>
           </div>
+        </div>
+      </section>
 
-          <div class="product-preview" aria-label="Crossposter interface preview">
-            <div class="preview-toolbar">
-              <img src="assets/logo-crossposter.png" alt="" width="34" height="34">
-              <div>
-                <strong>Crossposter</strong>
-                <span>Dashboard · 11 ready</span>
-              </div>
-              <span class="preview-status">Local</span>
-            </div>
-            <div class="preview-body">
-              <div class="preview-compose">
-                <div class="preview-label">Compose</div>
-                <div class="preview-input wide"></div>
-                <div class="preview-input"></div>
-                <div class="preview-text">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <div class="preview-actions">
-                  <span>Publish draft</span>
-                  <span>Schedule</span>
-                </div>
-              </div>
-              <div class="preview-output">
-                <div class="preview-label">Publish output</div>
-                <div class="preview-result ok">
-                  <strong>Instagram · Fud AI</strong>
-                  <span>1/1 OK</span>
-                </div>
-                <div class="preview-result">
-                  <strong>Hacker News · Apoorv</strong>
-                  <span>Ready</span>
-                </div>
-                <div class="preview-media"></div>
-              </div>
-            </div>
-          </div>
-        </section>
+      <section class="quick-facts" aria-label="Project facts">
+        <div>
+          <strong>12</strong>
+          <span>connected providers</span>
+        </div>
+        <div>
+          <strong>0</strong>
+          <span>required databases</span>
+        </div>
+        <div>
+          <strong>1</strong>
+          <span>local config file</span>
+        </div>
+        <div>
+          <strong>MIT</strong>
+          <span>open-source license</span>
+        </div>
+      </section>
 
-        <section class="status-strip doc-section" aria-label="Project status">
-          <div>
-            <strong>12</strong>
-            <span>publishing targets</span>
-          </div>
-          <div>
-            <strong>0</strong>
-            <span>required databases</span>
-          </div>
-          <div>
-            <strong>1</strong>
-            <span>local config file</span>
-          </div>
-          <div>
-            <strong>MIT</strong>
-            <span>open-source license</span>
-          </div>
-        </section>
+      <div class="docs-shell">
+        <aside class="docs-sidebar" aria-label="Documentation navigation">
+          <label for="docs-search">Search docs</label>
+          <input id="docs-search" type="search" placeholder="Search Crossposter docs">
+          <nav aria-label="Sections">
+            <a href="#start">Start locally</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#providers">Providers</a>
+            <a href="#setup">Setup</a>
+            <a href="#limits">Limits</a>
+            <a href="#media">Media</a>
+            <a href="#security">Security</a>
+            <a href="#policy">Privacy & terms</a>
+            <a href="#contact">Contact</a>
+          </nav>
+        </aside>
 
-        <section class="command-strip doc-section" data-search="install command run localhost npm">
-          <div>
-            <p class="eyebrow">Run it</p>
-            <h2>Local in three commands</h2>
+        <div class="docs-content">
+          <section id="start" class="doc-section" data-search="start quickstart install npm localhost local">
+            <div class="section-kicker">Quickstart</div>
+            <h2>Run Crossposter locally.</h2>
             <p>
-              The app runs as a local Next server. The separate docs site you are
-              viewing now is plain static HTML/CSS/JS.
+              Crossposter is a local Next app with a static docs site in this
+              <code>web/</code> folder. The publishing dashboard runs at
+              <code>http://localhost:2004</code>.
             </p>
-          </div>
-          <div class="code-card">
-            <button class="copy-button" type="button" data-copy-target="quickstart-code">Copy</button>
-            <pre><code id="quickstart-code">npm install
+            <div class="command-panel">
+              <div class="command-head">
+                <span>Terminal</span>
+                <button class="copy-button" type="button" data-copy-target="install-commands">Copy</button>
+              </div>
+              <pre><code id="install-commands">npm install
 cp .env.example .env
 npm run dev:local</code></pre>
-          </div>
-        </section>
+            </div>
+          </section>
 
-        <section id="quickstart" class="doc-section" data-search="quickstart install localhost schedule local app">
-          <div class="section-heading">
-            <p class="eyebrow">Quickstart</p>
-            <h2>From clone to dashboard</h2>
-          </div>
-          <ol class="steps">
-            <li>
-              <strong>Install dependencies.</strong>
-              Run <code>npm install</code> in the repository.
-            </li>
-            <li>
-              <strong>Create local env.</strong>
-              Copy <code>.env.example</code> to <code>.env</code> and keep real secrets local.
-            </li>
-            <li>
-              <strong>Start Crossposter.</strong>
-              Run <code>npm run dev:local</code> and open <code>http://localhost:2004</code>.
-            </li>
-            <li>
-              <strong>Add profiles.</strong>
-              Use Settings, then Socials, to configure each provider and active profile.
-            </li>
-            <li>
-              <strong>Publish or schedule.</strong>
-              Use the Dashboard composer to send posts immediately or queue them locally.
-            </li>
-          </ol>
-        </section>
+          <section id="workflow" class="doc-section" data-search="workflow compose schedule publish history profiles local config">
+            <div class="section-kicker">Workflow</div>
+            <h2>Built for repeated posting, not marketing bloat.</h2>
+            <div class="feature-grid">
+              <article>
+                <span>01</span>
+                <h3>Compose once</h3>
+                <p>Write a title, link, body, and media in one focused dashboard composer.</p>
+              </article>
+              <article>
+                <span>02</span>
+                <h3>Select profiles</h3>
+                <p>Choose active accounts across platforms without editing env files every time.</p>
+              </article>
+              <article>
+                <span>03</span>
+                <h3>Preflight limits</h3>
+                <p>See warnings only when selected providers would reject text or media.</p>
+              </article>
+              <article>
+                <span>04</span>
+                <h3>Publish or schedule</h3>
+                <p>Send immediately or queue scheduled posts from the running local server.</p>
+              </article>
+            </div>
+          </section>
 
-        <section id="configuration" class="doc-section" data-search="configuration poster config env local profiles">
-          <div class="section-heading">
-            <p class="eyebrow">Configuration</p>
-            <h2>Where Crossposter stores settings</h2>
-          </div>
-          <div class="columns">
-            <article>
-              <h3>Local config</h3>
-              <p>
-                The Settings UI writes provider profiles, active profiles, drafts,
-                scheduled posts, and publish history to <code>poster.config.local.json</code>.
-                The file is gitignored and should stay private.
-              </p>
-            </article>
-            <article>
-              <h3>Environment fallback</h3>
-              <p>
-                Crossposter can also read environment variables, but local config is
-                the normal path because it supports multiple profiles per provider.
-              </p>
-            </article>
-            <article>
-              <h3>Local runtime data</h3>
-              <p>
-                Uploaded media and provider sessions live in local folders such as
-                <code>.poster-uploads</code>, <code>.instagram-sessions</code>, and
-                <code>.pinterest-sessions</code>.
-              </p>
-            </article>
-          </div>
-        </section>
+          <section id="providers" class="doc-section" data-search="providers x twitter linkedin bluesky mastodon instagram youtube devto pinterest peerlist hacker news nostr dribbble">
+            <div class="section-kicker">Providers</div>
+            <h2>Current publishing targets.</h2>
+            <div class="provider-list">
+              <article><strong>X / Twitter</strong><span>bird · text/media/video</span></article>
+              <article><strong>LinkedIn</strong><span>OAuth · profiles/pages</span></article>
+              <article><strong>Bluesky</strong><span>app password · text/images</span></article>
+              <article><strong>Mastodon</strong><span>access token · text/media</span></article>
+              <article><strong>Instagram</strong><span>instagrapi · images/video</span></article>
+              <article><strong>YouTube</strong><span>InnerTube · video upload</span></article>
+              <article><strong>Dev.to</strong><span>API key · markdown articles</span></article>
+              <article><strong>Pinterest</strong><span>py3-pinterest · Pins</span></article>
+              <article><strong>Peerlist</strong><span>Chrome cookies · Scroll</span></article>
+              <article><strong>Hacker News</strong><span>form flow · link/text</span></article>
+              <article><strong>Nostr</strong><span>local key · relays</span></article>
+              <article><strong>Dribbble</strong><span>OAuth · shots</span></article>
+            </div>
+          </section>
 
-        <section id="providers" class="doc-section" data-search="providers channels supported x linkedin bluesky mastodon instagram youtube devto pinterest peerlist hacker news nostr dribbble">
-          <div class="section-heading">
-            <p class="eyebrow">Providers</p>
-            <h2>Supported publishing targets</h2>
-          </div>
-          <div class="provider-grid">
-            <article>
-              <span class="provider-dot x-dot"></span>
-              <h3>X / Twitter</h3>
-              <p>Unofficial local posting through <code>bird</code>. Supports text, images, GIFs, and video.</p>
-              <div class="tag-row"><span>Unofficial</span><span>Text</span><span>Media</span></div>
-            </article>
-            <article>
-              <span class="provider-dot linkedin-dot"></span>
-              <h3>LinkedIn</h3>
-              <p>Official OAuth posting to personal profiles and approved Pages, with images or MP4 video.</p>
-              <div class="tag-row"><span>OAuth</span><span>Pages</span><span>Media</span></div>
-            </article>
-            <article>
-              <span class="provider-dot bluesky-dot"></span>
-              <h3>Bluesky</h3>
-              <p>Text posts and local image media using a Bluesky app password.</p>
-              <div class="tag-row"><span>API</span><span>Text</span><span>Images</span></div>
-            </article>
-            <article>
-              <span class="provider-dot mastodon-dot"></span>
-              <h3>Mastodon</h3>
-              <p>Text and local media uploads to a configured Mastodon instance.</p>
-              <div class="tag-row"><span>API</span><span>Text</span><span>Media</span></div>
-            </article>
-            <article>
-              <span class="provider-dot instagram-dot"></span>
-              <h3>Instagram</h3>
-              <p>Unofficial media publishing through <code>instagrapi</code> and per-account session JSON.</p>
-              <div class="tag-row"><span>Session</span><span>Caption</span><span>Media</span></div>
-            </article>
-            <article>
-              <span class="provider-dot youtube-dot"></span>
-              <h3>YouTube</h3>
-              <p>Unofficial video uploads through YouTube.js and InnerTube cookies.</p>
-              <div class="tag-row"><span>Cookies</span><span>Title</span><span>Video</span></div>
-            </article>
-            <article>
-              <span class="provider-dot devto-dot"></span>
-              <h3>Dev.to</h3>
-              <p>Markdown articles with title and body text through a Dev.to API key.</p>
-              <div class="tag-row"><span>API</span><span>Title</span><span>Markdown</span></div>
-            </article>
-            <article>
-              <span class="provider-dot pinterest-dot"></span>
-              <h3>Pinterest</h3>
-              <p>Unofficial Pin uploads through <code>py3-pinterest</code> and a board ID.</p>
-              <div class="tag-row"><span>Session</span><span>Board</span><span>Media</span></div>
-            </article>
-            <article>
-              <span class="provider-dot peerlist-dot"></span>
-              <h3>Peerlist</h3>
-              <p>Unofficial Scroll posting through Chrome cookies and direct API requests.</p>
-              <div class="tag-row"><span>Cookies</span><span>Scroll</span><span>Image</span></div>
-            </article>
-            <article>
-              <span class="provider-dot hackernews-dot"></span>
-              <h3>Hacker News</h3>
-              <p>Personal link or text submissions through Hacker News' normal form flow.</p>
-              <div class="tag-row"><span>Form flow</span><span>Title</span><span>Link</span></div>
-            </article>
-            <article>
-              <span class="provider-dot nostr-dot"></span>
-              <h3>Nostr</h3>
-              <p>Kind-1 notes signed locally and published to configured relay WebSockets.</p>
-              <div class="tag-row"><span>Local key</span><span>Relays</span><span>Text</span></div>
-            </article>
-            <article>
-              <span class="provider-dot dribbble-dot"></span>
-              <h3>Dribbble</h3>
-              <p>Official OAuth shot uploads with required 400x300 or 800x600 images.</p>
-              <div class="tag-row"><span>OAuth</span><span>Shots</span><span>Crop</span></div>
-            </article>
-          </div>
-        </section>
+          <section id="setup" class="doc-section" data-search="setup credentials oauth cookies sessions passwords tokens board id">
+            <div class="section-kicker">Setup</div>
+            <h2>Credentials stay local.</h2>
+            <div class="split-list">
+              <article>
+                <h3>Official APIs</h3>
+                <p>LinkedIn and Dribbble use OAuth. Bluesky, Mastodon, Dev.to, and Nostr use app passwords, access tokens, or local keys.</p>
+              </article>
+              <article>
+                <h3>Local automation</h3>
+                <p>X, Instagram, YouTube, Pinterest, Peerlist, and Hacker News use local cookies, sessions, tools, or normal submit flows.</p>
+              </article>
+              <article>
+                <h3>Multi-profile config</h3>
+                <p>Provider profiles are saved in <code>poster.config.local.json</code>, with active profile selection managed in Settings.</p>
+              </article>
+            </div>
+          </section>
 
-        <section id="setup" class="doc-section" data-search="setup fields oauth cookie sessions passwords board id app password">
-          <div class="section-heading">
-            <p class="eyebrow">Provider setup</p>
-            <h2>What each profile needs</h2>
-          </div>
-          <div class="setup-list">
-            <article>
-              <h3>X / Twitter</h3>
-              <p>Install <code>bird</code>, sign in to X in a supported browser, then configure the bird command and optional browser profile.</p>
-            </article>
-            <article>
-              <h3>LinkedIn</h3>
-              <p>Create a LinkedIn developer app, add the local callback, then connect with <code>w_member_social</code>.</p>
-            </article>
-            <article>
-              <h3>Bluesky and Mastodon</h3>
-              <p>Use a Bluesky app password, or a Mastodon instance URL and access token.</p>
-            </article>
-            <article>
-              <h3>Instagram and Pinterest</h3>
-              <p>Install the Python dependencies. Use one session file or folder per account, and complete platform challenges manually when required.</p>
-            </article>
-            <article>
-              <h3>YouTube and Hacker News</h3>
-              <p>YouTube reads signed-in Chrome cookies or a saved cookie header. Hacker News can use a saved cookie or username/password login.</p>
-            </article>
-            <article>
-              <h3>Dev.to, Nostr, Dribbble, Peerlist</h3>
-              <p>Dev.to uses an API key. Nostr signs with a private key. Dribbble uses OAuth. Peerlist reads Chrome cookies.</p>
-            </article>
-          </div>
-        </section>
+          <section id="limits" class="doc-section" data-search="limits characters media title post premium">
+            <div class="section-kicker">Limits</div>
+            <h2>Only show warnings when a limit is hit.</h2>
+            <div class="limit-table" tabindex="0">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>Title</th>
+                    <th>Post</th>
+                    <th>Media</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>X / Twitter</td><td>Post text</td><td>280 or 25,000 Premium</td><td>5 MB photo, 15 MB GIF, 512 MB or 16 GB video</td></tr>
+                  <tr><td>LinkedIn</td><td>Post text</td><td>3,000 chars</td><td>Images and MP4 up to 500 MB</td></tr>
+                  <tr><td>Bluesky</td><td>Post text</td><td>300 chars</td><td>Images up to 1 MB</td></tr>
+                  <tr><td>Instagram</td><td>Caption</td><td>2,200 chars</td><td>8 MB image, 300 MB video</td></tr>
+                  <tr><td>YouTube</td><td>100 chars</td><td>5,000 char description</td><td>Video up to 256 GB or 12 hours</td></tr>
+                  <tr><td>Dev.to</td><td>128 non-space chars</td><td>800 KB body</td><td>Local media ignored</td></tr>
+                  <tr><td>Pinterest</td><td>100 chars</td><td>800 char description</td><td>20 MB image, 100 MB video</td></tr>
+                  <tr><td>Peerlist</td><td>120 chars</td><td>2,000 chars</td><td>15 MB image/GIF</td></tr>
+                  <tr><td>Hacker News</td><td>80 chars</td><td>Optional text</td><td>Local media ignored</td></tr>
+                  <tr><td>Dribbble</td><td>Required</td><td>Description</td><td>400x300 or 800x600, up to 8 MB</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-        <section id="limits" class="doc-section" data-search="limits title post media size characters premium">
-          <div class="section-heading">
-            <p class="eyebrow">Limits</p>
-            <h2>Preflight checks before publishing</h2>
-          </div>
-          <p>
-            Crossposter shows title, post, and media warnings only when a selected
-            provider would exceed its limit. This keeps the composer quiet until a
-            specific draft has a real problem.
-          </p>
-          <div class="table-wrap" tabindex="0">
-            <table>
-              <thead>
-                <tr>
-                  <th>Provider</th>
-                  <th>Title</th>
-                  <th>Post text</th>
-                  <th>Media</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>X / Twitter</td>
-                  <td>Uses post text</td>
-                  <td>280, or 25,000 with Premium toggle</td>
-                  <td>Photo 5 MB, GIF 15 MB, video 512 MB or 16 GB Premium</td>
-                </tr>
-                <tr>
-                  <td>LinkedIn</td>
-                  <td>Uses post text</td>
-                  <td>3,000 characters</td>
-                  <td>Images and MP4 video up to 500 MB</td>
-                </tr>
-                <tr>
-                  <td>Bluesky</td>
-                  <td>Uses post text</td>
-                  <td>300 characters</td>
-                  <td>JPEG, PNG, WebP, GIF image up to 1 MB</td>
-                </tr>
-                <tr>
-                  <td>Mastodon</td>
-                  <td>Uses post text</td>
-                  <td>Instance dependent</td>
-                  <td>Image, video, audio, or file upload</td>
-                </tr>
-                <tr>
-                  <td>Instagram</td>
-                  <td>Uses caption</td>
-                  <td>2,200 characters</td>
-                  <td>Image 8 MB, video 300 MB</td>
-                </tr>
-                <tr>
-                  <td>YouTube</td>
-                  <td>100 characters</td>
-                  <td>Description 5,000 characters</td>
-                  <td>Video up to 256 GB or 12 hours</td>
-                </tr>
-                <tr>
-                  <td>Dev.to</td>
-                  <td>128 non-space characters</td>
-                  <td>Body up to 800 KB</td>
-                  <td>Local media ignored</td>
-                </tr>
-                <tr>
-                  <td>Pinterest</td>
-                  <td>100 characters</td>
-                  <td>Description 800 characters</td>
-                  <td>Image 20 MB, video 100 MB</td>
-                </tr>
-                <tr>
-                  <td>Peerlist</td>
-                  <td>120 characters</td>
-                  <td>2,000 characters</td>
-                  <td>JPG, PNG, WebP, or GIF image up to 15 MB</td>
-                </tr>
-                <tr>
-                  <td>Hacker News</td>
-                  <td>80 characters</td>
-                  <td>Optional text body</td>
-                  <td>Local media ignored</td>
-                </tr>
-                <tr>
-                  <td>Nostr</td>
-                  <td>Uses post text</td>
-                  <td>Relay and client dependent</td>
-                  <td>Local media ignored</td>
-                </tr>
-                <tr>
-                  <td>Dribbble</td>
-                  <td>Required</td>
-                  <td>Description text</td>
-                  <td>JPG, PNG, or GIF exactly 400x300 or 800x600, up to 8 MB</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+          <section id="media" class="doc-section" data-search="media compression conversion image video dribbble crop upload">
+            <div class="section-kicker">Media</div>
+            <h2>Compression and crop tools are built in.</h2>
+            <div class="feature-grid compact">
+              <article>
+                <span>IMG</span>
+                <h3>Image compression</h3>
+                <p>Convert images to JPG with quality, target size, and estimated output size controls.</p>
+              </article>
+              <article>
+                <span>MP4</span>
+                <h3>Video conversion</h3>
+                <p>Transcode supported video to MP4 when that can satisfy a selected platform.</p>
+              </article>
+              <article>
+                <span>4:3</span>
+                <h3>Dribbble crop</h3>
+                <p>Crop non-GIF images to Dribbble's required 400x300 or 800x600 shot sizes.</p>
+              </article>
+            </div>
+          </section>
 
-        <section id="media" class="doc-section" data-search="media conversion compression crop video image upload">
-          <div class="section-heading">
-            <p class="eyebrow">Media</p>
-            <h2>Conversion and crop tools</h2>
-          </div>
-          <div class="columns">
-            <article>
-              <h3>Images</h3>
-              <p>Convert images to JPG output with quality, target size, and estimated size controls.</p>
-            </article>
-            <article>
-              <h3>Videos</h3>
-              <p>Transcode supported videos to MP4 when a selected provider can accept the converted file.</p>
-            </article>
-            <article>
-              <h3>Dribbble crop</h3>
-              <p>Open a cropper when a selected Dribbble image is not exactly 400x300 or 800x600.</p>
-            </article>
-          </div>
-        </section>
+          <section id="security" class="doc-section" data-search="security private local secrets sessions passwords cookies">
+            <div class="section-kicker">Security</div>
+            <h2>Private by convention.</h2>
+            <ul class="check-list">
+              <li>Keep <code>poster.config.local.json</code> private.</li>
+              <li>Never commit API keys, OAuth tokens, cookies, passwords, or session files.</li>
+              <li>Use <code>POSTER_REQUIRE_ADMIN_PASSWORD=true</code> before public hosting.</li>
+              <li>Only connect accounts, pages, boards, channels, and profiles you own or manage.</li>
+            </ul>
+          </section>
 
-        <section id="security" class="doc-section" data-search="security secrets local passwords cookies sessions self hosted">
-          <div class="section-heading">
-            <p class="eyebrow">Security</p>
-            <h2>Private by convention</h2>
-          </div>
-          <p>
-            Crossposter is not a public multi-tenant auth system. Keep it local, or
-            protect it before exposing it over the internet.
-          </p>
-          <ul class="check-list">
-            <li>Keep <code>poster.config.local.json</code> private.</li>
-            <li>Never commit API keys, OAuth tokens, browser cookies, passwords, or session files.</li>
-            <li>Use <code>POSTER_REQUIRE_ADMIN_PASSWORD=true</code> before public hosting.</li>
-            <li>Use accounts, boards, pages, channels, and profiles you own or are authorized to manage.</li>
-          </ul>
-        </section>
+          <section id="policy" class="doc-section policy" data-search="privacy terms data policy effective date local">
+            <div class="section-kicker">Privacy & terms</div>
+            <h2>Policy lives here, not in separate Markdown files.</h2>
+            <p class="effective">Effective date: June 4, 2026</p>
+            <div class="split-list">
+              <article>
+                <h3>Privacy</h3>
+                <p>Crossposter stores credentials, titles, links, draft text, media, scheduled posts, and publish history in your local or self-hosted environment.</p>
+              </article>
+              <article>
+                <h3>Third parties</h3>
+                <p>Content is sent only to the social platforms selected during publishing. This website uses no analytics pixels or tracking cookies.</p>
+              </article>
+              <article>
+                <h3>Terms</h3>
+                <p>Use Crossposter only with accounts you control. You are responsible for platform rules, API terms, automation rules, and content policies.</p>
+              </article>
+            </div>
+          </section>
 
-        <section id="privacy" class="doc-section" data-search="privacy data stored local credentials media history">
-          <div class="section-heading">
-            <p class="eyebrow">Privacy</p>
-            <h2>What data stays local</h2>
-          </div>
-          <p class="effective">Effective date: June 4, 2026</p>
-          <p>
-            Crossposter stores configured credentials, titles, links, draft text,
-            uploaded media, scheduled posts, and local publish history in the
-            operator's own local or self-hosted environment.
-          </p>
-          <p>
-            Content is sent only to the social platforms selected by the operator.
-            This website does not use analytics, advertising pixels, or tracking cookies.
-          </p>
-        </section>
-
-        <section id="terms" class="doc-section" data-search="terms authorized use content responsibility credentials availability">
-          <div class="section-heading">
-            <p class="eyebrow">Terms</p>
-            <h2>Use it with accounts you control</h2>
-          </div>
-          <p class="effective">Effective date: June 4, 2026</p>
-          <p>
-            Use Crossposter only with accounts, boards, pages, channels, and
-            profiles you own or are authorized to manage. You are responsible for
-            your content and for each platform's rules, API terms, automation
-            rules, and content policies.
-          </p>
-          <p>
-            Some integrations use official APIs. Others use local personal
-            automation, browser cookies, or session files because the platform does
-            not provide a normal public posting API for this use case.
-          </p>
-        </section>
-
-        <section id="project" class="doc-section project" data-search="project github support issues license contact">
-          <div class="section-heading">
-            <p class="eyebrow">Project</p>
-            <h2>Open source and local-first</h2>
-          </div>
-          <p>
-            Crossposter is maintained by Apoorv Darshan and released under the MIT
-            license. The source, issue tracker, and setup files live on GitHub.
-          </p>
-          <div class="contact-grid" aria-label="Project links">
-            <a href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">
-              <span>GitHub</span>
-              <strong>Repository</strong>
-            </a>
-            <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank">
-              <span>Issues</span>
-              <strong>Report an issue</strong>
-            </a>
-            <a href="https://x.com/apoorvdarshan" rel="noreferrer" target="_blank">
-              <span>X</span>
-              <strong>@apoorvdarshan</strong>
-            </a>
-            <a href="mailto:apoorvdarshan@gmail.com">
-              <span>Email</span>
-              <strong>apoorvdarshan@gmail.com</strong>
-            </a>
-            <a href="https://ko-fi.com/apoorvdarshan" rel="noreferrer" target="_blank">
-              <span>Support</span>
-              <strong>Ko-fi</strong>
-            </a>
-          </div>
-        </section>
-      </main>
-    </div>
+          <section id="contact" class="doc-section contact-section" data-search="contact github x email ko-fi issue support">
+            <div class="section-kicker">Project links</div>
+            <h2>Source, support, and contact.</h2>
+            <div class="contact-grid">
+              <a href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank"><span>GitHub</span><strong>Repository</strong></a>
+              <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank"><span>Issues</span><strong>Report an issue</strong></a>
+              <a href="https://x.com/apoorvdarshan" rel="noreferrer" target="_blank"><span>X</span><strong>@apoorvdarshan</strong></a>
+              <a href="mailto:apoorvdarshan@gmail.com"><span>Email</span><strong>apoorvdarshan@gmail.com</strong></a>
+              <a href="https://ko-fi.com/apoorvdarshan" rel="noreferrer" target="_blank"><span>Support</span><strong>Ko-fi</strong></a>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
 
     <footer class="site-footer">
-      <img src="assets/logo-crossposter.png" alt="" width="28" height="28">
       <span>Crossposter</span>
       <a href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">GitHub</a>
       <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank">Report issue</a>
