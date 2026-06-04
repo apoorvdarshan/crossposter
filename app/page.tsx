@@ -28,6 +28,8 @@ import {
   instagramPhotoMediaSizeLimit,
   instagramVideoMediaSizeLimit,
   dribbbleImageMediaSizeLimit,
+  pinterestImageMediaSizeLimit,
+  pinterestVideoMediaSizeLimit,
   postLimitIssuesForTargets,
   postTextLimitForPlatform,
   platformLabel,
@@ -136,6 +138,14 @@ const channels: Array<{
     uses: ["Title", "Post", "Media"],
     target: "Uses the active Dribbble OAuth token profile from Settings.",
     media: "Title becomes the shot title. Post becomes the description. Requires a JPG, PNG, or GIF exactly 400x300 or 800x600."
+  },
+  {
+    id: "pinterest",
+    label: "Pinterest",
+    note: "Unofficial Pin upload",
+    uses: ["Title", "Link", "Post", "Media"],
+    target: "Uses the active Pinterest py3-pinterest profile from Settings.",
+    media: "Title becomes the Pin title. Post becomes the description. Link becomes the destination URL. Requires a local image or MP4/MOV video."
   }
 ];
 
@@ -171,6 +181,11 @@ const envLabels: Record<string, string> = {
   DRIBBBLE_TAGS: "tags",
   DRIBBBLE_TEAM_ID: "team ID",
   DRIBBBLE_LOW_PROFILE: "Low Profile",
+  PINTEREST_EMAIL: "email",
+  PINTEREST_PASSWORD: "password",
+  PINTEREST_USERNAME: "username",
+  PINTEREST_BOARD_ID: "board ID",
+  PINTEREST_CRED_ROOT: "session folder",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
   NOSTR_PRIVATE_KEY: "private key",
@@ -298,6 +313,10 @@ const youtubeVideoExtensions = new Set([
 ]);
 const dribbbleImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const dribbbleImageTargetSize = 7.5 * 1024 * 1024;
+const pinterestImageTypes = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const pinterestVideoTypes = new Set(["video/mp4", "video/quicktime"]);
+const pinterestImageTargetSize = 19 * 1024 * 1024;
+const pinterestVideoTargetSize = 95 * 1024 * 1024;
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -757,6 +776,39 @@ function mediaPreflightIssues(
     }
   }
 
+  if (platforms.includes("pinterest")) {
+    if (kind === "image" && !pinterestImageTypes.has(file.type)) {
+      issues.push({
+        id: "pinterest-image-type",
+        message: `Pinterest supports JPG, PNG, GIF, and WebP images through py3-pinterest; selected file is ${file.type || "unknown"}.`,
+        compress: file.type === "image/gif" ? undefined : "image"
+      });
+    } else if (kind === "image" && file.size > pinterestImageMediaSizeLimit) {
+      issues.push({
+        id: "pinterest-image-size",
+        message: `Pinterest image limit is 20 MB; selected file is ${formatBytes(file.size)}.`,
+        compress: file.type === "image/gif" ? undefined : "image"
+      });
+    } else if (kind === "video" && !pinterestVideoTypes.has(file.type)) {
+      issues.push({
+        id: "pinterest-video-type",
+        message: `Pinterest supports MP4 and MOV videos through py3-pinterest; selected file is ${file.type || "unknown"}.`,
+        compress: "video"
+      });
+    } else if (kind === "video" && file.size > pinterestVideoMediaSizeLimit) {
+      issues.push({
+        id: "pinterest-video-size",
+        message: `Pinterest video limit is 100 MB; selected file is ${formatBytes(file.size)}.`,
+        compress: "video"
+      });
+    } else if (kind !== "image" && kind !== "video") {
+      issues.push({
+        id: "pinterest-kind",
+        message: `Pinterest can upload images and MP4/MOV videos only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    }
+  }
+
   if (platforms.includes("youtube")) {
     const extension = fileExtension(file.name);
     const supportedExtension = youtubeVideoExtensions.has(extension);
@@ -889,6 +941,10 @@ function imageTargetBytesForPlatforms(platforms: Platform[], file: File): number
     targets.push(instagramImageTargetSize);
   }
 
+  if (platforms.includes("pinterest") && file.size > pinterestImageMediaSizeLimit) {
+    targets.push(pinterestImageTargetSize);
+  }
+
   if (platforms.includes("mastodon") && file.size > mastodonImageSizeLimit) {
     targets.push(mastodonImageTargetSize);
   }
@@ -917,6 +973,10 @@ function videoTargetBytesForPlatforms(platforms: Platform[], file: File, request
 
   if (platforms.includes("youtube") && file.size > youtubeVideoMediaSizeLimit) {
     targets.push(youtubeVideoMediaSizeLimit);
+  }
+
+  if (platforms.includes("pinterest") && file.size > pinterestVideoMediaSizeLimit) {
+    targets.push(pinterestVideoTargetSize);
   }
 
   return Math.min(...targets);
@@ -1952,8 +2012,9 @@ export default function Home() {
     const hasInstagram = publishPlatforms.includes("instagram");
     const hasYouTube = publishPlatforms.includes("youtube");
     const hasDribbble = publishPlatforms.includes("dribbble");
+    const hasPinterest = publishPlatforms.includes("pinterest");
     const hasOnlyTextOptionalPlatforms = publishPlatforms.every((platform) =>
-      platform === "hackernews" || platform === "dribbble"
+      platform === "hackernews" || platform === "dribbble" || platform === "pinterest"
     );
 
     if ((hasHackerNews || hasYouTube || hasDribbble) && !title.trim()) {
@@ -1988,6 +2049,11 @@ export default function Home() {
 
     if (hasDribbble && !mediaFile) {
       setError("Dribbble requires a local shot image.");
+      return;
+    }
+
+    if (hasPinterest && !mediaFile) {
+      setError("Pinterest requires a local image or video file.");
       return;
     }
 
@@ -2088,8 +2154,9 @@ export default function Home() {
     const hasInstagram = publishPlatforms.includes("instagram");
     const hasYouTube = publishPlatforms.includes("youtube");
     const hasDribbble = publishPlatforms.includes("dribbble");
+    const hasPinterest = publishPlatforms.includes("pinterest");
     const hasOnlyTextOptionalPlatforms = publishPlatforms.every((platform) =>
-      platform === "hackernews" || platform === "dribbble"
+      platform === "hackernews" || platform === "dribbble" || platform === "pinterest"
     );
 
     if ((hasHackerNews || hasYouTube || hasDribbble) && !title.trim()) {
@@ -2124,6 +2191,11 @@ export default function Home() {
 
     if (hasDribbble && !mediaFile) {
       setError("Dribbble requires a local shot image.");
+      return;
+    }
+
+    if (hasPinterest && !mediaFile) {
+      setError("Pinterest requires a local image or video file.");
       return;
     }
 
@@ -2267,9 +2339,10 @@ export default function Home() {
   const hasInstagram = selectedPlatforms.includes("instagram");
   const hasYouTube = selectedPlatforms.includes("youtube");
   const hasDribbble = selectedPlatforms.includes("dribbble");
+  const hasPinterest = selectedPlatforms.includes("pinterest");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
   const hasOnlyTextOptionalPlatforms = selectedPlatforms.every((platform) =>
-    platform === "hackernews" || platform === "dribbble"
+    platform === "hackernews" || platform === "dribbble" || platform === "pinterest"
   );
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
   const hasRequiredYouTubeTitle = !hasYouTube || Boolean(title.trim());
@@ -2277,6 +2350,7 @@ export default function Home() {
   const hasRequiredInstagramMedia = !hasInstagram || Boolean(mediaFile);
   const hasRequiredYouTubeMedia = !hasYouTube || Boolean(mediaFile);
   const hasRequiredDribbbleMedia = !hasDribbble || Boolean(mediaFile);
+  const hasRequiredPinterestMedia = !hasPinterest || Boolean(mediaFile);
   const hasRequiredPostText =
     Boolean(text.trim()) ||
     (isHackerNewsOnly && Boolean(title.trim())) ||
@@ -2294,6 +2368,7 @@ export default function Home() {
     hasRequiredInstagramMedia &&
     hasRequiredYouTubeMedia &&
     hasRequiredDribbbleMedia &&
+    hasRequiredPinterestMedia &&
     hasRequiredPostText &&
     preflightIssues.length === 0 &&
     !hasLimitIssues &&

@@ -47,6 +47,7 @@ const platforms: Platform[] = [
   "instagram",
   "youtube",
   "dribbble",
+  "pinterest",
   "devto",
   "hackernews",
   "nostr"

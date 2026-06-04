@@ -13,10 +13,14 @@ export const xPremiumVideoMediaSizeLimit = 16 * 1024 * 1024 * 1024;
 export const instagramPhotoMediaSizeLimit = 8 * 1024 * 1024;
 export const instagramVideoMediaSizeLimit = 300 * 1024 * 1024;
 export const dribbbleImageMediaSizeLimit = 8 * 1024 * 1024;
+export const pinterestImageMediaSizeLimit = 20 * 1024 * 1024;
+export const pinterestVideoMediaSizeLimit = 100 * 1024 * 1024;
 export const hackerNewsTitleLimit = 80;
 export const devtoTitleLimit = 128;
 export const youtubeTitleLimit = 100;
+export const pinterestTitleLimit = 100;
 export const youtubeVideoMediaSizeLimit = 256 * 1024 * 1024 * 1024;
+export const pinterestDescriptionLimit = 500;
 export const devtoBodyBytesLimit = 800 * 1024;
 
 const platformLabels: Record<Platform, string> = {
@@ -27,6 +31,7 @@ const platformLabels: Record<Platform, string> = {
   instagram: "Instagram",
   youtube: "YouTube",
   dribbble: "Dribbble",
+  pinterest: "Pinterest",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"
@@ -97,6 +102,10 @@ export function titleLimitForPlatform(platform: Platform): number | undefined {
     return youtubeTitleLimit;
   }
 
+  if (platform === "pinterest") {
+    return pinterestTitleLimit;
+  }
+
   return undefined;
 }
 
@@ -142,6 +151,10 @@ export function postTextLimitForPlatform(
 
   if (platform === "youtube") {
     return youtubeDescriptionLimit;
+  }
+
+  if (platform === "pinterest") {
+    return pinterestDescriptionLimit;
   }
 
   if (platform === "x") {

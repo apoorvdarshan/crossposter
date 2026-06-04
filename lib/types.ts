@@ -6,6 +6,7 @@ export type Platform =
   | "instagram"
   | "youtube"
   | "dribbble"
+  | "pinterest"
   | "devto"
   | "hackernews"
   | "nostr";

@@ -93,7 +93,8 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "devto", label: "Dev.to" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" },
-  { id: "dribbble", label: "Dribbble" }
+  { id: "dribbble", label: "Dribbble" },
+  { id: "pinterest", label: "Pinterest" }
 ];
 
 const settingsViews: Array<{ id: SettingsView; label: string; href: string }> = [
@@ -272,6 +273,26 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "On the Dashboard, add a Title, optional Post text for the shot description, and attach a JPG, PNG, or GIF.",
       "Dribbble API shot images must be exactly 400x300 or 800x600 and no larger than 8 MB.",
       "Dribbble creates shots asynchronously, so the returned shot may take a moment to appear."
+    ]
+  },
+  pinterest: {
+    title: "Pinterest setup",
+    intro:
+      "Unofficial local posting through py3-pinterest. Crossposter saves one browser-cookie session folder per Pinterest profile.",
+    links: [
+      { label: "py3-pinterest", href: "https://github.com/bstoilov/py3-pinterest" },
+      { label: "Pinterest developer guidelines", href: "https://policy.pinterest.com/en/developer-guidelines" },
+      { label: "Pinterest Pin specs", href: "https://help.pinterest.com/en/article/review-pin-specs" }
+    ],
+    steps: [
+      "Install the local dependency in Terminal with ./scripts/install-pinterest-deps.sh.",
+      "Add a Pinterest profile here.",
+      "Set Pinterest email, password, and username for that account. They stay in poster.config.local.json.",
+      "Set Pinterest board ID to the numeric board you want to publish into.",
+      "Set Pinterest session folder to a unique folder for each account, for example .pinterest-sessions/apoorvdarshan.",
+      "If Pinterest blocks headless login, set Pinterest headless login to false so py3-pinterest can show Chrome.",
+      "On the Dashboard, attach one local image or MP4/MOV video. Title becomes the Pin title, Post becomes the description, and Link becomes the Pin destination URL.",
+      "Avoid parallel or high-volume posting. Pinterest may challenge, rate limit, or restrict accounts for suspicious automation."
     ]
   },
   nostr: {
@@ -1209,7 +1230,8 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                 const fieldValue = profile.values[field.name] || field.defaultValue || "";
                 const isBooleanField =
                   field.name === "X_PREMIUM_LONG_POSTS" ||
-                  field.name === "DRIBBBLE_LOW_PROFILE";
+                  field.name === "DRIBBBLE_LOW_PROFILE" ||
+                  field.name === "PINTEREST_HEADLESS";
                 const issue = validateConfigField(
                   field,
                   fieldValue,
@@ -1242,6 +1264,10 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                             ? fieldValue === "true"
                               ? "Publish as Low Profile"
                               : "Normal shot profile"
+                            : field.name === "PINTEREST_HEADLESS"
+                              ? fieldValue === "true"
+                                ? "Headless Chrome login"
+                                : "Visible Chrome login"
                             : fieldValue === "true"
                               ? "Premium account limits"
                               : "Standard 280 chars / 512 MB video"}

@@ -4,6 +4,7 @@ import {
   siDribbble,
   siInstagram,
   siMastodon,
+  siPinterest,
   siX,
   siYoutube,
   siYcombinator,
@@ -19,6 +20,7 @@ const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   instagram: siInstagram,
   youtube: siYoutube,
   dribbble: siDribbble,
+  pinterest: siPinterest,
   devto: siDevdotto,
   hackernews: siYcombinator
 };
@@ -31,6 +33,7 @@ const socialNames: Record<Platform, string> = {
   instagram: "Instagram",
   youtube: "YouTube",
   dribbble: "Dribbble",
+  pinterest: "Pinterest",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"
@@ -44,6 +47,7 @@ const brandColors: Record<Platform, string> = {
   instagram: `#${siInstagram.hex}`,
   youtube: `#${siYoutube.hex}`,
   dribbble: `#${siDribbble.hex}`,
+  pinterest: `#${siPinterest.hex}`,
   devto: `#${siDevdotto.hex}`,
   hackernews: `#${siYcombinator.hex}`,
   nostr: "#8f3ffc"

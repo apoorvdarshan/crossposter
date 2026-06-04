@@ -6,6 +6,7 @@ import { publishLinkedIn } from "@/lib/providers/linkedin";
 import { publishMastodon } from "@/lib/providers/mastodon";
 import { publishInstagram } from "@/lib/providers/instagram";
 import { publishNostr } from "@/lib/providers/nostr";
+import { publishPinterest } from "@/lib/providers/pinterest";
 import { publishX } from "@/lib/providers/x";
 import { publishYouTube } from "@/lib/providers/youtube";
 import type { Platform, ProviderContext, PublishResult } from "@/lib/types";
@@ -20,6 +21,7 @@ export const providers: Record<Platform, Provider> = {
   instagram: publishInstagram,
   youtube: publishYouTube,
   dribbble: publishDribbble,
+  pinterest: publishPinterest,
   devto: publishDevto,
   hackernews: publishHackerNews,
   nostr: publishNostr

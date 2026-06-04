@@ -181,6 +181,70 @@ export const configFields: ConfigField[] = [
     showFor: ["dribbble"]
   },
   {
+    name: "PINTEREST_EMAIL",
+    label: "Pinterest email",
+    help: "Pinterest account email. Saved locally and used by py3-pinterest to refresh cookies.",
+    requiredFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_PASSWORD",
+    label: "Pinterest password",
+    help: "Pinterest account password. Saved locally and used only for this unofficial local session.",
+    secret: true,
+    requiredFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_USERNAME",
+    label: "Pinterest username",
+    help: "Pinterest username without @.",
+    requiredFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_BOARD_ID",
+    label: "Pinterest board ID",
+    help: "Numeric board ID to publish Pins into.",
+    requiredFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_CRED_ROOT",
+    label: "Pinterest session folder",
+    help: "Folder for py3-pinterest cookies, for example .pinterest-sessions/apoorvdarshan.",
+    defaultValue: ".pinterest-sessions/default",
+    requiredFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_SECTION_ID",
+    label: "Pinterest section ID",
+    help: "Optional numeric board section ID.",
+    showFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_ALT_TEXT",
+    label: "Pinterest alt text",
+    help: "Optional alt text for the Pin media.",
+    showFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_PYTHON_COMMAND",
+    label: "Pinterest Python command",
+    help: "Python command with py3-pinterest installed. Leave blank to use .venv/bin/python when present, then python3.",
+    showFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_TIMEOUT_MS",
+    label: "Pinterest timeout",
+    help: "Timeout for py3-pinterest publishing in milliseconds.",
+    defaultValue: "300000",
+    showFor: ["pinterest"]
+  },
+  {
+    name: "PINTEREST_HEADLESS",
+    label: "Pinterest headless login",
+    help: "Set false if Pinterest needs a visible Chrome login challenge for this account.",
+    defaultValue: "true",
+    showFor: ["pinterest"]
+  },
+  {
     name: "LINKEDIN_CLIENT_ID",
     label: "LinkedIn client ID",
     help: "Client ID from your LinkedIn developer app. Used only to connect this profile locally.",
@@ -310,6 +374,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     instagram: [],
     youtube: [],
     dribbble: [],
+    pinterest: [],
     devto: [],
     hackernews: [],
     nostr: []

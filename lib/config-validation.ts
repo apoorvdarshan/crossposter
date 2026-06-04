@@ -139,6 +139,36 @@ function invalidReason(name: string, value: string): string | null {
 
       return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
     }
+    case "PINTEREST_EMAIL":
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : "must be an email address";
+    case "PINTEREST_USERNAME":
+      return /^[A-Za-z0-9._-]{2,50}$/.test(value) && !value.startsWith("@")
+        ? null
+        : "must be a Pinterest username without @";
+    case "PINTEREST_BOARD_ID":
+    case "PINTEREST_SECTION_ID":
+      return /^\d+$/.test(value) ? null : "must be a numeric Pinterest ID";
+    case "PINTEREST_CRED_ROOT":
+      return /^[^\0\r\n]{1,500}$/.test(value)
+        ? null
+        : "must be a local session folder path";
+    case "PINTEREST_ALT_TEXT":
+      return value.length <= 500 ? null : "must be 500 characters or fewer";
+    case "PINTEREST_PYTHON_COMMAND":
+      return /^[A-Za-z0-9_./-]+$/.test(value)
+        ? null
+        : "must be a command name or path without spaces";
+    case "PINTEREST_TIMEOUT_MS": {
+      if (!/^\d+$/.test(value)) {
+        return "must be milliseconds";
+      }
+
+      const timeout = Number(value);
+
+      return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
+    }
+    case "PINTEREST_HEADLESS":
+      return value === "true" || value === "false" ? null : "must be true or false";
     case "YOUTUBE_COOKIE_SOURCE":
       return /^(chrome|manual)$/i.test(value) ? null : "must be chrome or manual";
     case "YOUTUBE_CHROME_PROFILE":

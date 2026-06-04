@@ -17,6 +17,7 @@ const platformSchema = z.enum([
   "instagram",
   "youtube",
   "dribbble",
+  "pinterest",
   "devto",
   "hackernews",
   "nostr"
@@ -81,7 +82,9 @@ function hasOnlyTextOptionalPlatforms(value: {
 }): boolean {
   const platforms = requestedPlatforms(value);
 
-  return platforms.length > 0 && platforms.every((platform) => platform === "hackernews" || platform === "dribbble");
+  return platforms.length > 0 && platforms.every((platform) =>
+    platform === "hackernews" || platform === "dribbble" || platform === "pinterest"
+  );
 }
 
 function defaultTargets(value: {
@@ -127,7 +130,7 @@ const requestSchema = z
     message: "Dribbble requires a title."
   })
   .refine((value) => value.text.trim() || (hasOnlyTextOptionalPlatforms(value) && value.title?.trim()), {
-    message: "Write post text, or select only Hacker News/Dribbble and add a title."
+    message: "Write post text, or select only Hacker News/Dribbble/Pinterest and add a title."
   })
   .refine((value) => Number.isFinite(Date.parse(value.scheduledFor)), {
     message: "Choose a valid scheduled time."
