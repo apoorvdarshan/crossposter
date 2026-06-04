@@ -141,32 +141,24 @@ pre code {
 }
 
 .hero {
-  min-height: min(780px, calc(100vh - 40px));
-  overflow: hidden;
+  background:
+    linear-gradient(rgba(246, 248, 239, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(246, 248, 239, 0.04) 1px, transparent 1px),
+    var(--dark);
+  background-size: 72px 72px;
+  color: #f6f8ef;
+  display: grid;
+  gap: clamp(30px, 6vw, 90px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 440px);
+  min-height: 620px;
+  padding: clamp(72px, 10vw, 132px) clamp(20px, 7vw, 92px);
   position: relative;
 }
 
-.hero-image {
-  height: 100%;
-  inset: 0;
-  object-fit: cover;
-  object-position: center top;
-  position: absolute;
-  width: 100%;
-}
-
-.hero-shade {
-  background:
-    linear-gradient(90deg, rgba(7, 12, 8, 0.92), rgba(7, 12, 8, 0.64) 42%, rgba(7, 12, 8, 0.14)),
-    linear-gradient(180deg, rgba(7, 12, 8, 0.16), rgba(7, 12, 8, 0.76));
-  inset: 0;
-  position: absolute;
-}
-
 .hero-content {
-  color: #f6f8ef;
-  max-width: 880px;
-  padding: clamp(62px, 8vw, 104px) clamp(20px, 7vw, 92px) 64px;
+  align-self: center;
+  min-width: 0;
+  max-width: 980px;
   position: relative;
   z-index: 2;
 }
@@ -181,17 +173,17 @@ pre code {
 }
 
 .hero h1 {
-  font-size: clamp(3.55rem, 8vw, 6.45rem);
+  font-size: clamp(4.5rem, 10vw, 9rem);
   letter-spacing: 0;
-  line-height: 0.88;
+  line-height: 0.84;
   margin: 14px 0 0;
-  max-width: 980px;
+  max-width: 900px;
 }
 
 .hero-copy {
   color: rgba(246, 248, 239, 0.82);
-  font-size: clamp(1.08rem, 2vw, 1.34rem);
-  max-width: 680px;
+  font-size: clamp(1.18rem, 2vw, 1.58rem);
+  max-width: 720px;
 }
 
 .hero-actions {
@@ -212,6 +204,40 @@ pre code {
 .button.secondary {
   border-color: rgba(246, 248, 239, 0.34);
   color: #f6f8ef;
+}
+
+.hero-ledger {
+  align-self: end;
+  border-bottom: 1px solid rgba(246, 248, 239, 0.22);
+  border-top: 1px solid rgba(246, 248, 239, 0.22);
+  display: grid;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-ledger div {
+  display: grid;
+  gap: 6px;
+  padding: 22px 0;
+}
+
+.hero-ledger div + div {
+  border-top: 1px solid rgba(246, 248, 239, 0.14);
+}
+
+.hero-ledger span {
+  color: #7ef0aa;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-ledger strong {
+  color: #f6f8ef;
+  font-size: clamp(1.8rem, 3vw, 3.3rem);
+  letter-spacing: 0;
+  line-height: 0.9;
 }
 
 .quick-facts {
@@ -259,16 +285,18 @@ pre code {
 
 .gallery-grid {
   display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  grid-template-columns: 1fr;
   margin: 0 auto;
-  max-width: 1520px;
+  max-width: 1560px;
 }
 
 .gallery-grid figure {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 330px);
   margin: 0;
   overflow: hidden;
 }
@@ -280,10 +308,14 @@ pre code {
 }
 
 .gallery-grid figcaption {
+  align-content: end;
+  border-left: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.95rem;
+  display: grid;
+  font-size: 1rem;
   font-weight: 750;
-  padding: 14px 16px 16px;
+  min-height: 100%;
+  padding: 20px;
 }
 
 .docs-shell {
@@ -663,7 +695,6 @@ tbody tr:last-child td {
   .feature-grid.compact,
   .split-list,
   .contact-grid,
-  .gallery-grid,
   .quick-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -698,30 +729,25 @@ tbody tr:last-child td {
   }
 
   .hero {
-    min-height: 760px;
-  }
-
-  .hero-shade {
-    background:
-      linear-gradient(180deg, rgba(7, 12, 8, 0.9), rgba(7, 12, 8, 0.62) 56%, rgba(7, 12, 8, 0.86)),
-      linear-gradient(90deg, rgba(7, 12, 8, 0.7), rgba(7, 12, 8, 0.24));
-  }
-
-  .hero-image {
-    object-position: 28% top;
+    display: block;
+    min-height: auto;
   }
 
   .hero-content {
-    padding: 70px 20px 54px;
+    padding: 0;
   }
 
   .hero h1 {
-    font-size: clamp(3.05rem, 14vw, 4.6rem);
-    max-width: 350px;
+    font-size: clamp(3.2rem, 15vw, 3.75rem);
+    max-width: 100%;
   }
 
   .hero-copy {
     max-width: 340px;
+  }
+
+  .hero-ledger {
+    margin-top: 42px;
   }
 
   .quick-facts,
@@ -732,6 +758,15 @@ tbody tr:last-child td {
   .contact-grid,
   .gallery-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gallery-grid figure {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-grid figcaption {
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
   .provider-list article {

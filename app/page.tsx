@@ -3119,7 +3119,7 @@ export default function Home() {
                     <span className="channel-body">
                       <span className="channel-top">
                         <span className="channel-title">
-                          <SocialLogo platform={target.id} />
+                          <SocialLogo platform={target.id} size="lg" />
                           <strong>{target.label}</strong>
                         </span>
                         <span className="channel-check" />

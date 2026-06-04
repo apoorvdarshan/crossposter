@@ -59,7 +59,7 @@ const brandColors: Record<Platform, string> = {
 
 type SocialLogoProps = {
   platform: Platform;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 };
 
 export function SocialLogo({ platform, size = "md" }: SocialLogoProps) {
