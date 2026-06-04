@@ -34,6 +34,7 @@ const platformLabels: Record<Platform, string> = {
   youtube: "YouTube",
   dribbble: "Dribbble",
   pinterest: "Pinterest",
+  peerlist: "Peerlist",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"

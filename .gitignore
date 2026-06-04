@@ -3,6 +3,7 @@
 .env*.local
 poster.config.local.json
 .instagram-sessions
+.pinterest-sessions
 .poster-uploads
 .venv
 .next

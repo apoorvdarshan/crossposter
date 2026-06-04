@@ -92,6 +92,7 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "youtube", label: "YouTube" },
   { id: "devto", label: "Dev.to" },
   { id: "pinterest", label: "Pinterest" },
+  { id: "peerlist", label: "Peerlist" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" },
   { id: "dribbble", label: "Dribbble" }
@@ -293,6 +294,24 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "If Pinterest blocks headless login, set Pinterest headless login to false so py3-pinterest can show Chrome.",
       "On the Dashboard, attach one local image or MP4/MOV video. Title becomes the Pin title, Post becomes the description, and Link becomes the Pin destination URL.",
       "Avoid parallel or high-volume posting. Pinterest may challenge, rate limit, or restrict accounts for suspicious automation."
+    ]
+  },
+  peerlist: {
+    title: "Peerlist setup",
+    intro:
+      "Unofficial local posting through Peerlist's Scroll API. Crossposter uses a temporary headless Chrome session with your existing Peerlist cookies, then sends API requests directly.",
+    links: [
+      { label: "Peerlist Scroll", href: "https://peerlist.io/scroll" },
+      { label: "Scroll posting guide", href: "https://help.peerlist.io/individual/scroll/what-can-i-post-on-peerlist-scroll" }
+    ],
+    steps: [
+      "Log in to Peerlist in Chrome on this Mac.",
+      "Add a Peerlist profile here.",
+      "Set Peerlist Chrome profile to the Chrome folder that is logged in, usually Default.",
+      "Set Peerlist username without @ so Crossposter can show your posts page if Peerlist does not return a post URL.",
+      "Leave Peerlist context as SHOW unless you want ASK, BOOK, HIRING, NEWS, EVENT, or QUIZ.",
+      "On the Dashboard, write Post text or attach one local JPG, PNG, WebP, or GIF. Title is optional and title-only posts are blocked.",
+      "Avoid parallel or high-volume posting. Peerlist may challenge, rate limit, or restrict accounts for suspicious automation."
     ]
   },
   nostr: {

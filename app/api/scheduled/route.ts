@@ -18,6 +18,7 @@ const platformSchema = z.enum([
   "youtube",
   "dribbble",
   "pinterest",
+  "peerlist",
   "devto",
   "hackernews",
   "nostr"
@@ -76,14 +77,30 @@ function requestedPlatforms(value: {
   return Array.from(new Set(platforms));
 }
 
-function hasOnlyTextOptionalPlatforms(value: {
+function canPublishWithoutText(value: {
   platforms?: Platform[];
   targets?: Array<{ platform: Platform }>;
+  title?: string;
+  mediaId?: string;
 }): boolean {
   const platforms = requestedPlatforms(value);
 
-  return platforms.length > 0 && platforms.every((platform) =>
-    platform === "hackernews" || platform === "dribbble" || platform === "pinterest"
+  if (platforms.length === 0) {
+    return false;
+  }
+
+  if (platforms.every((platform) => platform === "peerlist")) {
+    return Boolean(value.mediaId);
+  }
+
+  return (
+    Boolean(value.title?.trim()) &&
+    platforms.every((platform) =>
+      platform === "hackernews" ||
+      platform === "dribbble" ||
+      platform === "pinterest" ||
+      (platform === "peerlist" && Boolean(value.mediaId))
+    )
   );
 }
 
@@ -129,8 +146,8 @@ const requestSchema = z
   .refine((value) => !requestedPlatforms(value).includes("dribbble") || value.title?.trim(), {
     message: "Dribbble requires a title."
   })
-  .refine((value) => value.text.trim() || (hasOnlyTextOptionalPlatforms(value) && value.title?.trim()), {
-    message: "Write post text, or select only Hacker News/Dribbble/Pinterest and add a title."
+  .refine((value) => value.text.trim() || canPublishWithoutText(value), {
+    message: "Write post text, or use media for Peerlist-only posts."
   })
   .refine((value) => Number.isFinite(Date.parse(value.scheduledFor)), {
     message: "Choose a valid scheduled time."

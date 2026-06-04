@@ -48,6 +48,7 @@ const platforms: Platform[] = [
   "youtube",
   "dribbble",
   "pinterest",
+  "peerlist",
   "devto",
   "hackernews",
   "nostr"
@@ -80,7 +81,7 @@ function normalizePlatforms(value: unknown): Platform[] {
 
   return value
     .filter((item): item is Platform => platforms.includes(item as Platform))
-    .slice(0, 10);
+    .slice(0, 30);
 }
 
 function normalizePublishTargets(value: unknown): PublishTarget[] {
@@ -307,13 +308,15 @@ function normalizeScheduledPost(value: unknown): ScheduledPost | null {
   const title = stringValue(record.title, 300);
   const text = stringValue(record.text, storedPostTextLimit);
   const isHackerNewsOnly = platforms.length === 1 && platforms[0] === "hackernews";
+  const media = normalizePublishedMedia(record.media);
+  const isPeerlistOnly = platforms.length === 1 && platforms[0] === "peerlist";
   const results = Array.isArray(record.results)
     ? record.results.map(normalizePublishResult).filter((item): item is PublishResult => Boolean(item))
     : [];
 
   if (
     !Number.isFinite(scheduledAt) ||
-    (!text.trim() && !(isHackerNewsOnly && title.trim())) ||
+    (!text.trim() && !(isHackerNewsOnly && title.trim()) && !(isPeerlistOnly && media)) ||
     platforms.length === 0
   ) {
     return null;
@@ -331,7 +334,7 @@ function normalizeScheduledPost(value: unknown): ScheduledPost | null {
       : {}),
     platforms,
     targets,
-    ...(normalizePublishedMedia(record.media) ? { media: normalizePublishedMedia(record.media) } : {}),
+    ...(media ? { media } : {}),
     status: normalizeScheduledPostStatus(record.status),
     attempts: typeof record.attempts === "number" && record.attempts > 0 ? Math.floor(record.attempts) : 0,
     ...(typeof record.lastError === "string" && record.lastError
