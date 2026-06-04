@@ -51,21 +51,32 @@
     <main id="main">
       <section id="top" class="hero" aria-labelledby="hero-title">
         <div class="hero-content">
-          <p class="eyebrow">Local-first social publishing</p>
+          <p class="eyebrow">Local-first publishing console</p>
           <h1 id="hero-title">Crossposter</h1>
           <p class="hero-copy">
-            A private dashboard for posting to your connected socials from a
-            local/self-hosted server you control.
+            Compose once, attach media, and publish to your connected socials
+            from a private local server you control.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#start">Run locally</a>
             <a class="button secondary" href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">View source</a>
           </div>
+          <div class="hero-socials" aria-label="Supported provider logos">
+            <span>Targets</span>
+            <img src="assets/social/x.svg" alt="">
+            <img src="assets/social/linkedin.svg" alt="">
+            <img src="assets/social/bluesky.svg" alt="">
+            <img src="assets/social/instagram.svg" alt="">
+            <img src="assets/social/youtube.svg" alt="">
+            <img src="assets/social/pinterest.svg" alt="">
+            <img src="assets/social/hackernews.svg" alt="">
+            <img src="assets/social/dribbble.svg" alt="">
+          </div>
         </div>
         <div class="hero-ledger" aria-label="Crossposter highlights">
           <div>
-            <span>Providers</span>
-            <strong>12+</strong>
+            <span>Ready providers</span>
+            <strong>15</strong>
           </div>
           <div>
             <span>Runs on</span>
@@ -80,8 +91,8 @@
 
       <section class="quick-facts" aria-label="Project facts">
         <div>
-          <strong>12</strong>
-          <span>connected providers</span>
+          <strong>15</strong>
+          <span>ready publishing targets</span>
         </div>
         <div>
           <strong>0</strong>
@@ -100,21 +111,52 @@
       <section class="screenshot-gallery" aria-labelledby="screenshots-title">
         <div class="gallery-heading">
           <p class="section-kicker">Workflow preview</p>
-          <h2 id="screenshots-title">Publish in three steps.</h2>
+          <h2 id="screenshots-title">Three moves from draft to published.</h2>
         </div>
         <div class="gallery-grid">
           <figure>
-            <img src="assets/step-compose-preview.png" alt="Crossposter dashboard compose view with Scowld draft text and media selected">
-            <figcaption><span>01</span> Compose the post once with title, link, body, and media.</figcaption>
+            <div class="shot-frame">
+              <img src="assets/step-compose-preview.png" alt="Crossposter dashboard compose view with Scowld draft text and media selected">
+            </div>
+            <figcaption>
+              <span>01</span>
+              <strong>Compose once</strong>
+              <small>Title, link, post body, and media stay visible in one work surface.</small>
+            </figcaption>
           </figure>
           <figure>
-            <img src="assets/step-channels-preview.png" alt="Crossposter dashboard with selected publishing targets">
-            <figcaption><span>02</span> Pick connected profiles and see readiness before publishing.</figcaption>
+            <div class="shot-frame">
+              <img src="assets/step-channels-preview.png" alt="Crossposter dashboard with selected publishing targets">
+            </div>
+            <figcaption>
+              <span>02</span>
+              <strong>Pick targets</strong>
+              <small>Select connected profiles and see readiness before publishing.</small>
+            </figcaption>
           </figure>
           <figure>
-            <img src="assets/step-published-preview.png" alt="Crossposter publish output with platform result links">
-            <figcaption><span>03</span> Review saved local history and platform result links.</figcaption>
+            <div class="shot-frame">
+              <img src="assets/step-published-preview.png" alt="Crossposter publish output with platform result links">
+            </div>
+            <figcaption>
+              <span>03</span>
+              <strong>Read results</strong>
+              <small>Saved local history keeps platform result links and failures together.</small>
+            </figcaption>
           </figure>
+        </div>
+      </section>
+
+      <section class="platform-strip" aria-labelledby="platform-strip-title">
+        <div>
+          <p class="section-kicker">Provider surface</p>
+          <h2 id="platform-strip-title">Official APIs where possible, local sessions where necessary.</h2>
+        </div>
+        <div class="platform-strip-grid">
+          <span><img src="assets/social/linkedin.svg" alt="">OAuth</span>
+          <span><img src="assets/social/mastodon.svg" alt="">Access tokens</span>
+          <span><img src="assets/social/instagram.svg" alt="">Private sessions</span>
+          <span><img src="assets/social/x.svg" alt="">Local cookies</span>
         </div>
       </section>
 
