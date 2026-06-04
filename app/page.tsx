@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  Crop,
   ExternalLink,
   File as FileIcon,
   ImageIcon,
@@ -316,11 +317,23 @@ type PreflightIssue = {
   id: string;
   message: string;
   compress?: "image" | "video";
+  crop?: "dribbble";
 };
 
 type MediaPreflightTarget = {
   platform: Platform;
   xPremium?: boolean;
+};
+
+type MediaDimensions = {
+  width: number;
+  height: number;
+};
+
+type DribbbleCropOptions = {
+  x: number;
+  y: number;
+  zoom: number;
 };
 
 type VideoCompressionQuality = "high" | "balanced" | "small";
@@ -634,7 +647,8 @@ function isAbortError(error: unknown): boolean {
 
 function mediaPreflightIssues(
   targets: MediaPreflightTarget[],
-  file: File | null
+  file: File | null,
+  dimensions?: MediaDimensions | null
 ): PreflightIssue[] {
   const issues: PreflightIssue[] = [];
   const kind = fileKind(file);
@@ -773,6 +787,18 @@ function mediaPreflightIssues(
         message: `Dribbble supports JPG, PNG, and GIF shot images; selected file is ${file.type || "unknown"}.`,
         compress: file.type === "image/gif" ? undefined : "image"
       });
+    } else if (
+      dimensions &&
+      !(
+        (dimensions.width === 400 && dimensions.height === 300) ||
+        (dimensions.width === 800 && dimensions.height === 600)
+      )
+    ) {
+      issues.push({
+        id: "dribbble-image-dimensions",
+        message: `Dribbble shot images must be exactly 400x300 or 800x600; selected image is ${dimensions.width}x${dimensions.height}.`,
+        crop: file.type === "image/gif" ? undefined : "dribbble"
+      });
     } else if (file.size > dribbbleImageMediaSizeLimit) {
       issues.push({
         id: "dribbble-image-size",
@@ -829,6 +855,13 @@ function imageFileName(filename: string): string {
   const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
 
   return `${basename}-compressed.jpg`;
+}
+
+function dribbbleCropFileName(filename: string): string {
+  const dotIndex = filename.lastIndexOf(".");
+  const basename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
+
+  return `${basename}-dribbble-800x600.jpg`;
 }
 
 function videoFileName(filename: string): string {
@@ -896,6 +929,98 @@ function loadImage(file: File): Promise<HTMLImageElement> {
       reject(new Error("Could not read this image for compression"));
     };
     image.src = objectUrl;
+  });
+}
+
+async function readImageDimensions(file: File): Promise<MediaDimensions> {
+  const image = await loadImage(file);
+
+  return {
+    width: image.naturalWidth,
+    height: image.naturalHeight
+  };
+}
+
+function clampCropPercent(value: number): number {
+  return Math.max(0, Math.min(100, value));
+}
+
+function clampCropZoom(value: number): number {
+  return Math.max(1, Math.min(3, value));
+}
+
+function dribbbleCropRect(image: HTMLImageElement, options: DribbbleCropOptions) {
+  const imageWidth = image.naturalWidth;
+  const imageHeight = image.naturalHeight;
+  const aspect = 4 / 3;
+  const zoom = clampCropZoom(options.zoom);
+  let sourceWidth = imageWidth;
+  let sourceHeight = sourceWidth / aspect;
+
+  if (sourceHeight > imageHeight) {
+    sourceHeight = imageHeight;
+    sourceWidth = sourceHeight * aspect;
+  }
+
+  sourceWidth /= zoom;
+  sourceHeight /= zoom;
+
+  const maxX = Math.max(0, imageWidth - sourceWidth);
+  const maxY = Math.max(0, imageHeight - sourceHeight);
+
+  return {
+    x: maxX * (clampCropPercent(options.x) / 100),
+    y: maxY * (clampCropPercent(options.y) / 100),
+    width: sourceWidth,
+    height: sourceHeight
+  };
+}
+
+function drawDribbbleCrop(
+  image: HTMLImageElement,
+  canvas: HTMLCanvasElement,
+  options: DribbbleCropOptions
+) {
+  const context = canvas.getContext("2d");
+
+  canvas.width = 800;
+  canvas.height = 600;
+
+  if (!context) {
+    throw new Error("Image crop is not available in this browser");
+  }
+
+  const rect = dribbbleCropRect(image, options);
+
+  context.fillStyle = "#101510";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(
+    image,
+    rect.x,
+    rect.y,
+    rect.width,
+    rect.height,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+}
+
+async function cropImageForDribbble(
+  file: File,
+  options: DribbbleCropOptions
+): Promise<File> {
+  const image = await loadImage(file);
+  const canvas = document.createElement("canvas");
+
+  drawDribbbleCrop(image, canvas, options);
+
+  const blob = await canvasToBlob(canvas, 0.92);
+
+  return new File([blob], dribbbleCropFileName(file.name), {
+    type: "image/jpeg",
+    lastModified: Date.now()
   });
 }
 
@@ -1094,12 +1219,18 @@ export default function Home() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const mediaInputRef = useRef<HTMLInputElement | null>(null);
+  const cropCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
+  const [mediaDimensions, setMediaDimensions] = useState<MediaDimensions | null>(null);
   const [imageQuality, setImageQuality] = useState(78);
   const [estimatedImageSize, setEstimatedImageSize] = useState<number | null>(null);
   const [isEstimatingImageSize, setIsEstimatingImageSize] = useState(false);
   const [videoTargetMb, setVideoTargetMb] = useState(490);
   const [videoQuality, setVideoQuality] = useState<VideoCompressionQuality>("balanced");
+  const [isDribbbleCropOpen, setIsDribbbleCropOpen] = useState(false);
+  const [dribbbleCropX, setDribbbleCropX] = useState(50);
+  const [dribbbleCropY, setDribbbleCropY] = useState(50);
+  const [dribbbleCropZoom, setDribbbleCropZoom] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
   const [results, setResults] = useState<PublishResult[]>([]);
   const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
@@ -1109,6 +1240,7 @@ export default function Home() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isCompressingMedia, setIsCompressingMedia] = useState(false);
+  const [isCroppingMedia, setIsCroppingMedia] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
   const [progress, setProgress] = useState<ProgressState | null>(null);
   const [progressPlacement, setProgressPlacement] = useState<ProgressPlacement>("bottom");
@@ -1282,6 +1414,7 @@ export default function Home() {
     if (!mediaFile) {
       setMediaPreviewUrl("");
       setEstimatedImageSize(null);
+      setMediaDimensions(null);
       return;
     }
 
@@ -1293,6 +1426,56 @@ export default function Home() {
       URL.revokeObjectURL(objectUrl);
     };
   }, [mediaFile]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!mediaFile || fileKind(mediaFile) !== "image") {
+      setMediaDimensions(null);
+      return;
+    }
+
+    readImageDimensions(mediaFile)
+      .then((dimensions) => {
+        if (active) {
+          setMediaDimensions(dimensions);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setMediaDimensions(null);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [mediaFile]);
+
+  useEffect(() => {
+    let active = true;
+    const canvas = cropCanvasRef.current;
+
+    if (!isDribbbleCropOpen || !mediaFile || fileKind(mediaFile) !== "image" || !canvas) {
+      return;
+    }
+
+    loadImage(mediaFile)
+      .then((image) => {
+        if (active) {
+          drawDribbbleCrop(image, canvas, {
+            x: dribbbleCropX,
+            y: dribbbleCropY,
+            zoom: dribbbleCropZoom
+          });
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [dribbbleCropX, dribbbleCropY, dribbbleCropZoom, isDribbbleCropOpen, mediaFile]);
 
   useEffect(() => {
     let active = true;
@@ -1409,6 +1592,11 @@ export default function Home() {
   function setDraftMedia(file: File | null) {
     setHasSavedDraft(true);
     setMediaFile(file);
+    setMediaDimensions(null);
+    setIsDribbbleCropOpen(false);
+    setDribbbleCropX(50);
+    setDribbbleCropY(50);
+    setDribbbleCropZoom(1);
     setError("");
     setResults([]);
     setScheduleStatus("");
@@ -1564,6 +1752,49 @@ export default function Home() {
     }
   }
 
+  async function cropSelectedMediaForDribbble() {
+    if (!mediaFile || fileKind(mediaFile) !== "image") {
+      return;
+    }
+
+    setError("");
+    setIsCroppingMedia(true);
+    setProgress({ label: "Cropping image for Dribbble", value: 12 });
+
+    try {
+      const cropped = await cropImageForDribbble(mediaFile, {
+        x: dribbbleCropX,
+        y: dribbbleCropY,
+        zoom: dribbbleCropZoom
+      });
+
+      setProgress({ label: "Replacing selected media", value: 82 });
+      setDraftMedia(cropped);
+      setMediaDimensions({ width: 800, height: 600 });
+      setProgress({ label: "Dribbble crop complete", value: 100 });
+    } catch (cropError) {
+      setError(cropError instanceof Error ? cropError.message : "Dribbble image crop failed");
+    } finally {
+      setIsCroppingMedia(false);
+      window.setTimeout(() => setProgress(null), 500);
+    }
+  }
+
+  async function mediaDimensionsForPreflight(file: File | null): Promise<MediaDimensions | null> {
+    if (!file || fileKind(file) !== "image") {
+      return null;
+    }
+
+    if (mediaDimensions) {
+      return mediaDimensions;
+    }
+
+    const dimensions = await readImageDimensions(file);
+
+    setMediaDimensions(dimensions);
+    return dimensions;
+  }
+
   function cancelPublishAction() {
     const controller = publishAbortRef.current;
 
@@ -1676,7 +1907,8 @@ export default function Home() {
       return;
     }
 
-    const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile);
+    const dimensions = await mediaDimensionsForPreflight(mediaFile);
+    const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile, dimensions);
 
     if (preflightIssues.length > 0) {
       setError(preflightIssues[0].message);
@@ -1821,7 +2053,8 @@ export default function Home() {
       return;
     }
 
-    const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile);
+    const dimensions = await mediaDimensionsForPreflight(mediaFile);
+    const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile, dimensions);
 
     if (preflightIssues.length > 0) {
       setError(preflightIssues[0].message);
@@ -1881,7 +2114,7 @@ export default function Home() {
     }
   }
 
-  const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile);
+  const preflightIssues = mediaPreflightIssues(selectedLimitTargets, mediaFile, mediaDimensions);
   const postLength = textLength(text.trim());
   const postBytes = textBytes(text.trim());
   const titleLimitHints = selectedPlatforms
@@ -1973,7 +2206,8 @@ export default function Home() {
     !isPublishing &&
     !isScheduling &&
     !isUploadingMedia &&
-    !isCompressingMedia;
+    !isCompressingMedia &&
+    !isCroppingMedia;
   const canPublish =
     canSubmitDraft;
   const canOpenSchedule = canSubmitDraft;
@@ -1993,7 +2227,9 @@ export default function Home() {
           ? Music2
           : FileIcon;
   const compressionKind = preflightIssues.find((issue) => issue.compress)?.compress;
-  const canCompressMedia = Boolean(compressionKind && mediaFile);
+  const cropKind = preflightIssues.find((issue) => issue.crop)?.crop;
+  const canCompressMedia = Boolean(compressionKind && mediaFile && !isCroppingMedia);
+  const canCropDribbbleMedia = Boolean(cropKind === "dribbble" && mediaFile && !isCompressingMedia);
   const maxManualVideoTargetMb = Math.round(maxManualVideoTargetSize / 1024 / 1024);
   const videoPlatformTargetBytes = mediaFile
     ? videoTargetBytesForPlatforms(
@@ -2039,14 +2275,16 @@ export default function Home() {
         return [];
       })
     : [];
-  const compressionProgress = isCompressingMedia ? progress : null;
-  const actionProgress = progress && !isCompressingMedia ? progress : null;
+  const compressionProgress = isCompressingMedia || isCroppingMedia ? progress : null;
+  const actionProgress = progress && !isCompressingMedia && !isCroppingMedia ? progress : null;
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
   const bottomActionProgress =
     actionProgress && progressPlacement === "bottom" ? actionProgress : null;
   const publishButtonLabel = isCompressingMedia
     ? "Compressing..."
-    : isUploadingMedia
+    : isCroppingMedia
+      ? "Cropping..."
+      : isUploadingMedia
       ? "Uploading..."
       : isPublishing
         ? "Publishing..."
@@ -2397,6 +2635,9 @@ export default function Home() {
                         </span>
                         <span>
                           {mediaFile.type || "file"} · {formatBytes(mediaFile.size)}
+                          {selectedMediaKind === "image" && mediaDimensions
+                            ? ` · ${mediaDimensions.width}x${mediaDimensions.height}`
+                            : ""}
                         </span>
                       </div>
                     </>
@@ -2414,6 +2655,99 @@ export default function Home() {
                       <span>{warning.message}</span>
                     </p>
                   ))}
+                </div>
+              ) : null}
+              {canCropDribbbleMedia ? (
+                <div className="crop-panel">
+                  <div className="compression-heading">
+                    <div>
+                      <strong>Dribbble crop</strong>
+                      <span>Output will replace the selected media as an 800x600 JPG.</span>
+                    </div>
+                    <button
+                      className="secondary compact-button"
+                      onClick={() => setIsDribbbleCropOpen((current) => !current)}
+                      type="button"
+                    >
+                      <Crop size={16} />
+                      {isDribbbleCropOpen ? "Hide cropper" : "Crop for Dribbble"}
+                    </button>
+                  </div>
+                  {isDribbbleCropOpen ? (
+                    <div className="cropper-grid">
+                      <canvas
+                        aria-label="Dribbble crop preview"
+                        className="crop-preview"
+                        height="600"
+                        ref={cropCanvasRef}
+                        width="800"
+                      />
+                      <div className="crop-controls">
+                        <label>
+                          <span>Horizontal</span>
+                          <input
+                            className="quality-slider"
+                            max="100"
+                            min="0"
+                            onChange={(event) => setDribbbleCropX(Number(event.target.value))}
+                            style={{ "--value": `${dribbbleCropX}%` } as React.CSSProperties}
+                            type="range"
+                            value={dribbbleCropX}
+                          />
+                        </label>
+                        <label>
+                          <span>Vertical</span>
+                          <input
+                            className="quality-slider"
+                            max="100"
+                            min="0"
+                            onChange={(event) => setDribbbleCropY(Number(event.target.value))}
+                            style={{ "--value": `${dribbbleCropY}%` } as React.CSSProperties}
+                            type="range"
+                            value={dribbbleCropY}
+                          />
+                        </label>
+                        <label>
+                          <span>Zoom</span>
+                          <input
+                            className="quality-slider"
+                            max="3"
+                            min="1"
+                            onChange={(event) => setDribbbleCropZoom(Number(event.target.value))}
+                            step="0.05"
+                            style={
+                              { "--value": `${((dribbbleCropZoom - 1) / 2) * 100}%` } as React.CSSProperties
+                            }
+                            type="range"
+                            value={dribbbleCropZoom}
+                          />
+                          <small>{dribbbleCropZoom.toFixed(2)}x</small>
+                        </label>
+                        <div className="crop-actions">
+                          <button
+                            className="secondary compact-button"
+                            onClick={() => {
+                              setDribbbleCropX(50);
+                              setDribbbleCropY(50);
+                              setDribbbleCropZoom(1);
+                            }}
+                            type="button"
+                          >
+                            Center
+                          </button>
+                          <button
+                            className="secondary compact-button"
+                            disabled={isCroppingMedia}
+                            onClick={() => void cropSelectedMediaForDribbble()}
+                            type="button"
+                          >
+                            <Crop size={16} />
+                            {isCroppingMedia ? "Cropping..." : "Apply crop"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               {canCompressMedia ? (

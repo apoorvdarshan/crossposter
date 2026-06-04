@@ -691,6 +691,60 @@ textarea {
   color: var(--accent);
 }
 
+.crop-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  padding: 12px;
+}
+
+.cropper-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.crop-preview {
+  width: 100%;
+  max-height: 360px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--media-bg);
+}
+
+.crop-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.crop-controls label {
+  display: grid;
+  gap: 6px;
+}
+
+.crop-controls label > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.crop-controls small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.crop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .compression-panel {
   display: grid;
   gap: 12px;
@@ -2296,6 +2350,7 @@ a.history-platform.ok:hover {
   .scheduler-grid,
   .socials-masonry,
   .channel-grid,
+  .cropper-grid,
   .compression-grid,
   .schedule-popup-head,
   .schedule-picker,
