@@ -714,6 +714,13 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--media-bg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.crop-preview.is-dragging {
+  cursor: grabbing;
 }
 
 .crop-controls {

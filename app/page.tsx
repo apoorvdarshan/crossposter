@@ -336,6 +336,13 @@ type DribbbleCropOptions = {
   zoom: number;
 };
 
+type DribbbleCropMetrics = {
+  sourceWidth: number;
+  sourceHeight: number;
+  maxX: number;
+  maxY: number;
+};
+
 type VideoCompressionQuality = "high" | "balanced" | "small";
 
 type ProgressState = {
@@ -949,11 +956,13 @@ function clampCropZoom(value: number): number {
   return Math.max(1, Math.min(3, value));
 }
 
-function dribbbleCropRect(image: HTMLImageElement, options: DribbbleCropOptions) {
-  const imageWidth = image.naturalWidth;
-  const imageHeight = image.naturalHeight;
+function dribbbleCropMetrics(
+  imageWidth: number,
+  imageHeight: number,
+  zoomValue: number
+): DribbbleCropMetrics {
   const aspect = 4 / 3;
-  const zoom = clampCropZoom(options.zoom);
+  const zoom = clampCropZoom(zoomValue);
   let sourceWidth = imageWidth;
   let sourceHeight = sourceWidth / aspect;
 
@@ -969,10 +978,25 @@ function dribbbleCropRect(image: HTMLImageElement, options: DribbbleCropOptions)
   const maxY = Math.max(0, imageHeight - sourceHeight);
 
   return {
-    x: maxX * (clampCropPercent(options.x) / 100),
-    y: maxY * (clampCropPercent(options.y) / 100),
-    width: sourceWidth,
-    height: sourceHeight
+    sourceWidth,
+    sourceHeight,
+    maxX,
+    maxY
+  };
+}
+
+function dribbbleCropRect(image: HTMLImageElement, options: DribbbleCropOptions) {
+  const metrics = dribbbleCropMetrics(
+    image.naturalWidth,
+    image.naturalHeight,
+    options.zoom
+  );
+
+  return {
+    x: metrics.maxX * (clampCropPercent(options.x) / 100),
+    y: metrics.maxY * (clampCropPercent(options.y) / 100),
+    width: metrics.sourceWidth,
+    height: metrics.sourceHeight
   };
 }
 
@@ -1220,6 +1244,13 @@ export default function Home() {
   const [mediaInputKey, setMediaInputKey] = useState(0);
   const mediaInputRef = useRef<HTMLInputElement | null>(null);
   const cropCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cropDragRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startCropX: number;
+    startCropY: number;
+  } | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
   const [mediaDimensions, setMediaDimensions] = useState<MediaDimensions | null>(null);
   const [imageQuality, setImageQuality] = useState(78);
@@ -1228,6 +1259,7 @@ export default function Home() {
   const [videoTargetMb, setVideoTargetMb] = useState(490);
   const [videoQuality, setVideoQuality] = useState<VideoCompressionQuality>("balanced");
   const [isDribbbleCropOpen, setIsDribbbleCropOpen] = useState(false);
+  const [isDraggingDribbbleCrop, setIsDraggingDribbbleCrop] = useState(false);
   const [dribbbleCropX, setDribbbleCropX] = useState(50);
   const [dribbbleCropY, setDribbbleCropY] = useState(50);
   const [dribbbleCropZoom, setDribbbleCropZoom] = useState(1);
@@ -1777,6 +1809,68 @@ export default function Home() {
     } finally {
       setIsCroppingMedia(false);
       window.setTimeout(() => setProgress(null), 500);
+    }
+  }
+
+  function startDribbbleCropDrag(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!mediaDimensions) {
+      return;
+    }
+
+    cropDragRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startCropX: dribbbleCropX,
+      startCropY: dribbbleCropY
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setIsDraggingDribbbleCrop(true);
+  }
+
+  function moveDribbbleCropDrag(event: React.PointerEvent<HTMLCanvasElement>) {
+    const drag = cropDragRef.current;
+
+    if (!drag || !mediaDimensions) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const metrics = dribbbleCropMetrics(
+      mediaDimensions.width,
+      mediaDimensions.height,
+      dribbbleCropZoom
+    );
+
+    if (metrics.maxX > 0 && rect.width > 0) {
+      const startSourceX = metrics.maxX * (drag.startCropX / 100);
+      const deltaSourceX = (event.clientX - drag.startClientX) * (metrics.sourceWidth / rect.width);
+      const nextSourceX = Math.max(0, Math.min(metrics.maxX, startSourceX - deltaSourceX));
+
+      setDribbbleCropX(clampCropPercent((nextSourceX / metrics.maxX) * 100));
+    }
+
+    if (metrics.maxY > 0 && rect.height > 0) {
+      const startSourceY = metrics.maxY * (drag.startCropY / 100);
+      const deltaSourceY = (event.clientY - drag.startClientY) * (metrics.sourceHeight / rect.height);
+      const nextSourceY = Math.max(0, Math.min(metrics.maxY, startSourceY - deltaSourceY));
+
+      setDribbbleCropY(clampCropPercent((nextSourceY / metrics.maxY) * 100));
+    }
+  }
+
+  function stopDribbbleCropDrag(event: React.PointerEvent<HTMLCanvasElement>) {
+    const drag = cropDragRef.current;
+
+    if (drag?.pointerId === event.pointerId) {
+      cropDragRef.current = null;
+      setIsDraggingDribbbleCrop(false);
+
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
     }
   }
 
@@ -2676,37 +2770,17 @@ export default function Home() {
                   {isDribbbleCropOpen ? (
                     <div className="cropper-grid">
                       <canvas
-                        aria-label="Dribbble crop preview"
-                        className="crop-preview"
+                        aria-label="Drag Dribbble crop preview"
+                        className={`crop-preview ${isDraggingDribbbleCrop ? "is-dragging" : ""}`}
                         height="600"
+                        onPointerCancel={stopDribbbleCropDrag}
+                        onPointerDown={startDribbbleCropDrag}
+                        onPointerMove={moveDribbbleCropDrag}
+                        onPointerUp={stopDribbbleCropDrag}
                         ref={cropCanvasRef}
                         width="800"
                       />
                       <div className="crop-controls">
-                        <label>
-                          <span>Horizontal</span>
-                          <input
-                            className="quality-slider"
-                            max="100"
-                            min="0"
-                            onChange={(event) => setDribbbleCropX(Number(event.target.value))}
-                            style={{ "--value": `${dribbbleCropX}%` } as React.CSSProperties}
-                            type="range"
-                            value={dribbbleCropX}
-                          />
-                        </label>
-                        <label>
-                          <span>Vertical</span>
-                          <input
-                            className="quality-slider"
-                            max="100"
-                            min="0"
-                            onChange={(event) => setDribbbleCropY(Number(event.target.value))}
-                            style={{ "--value": `${dribbbleCropY}%` } as React.CSSProperties}
-                            type="range"
-                            value={dribbbleCropY}
-                          />
-                        </label>
                         <label>
                           <span>Zoom</span>
                           <input
