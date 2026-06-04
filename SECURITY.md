@@ -27,20 +27,25 @@ For non-sensitive bugs and feature requests, use GitHub Issues instead:
 
 ## Secret Handling
 
-Crossposter may use social platform tokens and app secrets. These must stay
-private.
+Crossposter may use social platform tokens, app secrets, passwords, browser
+cookies, and local session files. These must stay private.
 
 Do not commit:
 
 - `poster.config.local.json`
 - `.env`
+- `.instagram-sessions`
+- `.pinterest-sessions`
+- `.poster-uploads`
 - access tokens
 - refresh tokens
 - OAuth client secrets
 - API keys
+- browser cookies
+- platform passwords
 
-If a secret is exposed, revoke it at the provider immediately and generate a new
-one.
+If a secret is exposed, revoke it at the provider immediately, log out affected
+browser sessions when relevant, and generate a new one.
 
 ## Deployment Guidance
 
@@ -52,6 +57,7 @@ Before exposing Crossposter over the internet:
 - set a strong `POSTER_ADMIN_PASSWORD`
 - serve the app over HTTPS
 - keep local config and upload storage private
+- keep provider session folders private
 - restrict server access to trusted users
 
 Crossposter is not designed as a full multi-tenant authentication system.

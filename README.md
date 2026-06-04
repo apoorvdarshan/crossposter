@@ -35,19 +35,23 @@ that server process is running.
 
 | Channel | Current support |
 | --- | --- |
+| X / Twitter | Unofficial local posting through `bird`, with text, images, GIFs, and video |
+| LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
 | Bluesky | Text posts and local image media |
 | Mastodon | Text posts and local media |
+| Instagram | Unofficial local media publishing through `instagrapi` session files |
+| YouTube | Unofficial local video uploads through YouTube.js/InnerTube cookies |
 | Dev.to | Markdown articles |
-| LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
-| Nostr | Kind-1 text notes published to configured relays |
+| Pinterest | Unofficial local Pin uploads through `py3-pinterest` session folders |
+| Peerlist | Unofficial local Scroll posting through Peerlist cookies and API requests |
 | Hacker News | Personal link/text submission through HN's normal form flow |
-
-Removed integrations: Instagram, Pinterest, Twitch, and YouTube are not part of
-the current app.
+| Nostr | Kind-1 text notes published to configured relays |
+| Dribbble | Official OAuth shot uploads through the Dribbble API |
 
 ## Features
 
 - Dashboard composer for title, body text, channel selection, and media upload
+- Multi-profile configuration per provider, with active profile selection
 - Inline Schedule draft control for local timed posting
 - Scheduler page for reviewing queued posts, editing timing, and discarding posts
 - Per-platform profile configuration from the UI
@@ -55,8 +59,11 @@ the current app.
 - Local publish history
 - Local media upload storage in `.poster-uploads`
 - Image conversion/compression with quality and target size controls
+- Dribbble crop tool for 400x300 or 800x600 shot images
 - Video conversion/compression to MP4 for supported channels
 - Platform preflight warnings before publishing
+- Per-platform title, post, and media limits shown only when a selected draft
+  exceeds the limit
 - Light/dark/system theme controls
 - macOS auto-start service for `http://localhost:2004`
 
@@ -165,103 +172,39 @@ POSTER_ADMIN_PASSWORD=strong-password-here
 
 ## Provider Setup
 
-### Bluesky
+### X / Twitter
 
-Create a Bluesky app password. Do not use your main account password.
-
-Required fields:
-
-```text
-BLUESKY_IDENTIFIER
-BLUESKY_APP_PASSWORD
-```
-
-`BLUESKY_IDENTIFIER` should be your handle without `@`, for example:
-
-```text
-name.bsky.social
-```
-
-### Mastodon
-
-Create an application/access token from your Mastodon instance settings.
-
-Required fields:
-
-```text
-MASTODON_INSTANCE
-MASTODON_ACCESS_TOKEN
-```
-
-Example instance:
-
-```text
-https://mastodon.social
-```
-
-### Dev.to
-
-Create an API key from Dev.to account settings.
+X publishing is unofficial local posting through
+[`@steipete/bird`](https://github.com/steipete/bird). `bird` uses browser
+cookies from an account you are already signed into.
 
 Required field:
 
 ```text
-DEVTO_API_KEY
+X_BIRD_COMMAND
 ```
 
-Dev.to publishing expects a title and Markdown body text.
-
-### Nostr
-
-Nostr publishes signed kind-1 text notes directly to relay WebSocket URLs.
-
-Required fields:
+Optional fields:
 
 ```text
-NOSTR_PRIVATE_KEY
-NOSTR_RELAYS
+X_BIRD_COOKIE_SOURCE
+X_BIRD_CHROME_PROFILE
+X_BIRD_FIREFOX_PROFILE
+X_BIRD_TIMEOUT_MS
+X_PREMIUM_LONG_POSTS
 ```
 
-`NOSTR_PRIVATE_KEY` can be an `nsec...` key or a 64-character hex private key.
-Use a dedicated Nostr key if you do not want Crossposter to sign as your main
-identity.
+Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. Crossposter uses a
+280 character limit by default, or 25,000 characters for Premium profiles.
 
-`NOSTR_RELAYS` is a comma or newline separated list of relays:
+Media limits:
 
-```text
-wss://relay.example.com,wss://another-relay.example
-```
+- photos: 5 MB
+- GIFs: 15 MB
+- video: 512 MB, or 16 GB when `X_PREMIUM_LONG_POSTS=true`
 
-Local media is ignored for Nostr. Paste public image/video links into the post
-body if you want Nostr clients to render media previews.
-
-### Hacker News
-
-Hacker News has no official write/submit API. Crossposter uses unofficial
-personal automation through Hacker News' normal login and submit form flow.
-
-Required fields:
-
-```text
-HACKERNEWS_USERNAME
-HACKERNEWS_PASSWORD
-```
-
-How publishing works:
-
-- Title is required.
-- Link is optional. If set, it is submitted as Hacker News' `url` field.
-- Post text is optional for Hacker News. If set, it is submitted as Hacker News'
-  `text` field.
-- Leave Link empty to submit a discussion/text post.
-- For non-Hacker News channels, Crossposter still requires Post text.
-- Local media is ignored.
-- Crossposter logs in during publish and does not store an HN session cookie.
-
-Use this only for your own Hacker News account and normal personal submissions.
-Do not use it for spam, vote/comment solicitation, or bulk promotional posting.
-If Hacker News requires browser validation or CAPTCHA for the login, Crossposter
-will fail and you must submit manually.
+Use this only for accounts you control. X can still challenge, limit, or lock
+accounts for suspicious or high-volume automation.
 
 ### LinkedIn
 
@@ -320,6 +263,270 @@ urn:li:organization:YOUR_PAGE_ORG_ID
 LinkedIn local media upload supports JPG, PNG, and GIF images, plus MP4 videos
 between 75 KB and 500 MB. Unsupported local media is rejected before publishing.
 
+### Bluesky
+
+Create a Bluesky app password. Do not use your main account password.
+
+Required fields:
+
+```text
+BLUESKY_IDENTIFIER
+BLUESKY_APP_PASSWORD
+```
+
+`BLUESKY_IDENTIFIER` should be your handle without `@`, for example:
+
+```text
+name.bsky.social
+```
+
+### Mastodon
+
+Create an application/access token from your Mastodon instance settings.
+
+Required fields:
+
+```text
+MASTODON_INSTANCE
+MASTODON_ACCESS_TOKEN
+```
+
+Example instance:
+
+```text
+https://mastodon.social
+```
+
+### Instagram
+
+Instagram publishing is unofficial local posting through `instagrapi`.
+Crossposter stores one session JSON per Instagram profile.
+
+Required fields:
+
+```text
+INSTAGRAM_USERNAME
+INSTAGRAM_PASSWORD
+INSTAGRAM_SESSION_FILE
+```
+
+Optional fields:
+
+```text
+INSTAGRAM_2FA_CODE
+INSTAGRAM_PYTHON_COMMAND
+INSTAGRAM_TIMEOUT_MS
+```
+
+Install Python dependencies:
+
+```bash
+./scripts/install-instagram-deps.sh
+```
+
+On first login or after a challenge, Instagram may require a current 2FA code
+or web/app verification. After the session file is saved, later publishes reuse
+that session until Instagram invalidates or challenges it.
+
+Supported media:
+
+- image: JPG, PNG, or WebP up to 8 MB
+- video: MP4 or MOV up to 300 MB
+
+### YouTube
+
+YouTube publishing is unofficial local upload through YouTube.js and InnerTube.
+Crossposter can read cookies from a signed-in Chrome profile at publish time.
+
+Title becomes the YouTube video title. Post text becomes the description.
+
+Required field:
+
+```text
+YOUTUBE_COOKIE_SOURCE
+```
+
+Optional fields:
+
+```text
+YOUTUBE_CHROME_PROFILE
+YOUTUBE_COOKIE
+YOUTUBE_PRIVACY
+YOUTUBE_TIMEOUT_MS
+```
+
+`YOUTUBE_PRIVACY` defaults to `PUBLIC`. Common video formats are accepted up to
+256 GB or 12 hours.
+
+### Dev.to
+
+Create an API key from Dev.to account settings.
+
+Required field:
+
+```text
+DEVTO_API_KEY
+```
+
+Dev.to publishing expects a title and Markdown body text.
+
+### Pinterest
+
+Pinterest publishing is unofficial local posting through `py3-pinterest`.
+Crossposter stores one session folder per Pinterest profile.
+
+Required fields:
+
+```text
+PINTEREST_EMAIL
+PINTEREST_PASSWORD
+PINTEREST_USERNAME
+PINTEREST_BOARD_ID
+PINTEREST_CRED_ROOT
+```
+
+Optional fields:
+
+```text
+PINTEREST_SECTION_ID
+PINTEREST_ALT_TEXT
+PINTEREST_PYTHON_COMMAND
+PINTEREST_TIMEOUT_MS
+PINTEREST_HEADLESS
+```
+
+Install Python dependencies:
+
+```bash
+./scripts/install-pinterest-deps.sh
+```
+
+Pinterest requires a board ID because every Pin belongs to a board. Title is
+limited to 100 characters and description/post text is limited to 800
+characters.
+
+Supported media:
+
+- image: JPG, PNG, GIF, or WebP up to 20 MB
+- video: MP4 or MOV up to 100 MB
+
+### Peerlist
+
+Peerlist publishing is unofficial local Scroll posting through Peerlist cookies
+and API requests. Crossposter reads cookies from your signed-in Chrome profile.
+
+Required field:
+
+```text
+PEERLIST_CHROME_PROFILE
+```
+
+Optional fields:
+
+```text
+PEERLIST_CONTEXT
+PEERLIST_USERNAME
+PEERLIST_TIMEOUT_MS
+```
+
+Peerlist can publish post text, media-only posts, or post text with optional
+title and image. Local media supports JPG, PNG, WebP, or GIF up to 15 MB.
+
+### Hacker News
+
+Hacker News has no official write/submit API. Crossposter uses unofficial
+personal automation through Hacker News' normal login and submit form flow.
+
+Required fields:
+
+```text
+HACKERNEWS_USERNAME
+HACKERNEWS_PASSWORD
+```
+
+Optional field:
+
+```text
+HACKERNEWS_COOKIE
+```
+
+How publishing works:
+
+- Title is required.
+- Link is optional. If set, it is submitted as Hacker News' `url` field.
+- Post text is optional for Hacker News. If set, it is submitted as Hacker News'
+  `text` field.
+- Leave Link empty to submit a discussion/text post.
+- For non-Hacker News channels, Crossposter still requires Post text.
+- Local media is ignored.
+- A saved browser cookie can be used before password login.
+
+Use this only for your own Hacker News account and normal personal submissions.
+Do not use it for spam, vote/comment solicitation, or bulk promotional posting.
+If Hacker News requires browser validation or CAPTCHA for the login, Crossposter
+will fail and you must submit manually.
+
+### Nostr
+
+Nostr publishes signed kind-1 text notes directly to relay WebSocket URLs.
+
+Required fields:
+
+```text
+NOSTR_PRIVATE_KEY
+NOSTR_RELAYS
+```
+
+`NOSTR_PRIVATE_KEY` can be an `nsec...` key or a 64-character hex private key.
+Use a dedicated Nostr key if you do not want Crossposter to sign as your main
+identity.
+
+`NOSTR_RELAYS` is a comma or newline separated list of relays:
+
+```text
+wss://relay.example.com,wss://another-relay.example
+```
+
+Local media is ignored for Nostr. Paste public image/video links into the post
+body if you want Nostr clients to render media previews.
+
+### Dribbble
+
+Dribbble publishing uses the official Dribbble API. Create a Dribbble API app
+and connect the profile from Settings.
+
+Callback URL:
+
+```text
+http://localhost:2004/settings/socials/dribbble/callback
+```
+
+Required after OAuth:
+
+```text
+DRIBBBLE_ACCESS_TOKEN
+```
+
+Setup fields:
+
+```text
+DRIBBBLE_CLIENT_ID
+DRIBBBLE_CLIENT_SECRET
+DRIBBBLE_OAUTH_SCOPES
+```
+
+Optional fields:
+
+```text
+DRIBBBLE_TAGS
+DRIBBBLE_TEAM_ID
+DRIBBBLE_LOW_PROFILE
+```
+
+Dribbble requires a title and a local JPG, PNG, or GIF shot image that is
+exactly 400x300 or 800x600 and no larger than 8 MB. Crossposter can crop
+non-GIF images before publishing.
+
 ## Local Media Conversion
 
 The composer can convert and compress media before publishing:
@@ -328,11 +535,13 @@ The composer can convert and compress media before publishing:
 - videos are transcoded to MP4 with quality and target size controls
 - platform warnings offer conversion only when conversion can fix a selected
   channel's media problem
+- Dribbble image warnings can open a cropper that outputs a valid 800x600 JPG
 
-## Static Web Page
+## Static Website
 
-The `web/` folder contains a small static page for app review, privacy, and
-terms references. It is intended for a domain such as:
+The `web/` folder contains a standalone static docs website with overview,
+quickstart, provider setup, limits, privacy, and terms sections. It is intended
+for a domain such as:
 
 ```text
 crossposter.apoorvdarshan.com
@@ -343,9 +552,10 @@ Files:
 ```text
 web/index.html
 web/assets/logo-crossposter.png
-PRIVACY.md
-TERMS.md
 ```
+
+Privacy and terms are published inside `web/index.html` so the static website is
+the canonical policy page.
 
 ## Deploy
 
@@ -386,7 +596,10 @@ Before exposing it publicly:
 - set `POSTER_REQUIRE_ADMIN_PASSWORD=true`
 - use a strong `POSTER_ADMIN_PASSWORD`
 - keep `poster.config.local.json` private
-- never commit API keys, access tokens, refresh tokens, or app secrets
+- keep `.instagram-sessions`, `.pinterest-sessions`, and `.poster-uploads`
+  private
+- never commit API keys, access tokens, refresh tokens, app secrets, browser
+  cookies, session files, or platform passwords
 - only connect accounts, pages, and profiles you own or are authorized to manage
 
 ## Contact And Support

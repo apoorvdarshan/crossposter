@@ -9,13 +9,22 @@ focused, practical, and aligned with the current product scope.
 
 Supported publishing providers:
 
+- X / Twitter
+- LinkedIn
 - Bluesky
 - Mastodon
+- Instagram
+- YouTube
 - Dev.to
-- LinkedIn
+- Pinterest
+- Peerlist
+- Hacker News
+- Nostr
+- Dribbble
 
-Removed or intentionally unsupported providers should not be reintroduced
-without a clear reason and maintainer agreement.
+Provider changes should make the setup, limits, failure modes, and account-risk
+tradeoffs clear in the UI and docs. Unofficial or cookie/session-based providers
+must remain local and user-triggered.
 
 ## Development
 
@@ -49,7 +58,8 @@ npm run build
 
 ## Secrets
 
-Never commit API keys, access tokens, refresh tokens, app secrets, or
+Never commit API keys, access tokens, refresh tokens, app secrets, browser
+cookies, platform passwords, local session folders, uploaded media, or
 `poster.config.local.json`.
 
 Use `.env.example` for documented placeholders only.
