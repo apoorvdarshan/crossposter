@@ -239,6 +239,53 @@ pre code {
   margin-top: 8px;
 }
 
+.screenshot-gallery {
+  background: var(--paper);
+  padding: clamp(42px, 6vw, 82px) clamp(18px, 4vw, 46px);
+}
+
+.gallery-heading {
+  margin: 0 auto 24px;
+  max-width: 1320px;
+}
+
+.gallery-heading h2 {
+  font-size: clamp(2.2rem, 5vw, 5rem);
+  letter-spacing: 0;
+  line-height: 0.95;
+  margin: 8px 0 0;
+  max-width: 960px;
+}
+
+.gallery-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0 auto;
+  max-width: 1320px;
+}
+
+.gallery-grid figure {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin: 0;
+  overflow: hidden;
+}
+
+.gallery-grid img {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.gallery-grid figcaption {
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 750;
+  padding: 14px 16px 16px;
+}
+
 .docs-shell {
   display: grid;
   gap: clamp(24px, 4vw, 60px);
@@ -616,6 +663,7 @@ tbody tr:last-child td {
   .feature-grid.compact,
   .split-list,
   .contact-grid,
+  .gallery-grid,
   .quick-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -681,7 +729,8 @@ tbody tr:last-child td {
   .provider-list,
   .feature-grid.compact,
   .split-list,
-  .contact-grid {
+  .contact-grid,
+  .gallery-grid {
     grid-template-columns: 1fr;
   }
 

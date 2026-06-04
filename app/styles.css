@@ -2345,6 +2345,20 @@ a.history-platform.ok:hover {
   }
 }
 
+@media (min-width: 1500px) {
+  .workspace {
+    width: min(1560px, calc(100vw - 40px));
+  }
+
+  .dashboard {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  }
+
+  .channel-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 940px) {
   .workspace {
     width: min(100vw - 24px, 720px);
