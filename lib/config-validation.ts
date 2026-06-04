@@ -15,6 +15,8 @@ const tokenFields = new Set([
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
   "LINKEDIN_ACCESS_TOKEN",
+  "DRIBBBLE_CLIENT_ID",
+  "DRIBBBLE_CLIENT_SECRET",
   "DRIBBBLE_ACCESS_TOKEN",
   "NOSTR_PRIVATE_KEY"
 ]);
@@ -170,6 +172,10 @@ function invalidReason(name: string, value: string): string | null {
 
       return invalid ? `invalid tag ${invalid}` : null;
     }
+    case "DRIBBBLE_OAUTH_SCOPES":
+      return scopesFor(value).includes("upload")
+        ? null
+        : "must include upload";
     case "DRIBBBLE_TEAM_ID":
       return /^\d+$/.test(value) ? null : "must be a numeric team ID";
     case "DRIBBBLE_LOW_PROFILE":

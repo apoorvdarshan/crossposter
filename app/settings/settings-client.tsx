@@ -257,15 +257,16 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   dribbble: {
     title: "Dribbble setup",
     intro:
-      "Official shot uploads through the Dribbble API. The access token must include the upload scope.",
+      "Official shot uploads through the Dribbble API. Connect Dribbble saves an upload token locally.",
     links: [
       { label: "Dribbble OAuth", href: "https://developer.dribbble.com/v2/oauth/" },
       { label: "Create shot API", href: "https://developer.dribbble.com/v2/shots/" }
     ],
     steps: [
       "Create or open a Dribbble API application.",
-      "Authorize an OAuth token with the upload scope.",
-      "Add a Dribbble profile here and paste the access token.",
+      "Set the application's callback URL to http://localhost:2004/settings/socials.",
+      "Add a Dribbble profile here and paste the client ID and client secret.",
+      "Leave Dribbble OAuth scopes as public upload, then click Connect Dribbble.",
       "Optionally add comma-separated tags. Dribbble accepts up to 12 tags.",
       "Optionally set a team ID or enable Low Profile.",
       "On the Dashboard, add a Title, optional Post text for the shot description, and attach a JPG, PNG, or GIF.",
@@ -496,6 +497,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     const params = new URLSearchParams(window.location.search);
     const section = params.get("section");
     const linkedinMessage = params.get("linkedin");
+    const dribbbleMessage = params.get("dribbble");
 
     if (section === "settings" || section === "storage" || section === "socials") {
       setSettingsView(section);
@@ -509,9 +511,19 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
       failed: "LinkedIn authorization failed.",
       bad_state: "LinkedIn authorization expired. Try Connect LinkedIn again."
     };
+    const dribbbleLabels: Record<string, string> = {
+      connected: "Dribbble connected and saved locally.",
+      denied: "Dribbble authorization was cancelled.",
+      failed: "Dribbble authorization failed.",
+      bad_state: "Dribbble authorization expired. Try Connect Dribbble again.",
+      missing_upload: "Dribbble authorization must include the upload scope.",
+      cannot_upload: "This Dribbble account cannot upload shots."
+    };
 
     if (linkedinMessage) {
       setStatus(labels[linkedinMessage] || "LinkedIn authorization finished.");
+    } else if (dribbbleMessage) {
+      setStatus(dribbbleLabels[dribbbleMessage] || "Dribbble authorization finished.");
     }
 
     if (section === "settings" || section === "storage" || section === "socials") {
@@ -520,7 +532,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
         "",
         settingsViews.find((view) => view.id === section)?.href || window.location.pathname
       );
-    } else if (linkedinMessage) {
+    } else if (linkedinMessage || dribbbleMessage) {
       window.history.replaceState(null, "", window.location.pathname);
     }
   }, []);
@@ -826,6 +838,47 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  async function connectDribbble(profile: ProviderProfile) {
+    const clientId = profile.values.DRIBBBLE_CLIENT_ID?.trim();
+    const clientSecret = profile.values.DRIBBBLE_CLIENT_SECRET?.trim();
+    const scopes = profile.values.DRIBBBLE_OAUTH_SCOPES?.trim() || "public upload";
+
+    if (!clientId || !clientSecret) {
+      setStatus("Add Dribbble client ID and client secret first.");
+      return;
+    }
+
+    if (!scopes.split(/[\s,]+/).includes("upload")) {
+      setStatus("Dribbble OAuth scopes must include upload.");
+      return;
+    }
+
+    setStatus("");
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ values, profiles, activeProfiles })
+      });
+      const body = (await response.json()) as ConfigResponse & { error?: string };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not save config before connecting Dribbble.");
+        return;
+      }
+
+      const startUrl = new URL("/api/auth/dribbble/start", window.location.origin);
+      startUrl.searchParams.set("profileId", profile.id);
+      window.location.assign(startUrl.toString());
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not connect Dribbble.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function importHackerNewsCookie(profile: ProviderProfile) {
     setStatus("");
     setImportingHackerNewsCookie(profile.id);
@@ -1086,6 +1139,16 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                     >
                       <RefreshCw size={15} />
                       Connect LinkedIn
+                    </button>
+                  ) : null}
+                  {platform.id === "dribbble" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void connectDribbble(profile)}
+                    >
+                      <RefreshCw size={15} />
+                      Connect Dribbble
                     </button>
                   ) : null}
                   {platform.id === "hackernews" ? (

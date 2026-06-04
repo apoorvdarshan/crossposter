@@ -135,6 +135,26 @@ export const configFields: ConfigField[] = [
     showFor: ["youtube"]
   },
   {
+    name: "DRIBBBLE_CLIENT_ID",
+    label: "Dribbble client ID",
+    help: "Client ID from your Dribbble API application. Used only to connect this profile locally.",
+    showFor: ["dribbble"]
+  },
+  {
+    name: "DRIBBBLE_CLIENT_SECRET",
+    label: "Dribbble client secret",
+    help: "Client secret from your Dribbble API application. Saved locally and used only during OAuth.",
+    secret: true,
+    showFor: ["dribbble"]
+  },
+  {
+    name: "DRIBBBLE_OAUTH_SCOPES",
+    label: "Dribbble OAuth scopes",
+    help: "Use public upload so Crossposter can create shots for this account.",
+    defaultValue: "public upload",
+    showFor: ["dribbble"]
+  },
+  {
     name: "DRIBBBLE_ACCESS_TOKEN",
     label: "Dribbble access token",
     help: "OAuth token with Dribbble upload scope. Your Dribbble account must be able to upload shots.",
