@@ -378,8 +378,8 @@ export const configFields: ConfigField[] = [
   },
   {
     name: "X_PREMIUM_LONG_POSTS",
-    label: "X Premium account",
-    help: "Set true only for X Premium accounts. False uses 280 characters and 512 MB video; true uses 25,000 characters and 16 GB video.",
+    label: "X Premium media limits",
+    help: "Set true only for X Premium accounts. Text still uses Bird's 280-character tweet limit; Premium raises video size from 512 MB to 16 GB.",
     defaultValue: "false",
     showFor: ["x"]
   }

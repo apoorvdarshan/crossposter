@@ -210,7 +210,7 @@ const envLabels: Record<string, string> = {
   X_BIRD_CHROME_PROFILE: "Chrome profile",
   X_BIRD_FIREFOX_PROFILE: "Firefox profile",
   X_BIRD_TIMEOUT_MS: "timeout",
-  X_PREMIUM_LONG_POSTS: "Premium toggle"
+  X_PREMIUM_LONG_POSTS: "Premium media toggle"
 };
 
 function formatConfigIssues(issues: ConfigIssue[]): string {
@@ -2378,7 +2378,9 @@ export default function Home() {
       }
 
       const label =
-        target.platform === "x" && target.profileLabel
+        target.platform === "x" &&
+        target.profileLabel &&
+        target.profileLabel !== platformLabel(target.platform)
           ? `${platformLabel(target.platform)} · ${target.profileLabel}`
           : platformLabel(target.platform);
 
@@ -3119,7 +3121,7 @@ export default function Home() {
                     <span className="channel-body">
                       <span className="channel-top">
                         <span className="channel-title">
-                          <SocialLogo platform={target.id} size="lg" />
+                          <SocialLogo platform={target.id} />
                           <strong>{target.label}</strong>
                         </span>
                         <span className="channel-check" />

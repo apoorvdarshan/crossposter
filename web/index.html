@@ -12,6 +12,14 @@
     <meta property="og:image" content="assets/dashboard-preview.png">
     <link rel="icon" href="assets/logo-crossposter.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/logo-crossposter.png">
+    <script>
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem("crossposter-web-theme") || "dark";
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+    </script>
     <link rel="stylesheet" href="styles.css">
     <title>Crossposter</title>
   </head>
@@ -27,12 +35,16 @@
         Menu
       </button>
       <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
-        <a href="#start">Start</a>
-        <a href="#providers">Providers</a>
-        <a href="#limits">Limits</a>
-        <a href="#policy">Policy</a>
-        <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank">Report issue</a>
-        <a class="nav-button" href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">GitHub</a>
+        <a href="#start"><img src="assets/ui/start.svg" alt="">Start</a>
+        <a href="#providers"><img src="assets/ui/providers.svg" alt="">Providers</a>
+        <a href="#limits"><img src="assets/ui/limits.svg" alt="">Limits</a>
+        <a href="#policy"><img src="assets/ui/policy.svg" alt="">Policy</a>
+        <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank"><img src="assets/social/issue.svg" alt="">Report issue</a>
+        <button class="theme-button" type="button" aria-label="Switch to light mode" aria-pressed="true">
+          <img src="assets/ui/moon.svg" alt="">
+          <span aria-hidden="true">Dark</span>
+        </button>
+        <a class="nav-button" href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank"><img src="assets/social/github.svg" alt="">GitHub</a>
       </nav>
     </header>
 
@@ -87,21 +99,21 @@
 
       <section class="screenshot-gallery" aria-labelledby="screenshots-title">
         <div class="gallery-heading">
-          <p class="section-kicker">Real dashboard states</p>
-          <h2 id="screenshots-title">Full-width dashboard captures.</h2>
+          <p class="section-kicker">Workflow preview</p>
+          <h2 id="screenshots-title">Publish in three steps.</h2>
         </div>
         <div class="gallery-grid">
           <figure>
-            <img src="assets/dashboard-compose-preview.png" alt="Crossposter dashboard compose view with draft fields, media picker, and publish output">
-            <figcaption>Compose view with title, link, post, media, and publish output visible.</figcaption>
+            <img src="assets/step-compose-preview.png" alt="Crossposter dashboard compose view with Scowld draft text and media selected">
+            <figcaption><span>01</span> Compose the post once with title, link, body, and media.</figcaption>
           </figure>
           <figure>
-            <img src="assets/dashboard-channels-top-preview.png" alt="Crossposter dashboard showing three channel cards per row on a wide monitor">
-            <figcaption>Wide dashboard channel picker with three connected socials per row.</figcaption>
+            <img src="assets/step-channels-preview.png" alt="Crossposter dashboard with selected publishing targets">
+            <figcaption><span>02</span> Pick connected profiles and see readiness before publishing.</figcaption>
           </figure>
           <figure>
-            <img src="assets/dashboard-channels-bottom-preview.png" alt="Crossposter dashboard showing bottom channel rows with publish controls">
-            <figcaption>Lower channel rows with Dev.to, Pinterest, Peerlist, Hacker News, Nostr, and Dribbble.</figcaption>
+            <img src="assets/step-published-preview.png" alt="Crossposter publish output with platform result links">
+            <figcaption><span>03</span> Review saved local history and platform result links.</figcaption>
           </figure>
         </div>
       </section>
@@ -174,18 +186,18 @@ npm run dev:local</code></pre>
             <div class="section-kicker">Providers</div>
             <h2>Current publishing targets.</h2>
             <div class="provider-list">
-              <article><strong>X / Twitter</strong><span>bird · text/media/video</span></article>
-              <article><strong>LinkedIn</strong><span>OAuth · profiles/pages</span></article>
-              <article><strong>Bluesky</strong><span>app password · text/images</span></article>
-              <article><strong>Mastodon</strong><span>access token · text/media</span></article>
-              <article><strong>Instagram</strong><span>instagrapi · images/video</span></article>
-              <article><strong>YouTube</strong><span>InnerTube · video upload</span></article>
-              <article><strong>Dev.to</strong><span>API key · markdown articles</span></article>
-              <article><strong>Pinterest</strong><span>py3-pinterest · Pins</span></article>
-              <article><strong>Peerlist</strong><span>Chrome cookies · Scroll</span></article>
-              <article><strong>Hacker News</strong><span>form flow · link/text</span></article>
-              <article><strong>Nostr</strong><span>local key · relays</span></article>
-              <article><strong>Dribbble</strong><span>OAuth · shots</span></article>
+              <article><img src="assets/social/x.svg" alt="" width="28" height="28"><strong>X / Twitter</strong><span>bird · text/media/video</span></article>
+              <article><img src="assets/social/linkedin.svg" alt="" width="28" height="28"><strong>LinkedIn</strong><span>OAuth · profiles/pages</span></article>
+              <article><img src="assets/social/bluesky.svg" alt="" width="28" height="28"><strong>Bluesky</strong><span>app password · text/images</span></article>
+              <article><img src="assets/social/mastodon.svg" alt="" width="28" height="28"><strong>Mastodon</strong><span>access token · text/media</span></article>
+              <article><img src="assets/social/instagram.svg" alt="" width="28" height="28"><strong>Instagram</strong><span>instagrapi · images/video</span></article>
+              <article><img src="assets/social/youtube.svg" alt="" width="28" height="28"><strong>YouTube</strong><span>InnerTube · video upload</span></article>
+              <article><img src="assets/social/devto.svg" alt="" width="28" height="28"><strong>Dev.to</strong><span>API key · markdown articles</span></article>
+              <article><img src="assets/social/pinterest.svg" alt="" width="28" height="28"><strong>Pinterest</strong><span>py3-pinterest · Pins</span></article>
+              <article><img src="assets/social/peerlist.svg" alt="" width="28" height="28"><strong>Peerlist</strong><span>Chrome cookies · Scroll</span></article>
+              <article><img src="assets/social/hackernews.svg" alt="" width="28" height="28"><strong>Hacker News</strong><span>form flow · link/text</span></article>
+              <article><img src="assets/social/nostr.svg" alt="" width="28" height="28"><strong>Nostr</strong><span>local key · relays</span></article>
+              <article><img src="assets/social/dribbble.svg" alt="" width="28" height="28"><strong>Dribbble</strong><span>OAuth · shots</span></article>
             </div>
           </section>
 
@@ -222,7 +234,7 @@ npm run dev:local</code></pre>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>X / Twitter</td><td>Post text</td><td>280 or 25,000 Premium</td><td>5 MB photo, 15 MB GIF, 512 MB or 16 GB video</td></tr>
+                  <tr><td>X / Twitter</td><td>Post text</td><td>280 chars</td><td>5 MB photo, 15 MB GIF, 512 MB or 16 GB video with Premium</td></tr>
                   <tr><td>LinkedIn</td><td>Post text</td><td>3,000 chars</td><td>Images and MP4 up to 500 MB</td></tr>
                   <tr><td>Bluesky</td><td>Post text</td><td>300 chars</td><td>Images up to 1 MB</td></tr>
                   <tr><td>Instagram</td><td>Caption</td><td>2,200 chars</td><td>8 MB image, 300 MB video</td></tr>
@@ -294,11 +306,31 @@ npm run dev:local</code></pre>
             <div class="section-kicker">Project links</div>
             <h2>Source, support, and contact.</h2>
             <div class="contact-grid">
-              <a href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank"><span>GitHub</span><strong>Repository</strong></a>
-              <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank"><span>Issues</span><strong>Report an issue</strong></a>
-              <a href="https://x.com/apoorvdarshan" rel="noreferrer" target="_blank"><span>X</span><strong>@apoorvdarshan</strong></a>
-              <a href="mailto:apoorvdarshan@gmail.com"><span>Email</span><strong>apoorvdarshan@gmail.com</strong></a>
-              <a href="https://ko-fi.com/apoorvdarshan" rel="noreferrer" target="_blank"><span>Support</span><strong>Ko-fi</strong></a>
+              <a href="https://github.com/apoorvdarshan/crossposter" rel="noreferrer" target="_blank">
+                <span class="contact-mark"><img src="assets/social/github.svg" alt=""></span>
+                <span class="contact-label">GitHub</span>
+                <strong>Repository</strong>
+              </a>
+              <a href="https://github.com/apoorvdarshan/crossposter/issues/new" rel="noreferrer" target="_blank">
+                <span class="contact-mark"><img src="assets/social/issue.svg" alt=""></span>
+                <span class="contact-label">Issues</span>
+                <strong>Report an issue</strong>
+              </a>
+              <a href="https://x.com/apoorvdarshan" rel="noreferrer" target="_blank">
+                <span class="contact-mark"><img src="assets/social/x.svg" alt=""></span>
+                <span class="contact-label">X</span>
+                <strong>@apoorvdarshan</strong>
+              </a>
+              <a href="mailto:apoorvdarshan@gmail.com">
+                <span class="contact-mark"><img src="assets/social/email.svg" alt=""></span>
+                <span class="contact-label">Email</span>
+                <strong>apoorvdarshan@gmail.com</strong>
+              </a>
+              <a href="https://ko-fi.com/apoorvdarshan" rel="noreferrer" target="_blank">
+                <span class="contact-mark"><img src="assets/social/kofi.svg" alt=""></span>
+                <span class="contact-label">Support</span>
+                <strong>Ko-fi</strong>
+              </a>
             </div>
           </section>
         </div>

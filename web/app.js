@@ -5,6 +5,10 @@ const sections = Array.from(document.querySelectorAll(".doc-section"));
 const sidebarLinks = Array.from(document.querySelectorAll(".docs-sidebar a"));
 const copyButtons = Array.from(document.querySelectorAll(".copy-button"));
 const backToTop = document.querySelector(".back-to-top");
+const themeButton = document.querySelector(".theme-button");
+const themeButtonLabel = themeButton?.querySelector("span");
+const themeButtonIcon = themeButton?.querySelector("img");
+const themeStorageKey = "crossposter-web-theme";
 
 function normalize(value) {
   return value.trim().toLowerCase();
@@ -39,9 +43,39 @@ function updateActiveSection() {
   backToTop?.classList.toggle("is-visible", window.scrollY > 700);
 }
 
+function setTheme(theme) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+
+  document.documentElement.dataset.theme = nextTheme;
+  try {
+    localStorage.setItem(themeStorageKey, nextTheme);
+  } catch {}
+
+  if (themeButton) {
+    const isDark = nextTheme === "dark";
+
+    themeButton.setAttribute("aria-pressed", String(isDark));
+    themeButton.setAttribute("aria-label", `Switch to ${isDark ? "light" : "dark"} mode`);
+  }
+
+  if (themeButtonLabel) {
+    themeButtonLabel.textContent = nextTheme === "dark" ? "Dark" : "Light";
+  }
+
+  if (themeButtonIcon) {
+    themeButtonIcon.src = nextTheme === "dark" ? "assets/ui/moon.svg" : "assets/ui/sun.svg";
+  }
+}
+
 menuButton?.addEventListener("click", () => {
   const isOpen = nav?.classList.toggle("is-open") || false;
   menuButton.setAttribute("aria-expanded", String(isOpen));
+});
+
+themeButton?.addEventListener("click", () => {
+  const currentTheme = document.documentElement.dataset.theme || "dark";
+
+  setTheme(currentTheme === "dark" ? "light" : "dark");
 });
 
 searchInput?.addEventListener("input", () => {
@@ -79,4 +113,5 @@ backToTop?.addEventListener("click", () => {
 
 window.addEventListener("scroll", updateActiveSection, { passive: true });
 window.addEventListener("resize", updateActiveSection);
+setTheme(document.documentElement.dataset.theme || "dark");
 updateActiveSection();

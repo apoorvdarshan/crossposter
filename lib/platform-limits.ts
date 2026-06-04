@@ -5,7 +5,6 @@ export const instagramPostTextLimit = 2_200;
 export const linkedInPostTextLimit = 3_000;
 export const youtubeDescriptionLimit = 5_000;
 export const xFreePostTextLimit = 280;
-export const xPremiumPostTextLimit = 25_000;
 export const xPhotoMediaSizeLimit = 5 * 1024 * 1024;
 export const xGifMediaSizeLimit = 15 * 1024 * 1024;
 export const xFreeVideoMediaSizeLimit = 512 * 1024 * 1024;
@@ -117,8 +116,8 @@ export function titleLimitForPlatform(platform: Platform): number | undefined {
   return undefined;
 }
 
-export function xPostTextLimit(isPremium: boolean): number {
-  return isPremium ? xPremiumPostTextLimit : xFreePostTextLimit;
+export function xPostTextLimit(_isPremium: boolean): number {
+  return xFreePostTextLimit;
 }
 
 export function xMediaSizeLimit(
@@ -180,6 +179,17 @@ export function platformLabel(platform: Platform): string {
   return platformLabels[platform];
 }
 
+function limitTargetLabel(target: { platform: Platform; profileLabel?: string }): string {
+  const label = platformLabel(target.platform);
+  const profileLabel = target.profileLabel?.trim();
+
+  if (!profileLabel || profileLabel === label) {
+    return label;
+  }
+
+  return target.platform === "x" ? `${label} · ${profileLabel}` : label;
+}
+
 export function titleLimitIssues(platforms: Platform[], title: string): DraftLimitIssue[] {
   return Array.from(new Set(platforms)).flatMap((platform) => {
     const limit = titleLimitForPlatform(platform);
@@ -221,10 +231,7 @@ export function postLimitIssuesForTargets(
   const seen = new Set<string>();
 
   for (const target of targets) {
-    const key =
-      target.platform === "x"
-        ? `${target.platform}:${target.xPremium ? "premium" : "free"}`
-        : target.platform;
+    const key = target.platform;
 
     if (seen.has(key)) {
       continue;
@@ -235,10 +242,7 @@ export function postLimitIssuesForTargets(
     const limit = postTextLimitForPlatform(target.platform, { xPremium: target.xPremium });
 
     if (limit && length > limit) {
-      const label =
-        target.platform === "x" && target.profileLabel
-          ? `${platformLabel(target.platform)} · ${target.profileLabel}`
-          : platformLabel(target.platform);
+      const label = limitTargetLabel(target);
 
       issues.push({
         id: `${key}-post-limit`,

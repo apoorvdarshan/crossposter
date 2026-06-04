@@ -194,8 +194,9 @@ X_BIRD_TIMEOUT_MS
 X_PREMIUM_LONG_POSTS
 ```
 
-Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. Crossposter uses a
-280 character limit by default, or 25,000 characters for Premium profiles.
+Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. Crossposter uses
+Bird's 280 character tweet limit for X text. The Premium toggle is only used
+for larger X video uploads.
 
 Media limits:
 
