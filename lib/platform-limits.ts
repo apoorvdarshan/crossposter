@@ -20,7 +20,7 @@ export const devtoTitleLimit = 128;
 export const youtubeTitleLimit = 100;
 export const pinterestTitleLimit = 100;
 export const youtubeVideoMediaSizeLimit = 256 * 1024 * 1024 * 1024;
-export const pinterestDescriptionLimit = 500;
+export const pinterestDescriptionLimit = 800;
 export const devtoBodyBytesLimit = 800 * 1024;
 
 const platformLabels: Record<Platform, string> = {
