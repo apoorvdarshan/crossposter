@@ -5,6 +5,7 @@ export type Platform =
   | "mastodon"
   | "instagram"
   | "youtube"
+  | "dribbble"
   | "devto"
   | "hackernews"
   | "nostr";

@@ -135,6 +135,32 @@ export const configFields: ConfigField[] = [
     showFor: ["youtube"]
   },
   {
+    name: "DRIBBBLE_ACCESS_TOKEN",
+    label: "Dribbble access token",
+    help: "OAuth token with Dribbble upload scope. Your Dribbble account must be able to upload shots.",
+    secret: true,
+    requiredFor: ["dribbble"]
+  },
+  {
+    name: "DRIBBBLE_TAGS",
+    label: "Dribbble tags",
+    help: "Optional comma-separated tags. Dribbble accepts up to 12 tags.",
+    showFor: ["dribbble"]
+  },
+  {
+    name: "DRIBBBLE_TEAM_ID",
+    label: "Dribbble team ID",
+    help: "Optional team ID to associate the shot with.",
+    showFor: ["dribbble"]
+  },
+  {
+    name: "DRIBBBLE_LOW_PROFILE",
+    label: "Dribbble Low Profile",
+    help: "Set true to publish the shot as Low Profile.",
+    defaultValue: "false",
+    showFor: ["dribbble"]
+  },
+  {
     name: "LINKEDIN_CLIENT_ID",
     label: "LinkedIn client ID",
     help: "Client ID from your LinkedIn developer app. Used only to connect this profile locally.",
@@ -263,6 +289,7 @@ export const requiredConfigByPlatform = configFields.reduce(
     mastodon: [],
     instagram: [],
     youtube: [],
+    dribbble: [],
     devto: [],
     hackernews: [],
     nostr: []

@@ -26,6 +26,7 @@ import {
   devtoBodyBytesLimit,
   instagramPhotoMediaSizeLimit,
   instagramVideoMediaSizeLimit,
+  dribbbleImageMediaSizeLimit,
   postLimitIssuesForTargets,
   postTextLimitForPlatform,
   platformLabel,
@@ -104,6 +105,14 @@ const channels: Array<{
     media: "Title becomes the video title. Post becomes the description. Requires a local video up to 256 GB or 12 hours."
   },
   {
+    id: "dribbble",
+    label: "Dribbble",
+    note: "Shot upload",
+    uses: ["Title", "Post", "Media"],
+    target: "Uses the active Dribbble OAuth token profile from Settings.",
+    media: "Title becomes the shot title. Post becomes the description. Requires a JPG, PNG, or GIF exactly 400x300 or 800x600."
+  },
+  {
     id: "devto",
     label: "Dev.to",
     note: "Markdown article",
@@ -157,6 +166,10 @@ const envLabels: Record<string, string> = {
   YOUTUBE_COOKIE: "cookie",
   YOUTUBE_PRIVACY: "privacy",
   YOUTUBE_TIMEOUT_MS: "timeout",
+  DRIBBBLE_ACCESS_TOKEN: "access token",
+  DRIBBBLE_TAGS: "tags",
+  DRIBBBLE_TEAM_ID: "team ID",
+  DRIBBBLE_LOW_PROFILE: "Low Profile",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
   NOSTR_PRIVATE_KEY: "private key",
@@ -282,6 +295,8 @@ const youtubeVideoExtensions = new Set([
   ".webm",
   ".wmv"
 ]);
+const dribbbleImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
+const dribbbleImageTargetSize = 7.5 * 1024 * 1024;
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -746,6 +761,27 @@ function mediaPreflightIssues(
     }
   }
 
+  if (platforms.includes("dribbble")) {
+    if (kind !== "image") {
+      issues.push({
+        id: "dribbble-kind",
+        message: `Dribbble can upload shot images only; selected media is a ${mediaKindLabel(kind)}.`
+      });
+    } else if (!dribbbleImageTypes.has(file.type)) {
+      issues.push({
+        id: "dribbble-image-type",
+        message: `Dribbble supports JPG, PNG, and GIF shot images; selected file is ${file.type || "unknown"}.`,
+        compress: file.type === "image/gif" ? undefined : "image"
+      });
+    } else if (file.size > dribbbleImageMediaSizeLimit) {
+      issues.push({
+        id: "dribbble-image-size",
+        message: `Dribbble shot image limit is 8 MB; selected file is ${formatBytes(file.size)}.`,
+        compress: file.type === "image/gif" ? undefined : "image"
+      });
+    }
+  }
+
   if (platforms.includes("bluesky")) {
     if (kind !== "image") {
       issues.push({
@@ -815,6 +851,10 @@ function imageTargetBytesForPlatforms(platforms: Platform[], file: File): number
 
   if (platforms.includes("mastodon") && file.size > mastodonImageSizeLimit) {
     targets.push(mastodonImageTargetSize);
+  }
+
+  if (platforms.includes("dribbble") && file.size > dribbbleImageMediaSizeLimit) {
+    targets.push(dribbbleImageTargetSize);
   }
 
   return targets.length ? Math.min(...targets) : undefined;
@@ -1586,21 +1626,28 @@ export default function Home() {
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const hasInstagram = publishPlatforms.includes("instagram");
     const hasYouTube = publishPlatforms.includes("youtube");
-    const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
+    const hasDribbble = publishPlatforms.includes("dribbble");
+    const hasOnlyTextOptionalPlatforms = publishPlatforms.every((platform) =>
+      platform === "hackernews" || platform === "dribbble"
+    );
 
-    if ((hasHackerNews || hasYouTube) && !title.trim()) {
+    if ((hasHackerNews || hasYouTube || hasDribbble) && !title.trim()) {
       setError(
-        hasHackerNews && hasYouTube
-          ? "Hacker News and YouTube require a title."
-          : hasHackerNews
-            ? "Hacker News requires a title."
-            : "YouTube requires a title."
+        [hasHackerNews ? "Hacker News" : "", hasYouTube ? "YouTube" : "", hasDribbble ? "Dribbble" : ""]
+          .filter(Boolean)
+          .join(", ") + " require a title."
       );
       return;
     }
 
-    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
-      setError("Write post text before publishing, or select only Hacker News and add a title.");
+    if (!text.trim() && !hasOnlyTextOptionalPlatforms) {
+      setError(
+        hasDribbble && publishPlatforms.length === 1
+          ? "Write post text for the Dribbble description, or leave it empty to publish without a description."
+          : hasHackerNews
+            ? "Write post text before publishing, or select only Hacker News and add a title."
+            : "Write post text before publishing."
+      );
       return;
     }
 
@@ -1611,6 +1658,11 @@ export default function Home() {
 
     if (hasYouTube && !mediaFile) {
       setError("YouTube requires a local video file.");
+      return;
+    }
+
+    if (hasDribbble && !mediaFile) {
+      setError("Dribbble requires a local shot image.");
       return;
     }
 
@@ -1709,21 +1761,28 @@ export default function Home() {
     const hasHackerNews = publishPlatforms.includes("hackernews");
     const hasInstagram = publishPlatforms.includes("instagram");
     const hasYouTube = publishPlatforms.includes("youtube");
-    const isHackerNewsOnly = hasHackerNews && publishPlatforms.length === 1;
+    const hasDribbble = publishPlatforms.includes("dribbble");
+    const hasOnlyTextOptionalPlatforms = publishPlatforms.every((platform) =>
+      platform === "hackernews" || platform === "dribbble"
+    );
 
-    if ((hasHackerNews || hasYouTube) && !title.trim()) {
+    if ((hasHackerNews || hasYouTube || hasDribbble) && !title.trim()) {
       setError(
-        hasHackerNews && hasYouTube
-          ? "Hacker News and YouTube require a title."
-          : hasHackerNews
-            ? "Hacker News requires a title."
-            : "YouTube requires a title."
+        [hasHackerNews ? "Hacker News" : "", hasYouTube ? "YouTube" : "", hasDribbble ? "Dribbble" : ""]
+          .filter(Boolean)
+          .join(", ") + " require a title."
       );
       return;
     }
 
-    if (!text.trim() && !(isHackerNewsOnly && title.trim())) {
-      setError("Write post text before scheduling, or select only Hacker News and add a title.");
+    if (!text.trim() && !hasOnlyTextOptionalPlatforms) {
+      setError(
+        hasDribbble && publishPlatforms.length === 1
+          ? "Write post text for the Dribbble description, or leave it empty to schedule without a description."
+          : hasHackerNews
+            ? "Write post text before scheduling, or select only Hacker News and add a title."
+            : "Write post text before scheduling."
+      );
       return;
     }
 
@@ -1734,6 +1793,11 @@ export default function Home() {
 
     if (hasYouTube && !mediaFile) {
       setError("YouTube requires a local video file.");
+      return;
+    }
+
+    if (hasDribbble && !mediaFile) {
+      setError("Dribbble requires a local shot image.");
       return;
     }
 
@@ -1875,14 +1939,21 @@ export default function Home() {
   const showHackerNewsLink = selectedPlatforms.includes("hackernews");
   const hasInstagram = selectedPlatforms.includes("instagram");
   const hasYouTube = selectedPlatforms.includes("youtube");
+  const hasDribbble = selectedPlatforms.includes("dribbble");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
+  const hasOnlyTextOptionalPlatforms = selectedPlatforms.every((platform) =>
+    platform === "hackernews" || platform === "dribbble"
+  );
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
   const hasRequiredYouTubeTitle = !hasYouTube || Boolean(title.trim());
+  const hasRequiredDribbbleTitle = !hasDribbble || Boolean(title.trim());
   const hasRequiredInstagramMedia = !hasInstagram || Boolean(mediaFile);
   const hasRequiredYouTubeMedia = !hasYouTube || Boolean(mediaFile);
+  const hasRequiredDribbbleMedia = !hasDribbble || Boolean(mediaFile);
   const hasRequiredPostText =
     Boolean(text.trim()) ||
-    (isHackerNewsOnly && Boolean(title.trim()));
+    (isHackerNewsOnly && Boolean(title.trim())) ||
+    (hasOnlyTextOptionalPlatforms && Boolean(title.trim()));
   const draftLimitIssues = [
     ...titleLimitIssues(selectedPlatforms, title),
     ...postLimitIssuesForTargets(selectedLimitTargets, text)
@@ -1892,8 +1963,10 @@ export default function Home() {
     selectedTargets.length > 0 &&
     hasRequiredHackerNewsTitle &&
     hasRequiredYouTubeTitle &&
+    hasRequiredDribbbleTitle &&
     hasRequiredInstagramMedia &&
     hasRequiredYouTubeMedia &&
+    hasRequiredDribbbleMedia &&
     hasRequiredPostText &&
     preflightIssues.length === 0 &&
     !hasLimitIssues &&

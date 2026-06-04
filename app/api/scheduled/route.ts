@@ -16,6 +16,7 @@ const platformSchema = z.enum([
   "mastodon",
   "instagram",
   "youtube",
+  "dribbble",
   "devto",
   "hackernews",
   "nostr"
@@ -74,13 +75,13 @@ function requestedPlatforms(value: {
   return Array.from(new Set(platforms));
 }
 
-function isHackerNewsOnly(value: {
+function hasOnlyTextOptionalPlatforms(value: {
   platforms?: Platform[];
   targets?: Array<{ platform: Platform }>;
 }): boolean {
   const platforms = requestedPlatforms(value);
 
-  return platforms.length === 1 && platforms[0] === "hackernews";
+  return platforms.length > 0 && platforms.every((platform) => platform === "hackernews" || platform === "dribbble");
 }
 
 function defaultTargets(value: {
@@ -122,8 +123,11 @@ const requestSchema = z
   .refine((value) => !requestedPlatforms(value).includes("youtube") || value.title?.trim(), {
     message: "YouTube requires a title."
   })
-  .refine((value) => value.text.trim() || (isHackerNewsOnly(value) && value.title?.trim()), {
-    message: "Write post text, or select only Hacker News and add a title."
+  .refine((value) => !requestedPlatforms(value).includes("dribbble") || value.title?.trim(), {
+    message: "Dribbble requires a title."
+  })
+  .refine((value) => value.text.trim() || (hasOnlyTextOptionalPlatforms(value) && value.title?.trim()), {
+    message: "Write post text, or select only Hacker News/Dribbble and add a title."
   })
   .refine((value) => Number.isFinite(Date.parse(value.scheduledFor)), {
     message: "Choose a valid scheduled time."

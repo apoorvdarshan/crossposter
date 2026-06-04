@@ -15,6 +15,7 @@ const tokenFields = new Set([
   "LINKEDIN_CLIENT_ID",
   "LINKEDIN_CLIENT_SECRET",
   "LINKEDIN_ACCESS_TOKEN",
+  "DRIBBBLE_ACCESS_TOKEN",
   "NOSTR_PRIVATE_KEY"
 ]);
 
@@ -159,6 +160,20 @@ function invalidReason(name: string, value: string): string | null {
 
       return timeout >= 30_000 && timeout <= 3_600_000 ? null : "must be between 30000 and 3600000";
     }
+    case "DRIBBBLE_TAGS": {
+      const tags = value.split(",").map((tag) => tag.trim()).filter(Boolean);
+      const invalid = tags.find((tag) => tag.length > 32 || !/^[\p{Letter}\p{Number} _.-]+$/u.test(tag));
+
+      if (tags.length > 12) {
+        return "must include no more than 12 tags";
+      }
+
+      return invalid ? `invalid tag ${invalid}` : null;
+    }
+    case "DRIBBBLE_TEAM_ID":
+      return /^\d+$/.test(value) ? null : "must be a numeric team ID";
+    case "DRIBBBLE_LOW_PROFILE":
+      return value === "true" || value === "false" ? null : "must be true or false";
     case "NOSTR_RELAYS":
       return invalidNostrRelays(value);
     case "HACKERNEWS_USERNAME":

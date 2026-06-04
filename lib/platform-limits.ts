@@ -12,6 +12,7 @@ export const xFreeVideoMediaSizeLimit = 512 * 1024 * 1024;
 export const xPremiumVideoMediaSizeLimit = 16 * 1024 * 1024 * 1024;
 export const instagramPhotoMediaSizeLimit = 8 * 1024 * 1024;
 export const instagramVideoMediaSizeLimit = 300 * 1024 * 1024;
+export const dribbbleImageMediaSizeLimit = 8 * 1024 * 1024;
 export const hackerNewsTitleLimit = 80;
 export const devtoTitleLimit = 128;
 export const youtubeTitleLimit = 100;
@@ -25,6 +26,7 @@ const platformLabels: Record<Platform, string> = {
   mastodon: "Mastodon",
   instagram: "Instagram",
   youtube: "YouTube",
+  dribbble: "Dribbble",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"

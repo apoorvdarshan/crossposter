@@ -90,6 +90,7 @@ const platforms: Array<{ id: Platform; label: string }> = [
   { id: "mastodon", label: "Mastodon" },
   { id: "instagram", label: "Instagram" },
   { id: "youtube", label: "YouTube" },
+  { id: "dribbble", label: "Dribbble" },
   { id: "devto", label: "Dev.to" },
   { id: "hackernews", label: "Hacker News" },
   { id: "nostr", label: "Nostr" }
@@ -251,6 +252,25 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "YouTube privacy defaults to PUBLIC. Change it to UNLISTED or PRIVATE only when needed.",
       "On the Dashboard, add a Title, Post text for the description, and attach a local video.",
       "Avoid high-volume uploads. YouTube may challenge, throttle, or restrict accounts for suspicious automation."
+    ]
+  },
+  dribbble: {
+    title: "Dribbble setup",
+    intro:
+      "Official shot uploads through the Dribbble API. The access token must include the upload scope.",
+    links: [
+      { label: "Dribbble OAuth", href: "https://developer.dribbble.com/v2/oauth/" },
+      { label: "Create shot API", href: "https://developer.dribbble.com/v2/shots/" }
+    ],
+    steps: [
+      "Create or open a Dribbble API application.",
+      "Authorize an OAuth token with the upload scope.",
+      "Add a Dribbble profile here and paste the access token.",
+      "Optionally add comma-separated tags. Dribbble accepts up to 12 tags.",
+      "Optionally set a team ID or enable Low Profile.",
+      "On the Dashboard, add a Title, optional Post text for the shot description, and attach a JPG, PNG, or GIF.",
+      "Dribbble API shot images must be exactly 400x300 or 800x600 and no larger than 8 MB.",
+      "Dribbble creates shots asynchronously, so the returned shot may take a moment to appear."
     ]
   },
   nostr: {
@@ -1124,7 +1144,9 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               </label>
               {providerFields.map((field) => {
                 const fieldValue = profile.values[field.name] || field.defaultValue || "";
-                const isBooleanField = field.name === "X_PREMIUM_LONG_POSTS";
+                const isBooleanField =
+                  field.name === "X_PREMIUM_LONG_POSTS" ||
+                  field.name === "DRIBBBLE_LOW_PROFILE";
                 const issue = validateConfigField(
                   field,
                   fieldValue,
@@ -1153,9 +1175,13 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                           type="checkbox"
                         />
                         <span>
-                          {fieldValue === "true"
-                            ? "Premium account limits"
-                            : "Standard 280 chars / 512 MB video"}
+                          {field.name === "DRIBBBLE_LOW_PROFILE"
+                            ? fieldValue === "true"
+                              ? "Publish as Low Profile"
+                              : "Normal shot profile"
+                            : fieldValue === "true"
+                              ? "Premium account limits"
+                              : "Standard 280 chars / 512 MB video"}
                         </span>
                       </span>
                       <span className={`field-hint ${issue ? "is-warning" : ""}`}>
