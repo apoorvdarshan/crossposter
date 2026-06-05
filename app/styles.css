@@ -2410,3 +2410,278 @@ a.history-platform.ok:hover {
     font-size: 1.65rem;
   }
 }
+
+@media (max-width: 640px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .workspace {
+    width: 100%;
+    padding: 10px 10px 34px;
+  }
+
+  .masthead,
+  .dashboard,
+  .compose-panel,
+  .publish-panel,
+  .info-panel,
+  .scheduler-grid,
+  .settings-grid,
+  .socials-masonry {
+    min-width: 0;
+  }
+
+  .masthead {
+    top: 8px;
+    gap: 12px;
+    min-height: 0;
+    margin-bottom: 14px;
+    padding: 12px;
+  }
+
+  .brand-lockup {
+    gap: 10px;
+    max-width: calc(100vw - 44px);
+  }
+
+  .mark {
+    width: 42px;
+    height: 42px;
+  }
+
+  h1 {
+    font-size: 1.78rem;
+  }
+
+  h2 {
+    font-size: 1rem;
+  }
+
+  .project-links {
+    gap: 6px;
+  }
+
+  .masthead-actions {
+    width: 100%;
+    max-width: calc(100vw - 44px);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .top-tabs {
+    width: 100%;
+    max-width: calc(100vw - 44px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: 8px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .top-tab {
+    justify-content: center;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .theme-toggle {
+    width: 100%;
+    max-width: calc(100vw - 44px);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-radius: 8px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .theme-toggle button {
+    justify-content: center;
+    min-width: 0;
+    padding: 0 6px;
+  }
+
+  .status-pill {
+    max-width: calc(100vw - 44px);
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .masthead-action-slot {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dashboard {
+    gap: 14px;
+  }
+
+  .panel-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .panel-heading.compact {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .compose-head-actions,
+  .panel-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+    min-width: 0;
+  }
+
+  .compose-head-actions .counter {
+    width: 100%;
+    text-align: center;
+  }
+
+  .compose-head-actions .primary,
+  .compose-head-actions .secondary,
+  .actions .primary,
+  .actions .secondary,
+  .schedule-popup-actions .primary,
+  .schedule-popup-actions .secondary {
+    width: 100%;
+  }
+
+  .composer {
+    gap: 15px;
+    padding: 14px;
+  }
+
+  input,
+  textarea,
+  select {
+    min-width: 0;
+    padding: 11px;
+    font-size: 16px;
+  }
+
+  textarea {
+    min-height: 185px;
+  }
+
+  .field-hint {
+    font-size: 0.8rem;
+  }
+
+  .media-picker {
+    border-radius: 8px;
+  }
+
+  .media-preview {
+    min-height: 178px;
+  }
+
+  .media-preview img,
+  .media-preview video {
+    max-height: 280px;
+  }
+
+  .media-controls {
+    justify-items: stretch;
+    padding: 12px;
+  }
+
+  .media-choose-button {
+    width: 100%;
+  }
+
+  .media-meta span:first-child {
+    align-items: flex-start;
+  }
+
+  .crop-preview {
+    max-height: 290px;
+  }
+
+  .compression-heading,
+  .section-line,
+  .schedule-popup-head,
+  .schedule-presets,
+  .schedule-popup-actions {
+    align-items: stretch;
+  }
+
+  .compression-heading,
+  .section-line,
+  .schedule-popup-head {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .channel-actions {
+    justify-content: start;
+  }
+
+  .channel {
+    min-height: 0;
+  }
+
+  .channel-body {
+    padding: 11px;
+  }
+
+  .channel-top {
+    align-items: flex-start;
+  }
+
+  .field-map span {
+    font-size: 0.68rem;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-popup-top {
+    margin: 12px 14px 0;
+  }
+
+  .schedule-popup-actions,
+  .schedule-presets {
+    justify-content: stretch;
+  }
+
+  .schedule-popup-actions button,
+  .schedule-presets button {
+    flex: 1 1 auto;
+  }
+
+  .publish-feed {
+    padding: 12px;
+  }
+
+  .result-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .result-head time {
+    text-align: left;
+  }
+
+  .history-media img,
+  .history-media video {
+    max-height: 230px;
+  }
+}
