@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./web/assets/logo-crossposter.png" alt="Crossposter logo" width="120" height="120">
+  <img src="https://crossposter.apoorvdarshan.com/assets/logo-crossposter.png" alt="Crossposter logo" width="120" height="120">
 </p>
 
 <h1 align="center">Crossposter</h1>
