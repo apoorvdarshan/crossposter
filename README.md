@@ -113,18 +113,32 @@ server starts and the scheduler tick runs.
 
 ## Run Locally
 
-Fastest path:
+### Recommended: npx Launcher
+
+Use the npx path when you want Crossposter running on localhost without cloning
+the repo or installing a global binary:
 
 ```bash
 npx @apoorvdarshan/crossposter@latest
 ```
 
-The launcher opens or prints the local URL and keeps user data in the folder
-where you ran it:
+The launcher opens or prints the local URL:
 
 ```text
 http://localhost:2004
 ```
+
+Run the command from the folder where you want Crossposter data to live. The
+local config, uploads, schedule, and history stay in that folder.
+
+```bash
+mkdir -p ~/Crossposter
+cd ~/Crossposter
+npx @apoorvdarshan/crossposter@latest
+```
+
+If you already have `poster.config.local.json` or `.poster-uploads`, run npx
+from that same folder so the app uses your existing data.
 
 For a persistent command:
 
