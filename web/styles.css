@@ -15,6 +15,10 @@
   --code-bg: #e8edde;
   --shadow: 0 22px 60px rgba(33, 38, 29, 0.12);
   --tight-shadow: 0 14px 34px rgba(33, 38, 29, 0.1);
+  --hero-copy: rgba(23, 25, 22, 0.74);
+  --hero-image-filter: invert(1) grayscale(0.12) brightness(1.14) contrast(0.76) saturate(0.72);
+  --hero-image-opacity: 0.72;
+  --hero-overlay: rgba(244, 246, 240, 0.42);
   --radius: 8px;
   --display: "Avenir Next", "Gill Sans", "Trebuchet MS", system-ui, sans-serif;
   --body: "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
@@ -38,6 +42,10 @@
   --code-bg: #252b24;
   --shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
   --tight-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+  --hero-copy: rgba(244, 244, 239, 0.72);
+  --hero-image-filter: none;
+  --hero-image-opacity: 0.7;
+  --hero-overlay: rgba(5, 5, 5, 0.42);
 }
 
 * {
@@ -243,6 +251,7 @@ pre code {
 }
 
 .hero-visual {
+  background: var(--panel-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   inset: clamp(18px, 3vw, 42px) clamp(10px, 2vw, 26px) auto;
@@ -253,14 +262,15 @@ pre code {
 }
 
 .hero-visual img {
+  filter: var(--hero-image-filter);
   height: 100%;
   object-fit: cover;
-  opacity: 0.7;
+  opacity: var(--hero-image-opacity);
   width: 100%;
 }
 
 .hero-visual::after {
-  background: rgba(5, 5, 5, 0.42);
+  background: var(--hero-overlay);
   content: "";
   inset: 0;
   position: absolute;
@@ -348,7 +358,7 @@ pre code {
 }
 
 .hero-center {
-  color: #f4f4ef;
+  color: var(--ink);
   margin: 0 auto;
   max-width: 930px;
   position: relative;
@@ -380,7 +390,7 @@ pre code {
 }
 
 .hero-copy {
-  color: rgba(244, 244, 239, 0.72);
+  color: var(--hero-copy);
   font-size: clamp(1.08rem, 2vw, 1.42rem);
   font-weight: 650;
   margin: 22px auto 0;
