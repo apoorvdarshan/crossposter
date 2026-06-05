@@ -30,6 +30,12 @@ For non-sensitive bugs and feature requests, use GitHub Issues instead:
 Crossposter may use social platform tokens, app secrets, passwords, browser
 cookies, and local session files. These must stay private.
 
+Some provider integrations are unofficial and may rely on cookies, local session
+files, private APIs, third-party tools, or normal web submit flows. Treat those
+credentials like account access. Platform changes, login challenges, rate
+limits, failed posts, or account restrictions are possible if a provider rejects
+or detects automation.
+
 Do not commit:
 
 - `poster.config.local.json`

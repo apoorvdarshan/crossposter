@@ -31,6 +31,19 @@ jobs. Crossposter keeps the surface area narrow so it can run on your Mac, a
 small VPS, Render, or a simple Node host. Scheduled posts publish only while
 that server process is running.
 
+## Unofficial Integrations And Platform Terms
+
+Crossposter includes a mix of official APIs and local unofficial integrations.
+X / Twitter, Instagram, YouTube, Pinterest, Peerlist, and Hacker News may use
+cookies, local sessions, private APIs, third-party tools, or normal web submit
+flows.
+
+Use Crossposter only with accounts, pages, boards, channels, and profiles you
+own or are authorized to manage. You are responsible for each platform's API
+terms, automation rules, rate limits, account policies, and content policies.
+Unofficial integrations can break when platforms change and may trigger login
+challenges, rate limits, failed posts, or account restrictions.
+
 ## Supported Channels
 
 | Channel | Current support |

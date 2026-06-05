@@ -739,6 +739,23 @@ pre code {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.disclaimer-box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-top: 18px;
+  max-width: 900px;
+  padding: 18px;
+}
+
+.disclaimer-box h3 {
+  margin-bottom: 8px;
+}
+
+.disclaimer-box p {
+  margin: 0;
+}
+
 .note-grid article,
 .command-grid article,
 .feature-grid article,

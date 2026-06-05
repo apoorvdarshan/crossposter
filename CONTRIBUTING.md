@@ -26,6 +26,15 @@ Provider changes should make the setup, limits, failure modes, and account-risk
 tradeoffs clear in the UI and docs. Unofficial or cookie/session-based providers
 must remain local and user-triggered.
 
+Unofficial integrations must be documented as unofficial anywhere users configure
+or learn about them. Note when a provider depends on cookies, local sessions,
+private APIs, third-party tools, or normal browser/web submit flows. Do not
+present those providers as platform-approved APIs.
+
+Contributors should assume users are responsible for platform terms, automation
+rules, rate limits, and content policies. Avoid changes that encourage bulk,
+spammy, parallel, or account-risky posting.
+
 ## Development
 
 Run the published local app without cloning:

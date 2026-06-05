@@ -477,6 +477,10 @@ h2 {
   align-content: start;
 }
 
+.socials-disclaimer {
+  grid-column: 1 / -1;
+}
+
 .compose-panel,
 .publish-panel,
 .info-panel {
@@ -1033,6 +1037,15 @@ textarea {
   border-radius: 7px;
   background: var(--panel-soft);
   padding: 14px;
+}
+
+.empty-channels.is-loading {
+  border-style: dashed;
+}
+
+.empty-channels.is-warning {
+  border-color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, var(--panel-soft));
 }
 
 .empty-channels span {

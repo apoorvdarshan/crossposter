@@ -1379,6 +1379,7 @@ export default function Home() {
   const publishAbortRef = useRef<AbortController | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [configHydrated, setConfigHydrated] = useState(false);
+  const [configLoadFailed, setConfigLoadFailed] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [schedulePanelPlacement, setSchedulePanelPlacement] = useState<ProgressPlacement | null>(null);
   const [scheduleStatusPlacement, setScheduleStatusPlacement] = useState<ProgressPlacement>("top");
@@ -1476,9 +1477,14 @@ export default function Home() {
           return;
         }
 
+        setConfigLoadFailed(false);
         setConfigProfiles(body.profiles || {});
-      } catch {}
-      finally {
+      } catch {
+        if (active) {
+          setConfigLoadFailed(true);
+          setConfigProfiles({});
+        }
+      } finally {
         if (active) {
           setConfigHydrated(true);
         }
@@ -3104,7 +3110,17 @@ export default function Home() {
                 </div>
               </div>
               <div className="channel-grid">
-                {visibleTargets.length === 0 ? (
+                {!configHydrated ? (
+                  <div className="empty-channels is-loading">
+                    <strong>Loading connected socials...</strong>
+                    <span>Reading local profiles from poster.config.local.json.</span>
+                  </div>
+                ) : configLoadFailed ? (
+                  <div className="empty-channels is-warning">
+                    <strong>Could not load connected socials.</strong>
+                    <span>Refresh the page or check that the local server can read the config file.</span>
+                  </div>
+                ) : visibleTargets.length === 0 ? (
                   <div className="empty-channels">
                     <strong>No connected socials yet.</strong>
                     <span>

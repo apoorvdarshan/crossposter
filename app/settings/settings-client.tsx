@@ -2000,13 +2000,35 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
         ) : null}
 
         {settingsView === "socials" ? (
-          <div className="socials-masonry">
-            {socialColumns.map((column, index) => (
-              <div className="socials-column" key={index === 0 ? "primary" : "secondary"}>
-                {column.map((platform) => renderSocialPanel(platform))}
+          <>
+            <section className="info-panel socials-disclaimer">
+              <div className="panel-heading compact">
+                <h2>
+                  <AlertTriangle size={18} />
+                  Unofficial integrations
+                </h2>
               </div>
-            ))}
-          </div>
+              <div className="config-panel">
+                <p className="hint">
+                  Crossposter supports a mix of official APIs and local unofficial flows.
+                  X / Twitter, Instagram, YouTube, Pinterest, Peerlist, and Hacker News may
+                  use cookies, local sessions, private APIs, or normal web submit flows.
+                </p>
+                <p className="hint">
+                  Use these only for accounts you own or manage. Platforms can change,
+                  challenge, rate-limit, reject, or restrict accounts that violate their
+                  rules or automation policies.
+                </p>
+              </div>
+            </section>
+            <div className="socials-masonry">
+              {socialColumns.map((column, index) => (
+                <div className="socials-column" key={index === 0 ? "primary" : "secondary"}>
+                  {column.map((platform) => renderSocialPanel(platform))}
+                </div>
+              ))}
+            </div>
+          </>
         ) : null}
       </section>
 
