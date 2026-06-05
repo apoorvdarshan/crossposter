@@ -3,15 +3,102 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Crossposter - Local Social Publishing Dashboard</title>
     <meta
       name="description"
-      content="Crossposter is a local-first crossposting dashboard for publishing to X, LinkedIn, Bluesky, Mastodon, Instagram, YouTube, Dev.to, Pinterest, Peerlist, Hacker News, Nostr, and Dribbble."
+      content="Crossposter is a local-first dashboard for composing once, attaching media, checking limits, and publishing to connected social accounts from localhost."
     >
-    <meta property="og:title" content="Crossposter">
-    <meta property="og:description" content="Private local social publishing for accounts you control.">
-    <meta property="og:image" content="assets/dashboard-preview.png">
+    <meta name="author" content="Apoorv Darshan">
+    <meta name="application-name" content="Crossposter">
+    <meta
+      name="keywords"
+      content="Crossposter, crossposting, social media publishing, local-first, self-hosted, social media scheduler, X, LinkedIn, Bluesky, Mastodon, Instagram, YouTube, Dev.to, Pinterest, Hacker News, Nostr, Dribbble"
+    >
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#050505" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f4f6f0" media="(prefers-color-scheme: light)">
+    <link rel="canonical" href="https://crossposter.apoorvdarshan.com/">
+    <link rel="me" href="https://github.com/apoorvdarshan">
+    <link rel="me" href="https://x.com/apoorvdarshan">
+    <meta property="og:site_name" content="Crossposter">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:url" content="https://crossposter.apoorvdarshan.com/">
+    <meta property="og:title" content="Crossposter - Local Social Publishing Dashboard">
+    <meta property="og:description" content="Compose once, attach media, check platform limits, and publish to connected social accounts from localhost.">
+    <meta property="og:image" content="https://crossposter.apoorvdarshan.com/assets/opengraph.png">
+    <meta property="og:image:url" content="https://crossposter.apoorvdarshan.com/assets/opengraph.png">
+    <meta property="og:image:secure_url" content="https://crossposter.apoorvdarshan.com/assets/opengraph.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Crossposter hero image showing local social publishing targets.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:creator" content="@apoorvdarshan">
+    <meta name="twitter:domain" content="crossposter.apoorvdarshan.com">
+    <meta name="twitter:url" content="https://crossposter.apoorvdarshan.com/">
+    <meta name="twitter:title" content="Crossposter - Local Social Publishing Dashboard">
+    <meta name="twitter:description" content="Compose once, attach media, check platform limits, and publish to connected social accounts from localhost.">
+    <meta name="twitter:image" content="https://crossposter.apoorvdarshan.com/assets/opengraph.png">
+    <meta name="twitter:image:alt" content="Crossposter hero image showing local social publishing targets.">
     <link rel="icon" href="assets/logo-crossposter.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/logo-crossposter.png">
+    <link rel="preload" as="image" href="assets/hero-social-backdrop.png" fetchpriority="high">
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://crossposter.apoorvdarshan.com/#website",
+            "name": "Crossposter",
+            "url": "https://crossposter.apoorvdarshan.com/",
+            "description": "Local-first social publishing dashboard for accounts you control.",
+            "inLanguage": "en-US",
+            "publisher": {
+              "@id": "https://crossposter.apoorvdarshan.com/#person"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://crossposter.apoorvdarshan.com/#software",
+            "name": "Crossposter",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Self-hosted",
+            "url": "https://crossposter.apoorvdarshan.com/",
+            "image": "https://crossposter.apoorvdarshan.com/assets/opengraph.png",
+            "screenshot": "https://crossposter.apoorvdarshan.com/assets/opengraph.png",
+            "description": "Compose once, attach media, check platform limits, and publish to connected social accounts from localhost.",
+            "codeRepository": "https://github.com/apoorvdarshan/crossposter",
+            "license": "https://github.com/apoorvdarshan/crossposter/blob/main/LICENSE",
+            "author": {
+              "@id": "https://crossposter.apoorvdarshan.com/#person"
+            },
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "featureList": [
+              "Local-first publishing dashboard",
+              "Media uploads and platform limit checks",
+              "Scheduled posts and local publish history",
+              "Provider readiness cards for connected social accounts"
+            ]
+          },
+          {
+            "@type": "Person",
+            "@id": "https://crossposter.apoorvdarshan.com/#person",
+            "name": "Apoorv Darshan",
+            "url": "https://github.com/apoorvdarshan",
+            "sameAs": [
+              "https://github.com/apoorvdarshan",
+              "https://x.com/apoorvdarshan"
+            ]
+          }
+        ]
+      }
+    </script>
     <script>
       try {
         document.documentElement.dataset.theme =
@@ -21,7 +108,6 @@
       }
     </script>
     <link rel="stylesheet" href="styles.css">
-    <title>Crossposter</title>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -51,7 +137,7 @@
     <main id="main">
       <section id="top" class="hero" aria-labelledby="hero-title">
         <div class="hero-visual" aria-hidden="true">
-          <img src="assets/hero-social-backdrop.png" alt="">
+          <img src="assets/hero-social-backdrop.png" alt="" width="1717" height="916" fetchpriority="high" decoding="async">
         </div>
         <div class="hero-logo-cloud" aria-hidden="true">
           <span><img src="assets/social/x.svg" alt=""></span>
@@ -329,7 +415,7 @@ npm run dev:local</code></pre>
               </article>
               <article>
                 <h3>Third parties</h3>
-                <p>Content is sent only to the social platforms selected during publishing. This website uses no analytics pixels or tracking cookies.</p>
+                <p>Content is sent only to the social platforms selected during publishing. This website uses Vercel Web Analytics for aggregate page-view analytics and does not use tracking cookies.</p>
               </article>
               <article>
                 <h3>Terms</h3>
@@ -383,6 +469,10 @@ npm run dev:local</code></pre>
     </footer>
 
     <button class="back-to-top" type="button" aria-label="Back to top">Top</button>
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
