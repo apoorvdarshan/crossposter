@@ -1590,6 +1590,37 @@ textarea {
   min-width: 0;
 }
 
+.config-location > div.config-location-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.config-location-title > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.config-location-title strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--heading-ink);
+  font-size: 0.96rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.config-info-button {
+  flex: 0 0 auto;
+  width: 42px;
+  padding: 0;
+}
+
 .config-location span {
   color: var(--muted);
   font-size: 0.74rem;
@@ -1622,6 +1653,40 @@ textarea {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.4;
+}
+
+.tailscale-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tailscale-status-grid > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--line-muted);
+  border-radius: 7px;
+  background: var(--chip-bg);
+  padding: 10px;
+}
+
+.tailscale-status-grid strong {
+  color: var(--heading-ink);
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.tailscale-status-grid small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.tailscale-host-field {
+  margin-top: 2px;
 }
 
 .local-service-card > .service-switch-row {
@@ -2665,6 +2730,11 @@ a.history-platform.ok:hover {
   .schedule-popup-actions button,
   .schedule-presets button {
     flex: 1 1 auto;
+  }
+
+  .tailscale-status-grid {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .publish-feed {

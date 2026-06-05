@@ -12,6 +12,7 @@ import {
   EyeOff,
   HardDrive,
   Info,
+  Network,
   Plus,
   RefreshCw,
   Save,
@@ -62,6 +63,17 @@ type LocalServiceResponse = {
   running: boolean;
   port: string;
   error?: string;
+};
+
+type TailscaleResponse = {
+  configuredHost: string;
+  detectedIp: string;
+  error: string;
+  host: string;
+  installed: boolean;
+  port: string;
+  running: boolean;
+  url: string;
 };
 
 type BrowserStorageStats = {
@@ -392,6 +404,19 @@ function formatBytes(size: number): string {
   return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
 }
 
+function normalizeNetworkHost(value: string | undefined): string {
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  const withoutProtocol = raw.replace(/^https?:\/\//i, "");
+  const hostWithOptionalPort = withoutProtocol.split(/[/?#]/)[0] || "";
+
+  return hostWithOptionalPort.replace(/:\d+$/, "").trim();
+}
+
 function newProfile(platform: Platform, fields: ConfigField[]): ProviderProfile {
   return {
     id: `${platform}-${Date.now()}`,
@@ -503,10 +528,12 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>({});
   const [storage, setStorage] = useState<StorageResponse | null>(null);
   const [localService, setLocalService] = useState<LocalServiceResponse | null>(null);
+  const [tailscale, setTailscale] = useState<TailscaleResponse | null>(null);
   const [browserStorage, setBrowserStorage] =
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
   const [openGuides, setOpenGuides] = useState<Partial<Record<Platform, boolean>>>({});
+  const [showTailscaleInfo, setShowTailscaleInfo] = useState(false);
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
   const [importingHackerNewsCookie, setImportingHackerNewsCookie] = useState("");
   const [importingYouTubeCookie, setImportingYouTubeCookie] = useState("");
@@ -580,6 +607,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   useEffect(() => {
     void loadStorage();
     void loadLocalService();
+    void loadTailscale();
   }, []);
 
   const statusDismissMs = useMemo(() => {
@@ -612,6 +640,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     () =>
       fields.filter(
         (field) =>
+          field.name !== "POSTER_TAILSCALE_HOST" &&
           !field.requiredFor?.length &&
           !field.showFor?.length
       ),
@@ -622,6 +651,38 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
     return port && /^\d+$/.test(port) ? `http://localhost:${port}` : localUrl;
   }, [localUrl, values.POSTER_LOCAL_PORT]);
+  const displayTailscaleHost = useMemo(
+    () =>
+      normalizeNetworkHost(values.POSTER_TAILSCALE_HOST) ||
+      normalizeNetworkHost(tailscale?.host) ||
+      normalizeNetworkHost(tailscale?.detectedIp),
+    [tailscale?.detectedIp, tailscale?.host, values.POSTER_TAILSCALE_HOST]
+  );
+  const displayTailscaleUrl = useMemo(() => {
+    const port = values.POSTER_LOCAL_PORT?.trim();
+    const normalizedPort = port && /^\d+$/.test(port) ? port : tailscale?.port || "2004";
+
+    return displayTailscaleHost ? `http://${displayTailscaleHost}:${normalizedPort}` : "";
+  }, [displayTailscaleHost, tailscale?.port, values.POSTER_LOCAL_PORT]);
+  const tailscaleSummary = useMemo(() => {
+    if (!tailscale) {
+      return "Checking Tailscale status...";
+    }
+
+    if (displayTailscaleUrl && values.POSTER_TAILSCALE_HOST?.trim()) {
+      return "Using the host saved in config. Change it here if your Tailnet name or 100.x IP changes.";
+    }
+
+    if (tailscale.running && displayTailscaleUrl) {
+      return "Detected from this Mac. Open this URL on a phone signed in to the same Tailnet.";
+    }
+
+    if (tailscale.installed) {
+      return tailscale.error || "Tailscale is installed, but this Mac is not connected right now.";
+    }
+
+    return "Tailscale was not detected. Install or start Tailscale, then refresh.";
+  }, [displayTailscaleUrl, tailscale, values.POSTER_TAILSCALE_HOST]);
   const totalStorageBytes = (storage?.totalBytes || 0) + browserStorage.bytes;
   const localServiceSummary = useMemo(() => {
     if (!localService) {
@@ -767,6 +828,17 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
       if (response.ok) {
         setLocalService(body);
+      }
+    } catch {}
+  }
+
+  async function loadTailscale() {
+    try {
+      const response = await fetch("/api/network/tailscale", { cache: "no-store" });
+      const body = (await response.json()) as TailscaleResponse;
+
+      if (response.ok) {
+        setTailscale(body);
       }
     } catch {}
   }
@@ -1018,6 +1090,20 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
       setStatus("Copied config path.");
     } catch {
       setStatus(configPath);
+    }
+  }
+
+  async function copyTailscaleUrl() {
+    if (!displayTailscaleUrl) {
+      setStatus("No Tailscale URL is available yet.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(displayTailscaleUrl);
+      setStatus("Copied Tailscale URL.");
+    } catch {
+      setStatus(displayTailscaleUrl);
     }
   }
 
@@ -1454,6 +1540,98 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                   Refresh status
                 </button>
               </div>
+            </div>
+            <div className="config-location tailscale-card">
+              <div className="config-location-title">
+                <div>
+                  <span>Tailscale connection</span>
+                  <strong>
+                    <Network size={17} />
+                    Phone access over Tailnet
+                  </strong>
+                </div>
+                <button
+                  aria-expanded={showTailscaleInfo}
+                  aria-label="Show Tailscale connection help"
+                  className="secondary compact-button config-info-button"
+                  type="button"
+                  onClick={() => setShowTailscaleInfo((current) => !current)}
+                >
+                  <Info size={17} />
+                </button>
+              </div>
+              <p>{tailscaleSummary}</p>
+              <div className="tailscale-status-grid">
+                <div>
+                  <span>Status</span>
+                  <strong>{tailscale?.running ? "Connected" : "Not connected"}</strong>
+                  <small>
+                    {tailscale?.detectedIp
+                      ? `Detected ${tailscale.detectedIp}`
+                      : tailscale?.error || "Refresh after opening Tailscale."}
+                  </small>
+                </div>
+                <div>
+                  <span>Phone URL</span>
+                  {displayTailscaleUrl ? (
+                    <a href={displayTailscaleUrl} target="_blank" rel="noreferrer">
+                      {displayTailscaleUrl}
+                      <ExternalLink size={15} />
+                    </a>
+                  ) : (
+                    <code>Set host below</code>
+                  )}
+                  <small>Use this on iPhone when it is on the same Tailnet.</small>
+                </div>
+              </div>
+              <label className="config-field tailscale-host-field">
+                <span>Tailscale host or IP</span>
+                <input
+                  value={values.POSTER_TAILSCALE_HOST || ""}
+                  onChange={(event) =>
+                    setValues((current) => ({
+                      ...current,
+                      POSTER_TAILSCALE_HOST: event.target.value
+                    }))
+                  }
+                  placeholder="100.x.x.x or macbook.tailnet.ts.net"
+                />
+                <span className="field-hint">
+                  Optional. Leave blank to auto-detect with <code>tailscale ip -4</code>.
+                </span>
+              </label>
+              <div className="inline-actions">
+                <button
+                  className="secondary compact-button"
+                  type="button"
+                  onClick={() => void loadTailscale()}
+                >
+                  <RefreshCw size={15} />
+                  Refresh Tailscale
+                </button>
+                <button
+                  className="secondary compact-button"
+                  type="button"
+                  onClick={() => void copyTailscaleUrl()}
+                >
+                  <Copy size={15} />
+                  Copy phone URL
+                </button>
+              </div>
+              {showTailscaleInfo ? (
+                <section className="setup-guide tailscale-guide">
+                  <strong>Fix phone access</strong>
+                  <ol>
+                    <li>Install and sign in to Tailscale on this Mac and your phone.</li>
+                    <li>Keep Crossposter running on this Mac at {displayLocalUrl}.</li>
+                    <li>Refresh this card and open the Phone URL on your phone.</li>
+                    <li>
+                      If auto-detect fails, paste this Mac&apos;s Tailscale 100.x IP or MagicDNS name
+                      into the host field, then Save config.
+                    </li>
+                  </ol>
+                </section>
+              ) : null}
             </div>
             <div className="config-location">
               <div>

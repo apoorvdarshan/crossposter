@@ -29,6 +29,11 @@ export const configFields: ConfigField[] = [
     defaultValue: "2004"
   },
   {
+    name: "POSTER_TAILSCALE_HOST",
+    label: "Tailscale host or IP",
+    help: "Optional Tailscale MagicDNS name or 100.x IP for phone access. Leave blank to auto-detect with tailscale ip -4."
+  },
+  {
     name: "BLUESKY_IDENTIFIER",
     label: "Bluesky handle",
     help: "Your handle without @, for example name.bsky.social.",
