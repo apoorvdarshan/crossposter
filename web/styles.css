@@ -415,8 +415,8 @@ pre code {
   display: grid;
   gap: clamp(28px, 7vw, 94px);
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.76fr);
-  margin-top: clamp(62px, 9vw, 118px);
-  padding-top: 36px;
+  margin-top: clamp(98px, 12vw, 156px);
+  padding-top: clamp(44px, 4vw, 58px);
   position: relative;
   z-index: 2;
 }
