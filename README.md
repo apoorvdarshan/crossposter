@@ -669,6 +669,7 @@ Before exposing it publicly:
 - Email: apoorvdarshan@gmail.com
 - Email: ad13dtu@gmail.com
 - X: https://x.com/apoorvdarshan
+- Product Hunt: https://www.producthunt.com/products/crossposter-2
 - Report an issue: https://github.com/apoorvdarshan/crossposter/issues/new
 - Request a feature: https://github.com/apoorvdarshan/crossposter/issues/new
 - View open issues: https://github.com/apoorvdarshan/crossposter/issues

@@ -1,5 +1,5 @@
 import { Coffee, Github, type LucideIcon } from "lucide-react";
-import { siX, type SimpleIcon } from "simple-icons";
+import { siProducthunt, siX, type SimpleIcon } from "simple-icons";
 
 type ProjectLink = {
   href: string;
@@ -27,6 +27,12 @@ const projectLinks: ProjectLink[] = [
     label: "Ko-fi",
     title: "Support @apoorvdarshan on Ko-fi",
     icon: Coffee
+  },
+  {
+    href: "https://www.producthunt.com/products/crossposter-2",
+    label: "Vote",
+    title: "Vote for Crossposter on Product Hunt",
+    simpleIcon: siProducthunt
   }
 ];
 
