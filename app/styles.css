@@ -1661,6 +1661,10 @@ textarea {
   gap: 8px;
 }
 
+.tailscale-panel .tailscale-status-grid {
+  grid-template-columns: 1fr;
+}
+
 .tailscale-status-grid > div {
   display: grid;
   gap: 4px;
