@@ -350,6 +350,8 @@ Example instance:
 https://mastodon.social
 ```
 
+Mastodon post text is limited to 500 characters.
+
 ### Instagram
 
 Instagram publishing is unofficial local posting through `instagrapi`.

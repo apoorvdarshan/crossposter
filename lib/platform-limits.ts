@@ -3,6 +3,7 @@ import type { Platform } from "@/lib/types";
 export const blueskyPostTextLimit = 300;
 export const instagramPostTextLimit = 2_200;
 export const linkedInPostTextLimit = 3_000;
+export const mastodonPostTextLimit = 500;
 export const youtubeDescriptionLimit = 5_000;
 export const xFreePostTextLimit = 280;
 export const xPhotoMediaSizeLimit = 5 * 1024 * 1024;
@@ -151,6 +152,10 @@ export function postTextLimitForPlatform(platform: Platform): number | undefined
 
   if (platform === "linkedin") {
     return linkedInPostTextLimit;
+  }
+
+  if (platform === "mastodon") {
+    return mastodonPostTextLimit;
   }
 
   if (platform === "youtube") {
