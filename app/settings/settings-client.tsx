@@ -558,6 +558,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [importingYouTubeCookie, setImportingYouTubeCookie] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const [isCheckingAppVersion, setIsCheckingAppVersion] = useState(false);
   const [isTogglingAutoUpdate, setIsTogglingAutoUpdate] = useState(false);
   const [settingsView, setSettingsView] = useState<SettingsView>(initialView);
 
@@ -703,6 +704,18 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
     return "You are on the latest version published to npm.";
   }, [appVersion]);
+  const versionActionIsUpdate = Boolean(appVersion?.updateAvailable);
+  const versionActionBusy = isUpdatingApp || isCheckingAppVersion;
+  const versionAlreadyCurrent = Boolean(
+    appVersion && !appVersion.updateAvailable && appVersion.latestVersion && !appVersion.latestError
+  );
+  const versionActionLabel = isUpdatingApp
+    ? "Updating..."
+    : isCheckingAppVersion
+      ? "Checking..."
+      : versionActionIsUpdate
+        ? "Update now"
+        : "Check for update";
   const tailscaleSummary = useMemo(() => {
     if (!tailscale) {
       return "Checking Tailscale status...";
@@ -882,7 +895,12 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     } catch {}
   }
 
-  async function loadAppVersion() {
+  async function loadAppVersion(options: { showStatus?: boolean } = {}) {
+    if (options.showStatus) {
+      setStatus("");
+      setIsCheckingAppVersion(true);
+    }
+
     try {
       const response = await fetch("/api/app-version", { cache: "no-store" });
       const body = (await response.json()) as AppVersionResponse;
@@ -893,8 +911,28 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
           ...current,
           POSTER_AUTO_UPDATE: body.autoUpdate ? "true" : "false"
         }));
+
+        if (options.showStatus) {
+          if (body.latestError) {
+            setStatus(body.latestError);
+          } else if (body.updateAvailable) {
+            setStatus(`Update available: ${body.latestVersion}.`);
+          } else {
+            setStatus("Already updated.");
+          }
+        }
+      } else if (options.showStatus) {
+        setStatus(body.message || body.latestError || "Could not check Crossposter version.");
       }
-    } catch {}
+    } catch (error) {
+      if (options.showStatus) {
+        setStatus(error instanceof Error ? error.message : "Could not check Crossposter version.");
+      }
+    } finally {
+      if (options.showStatus) {
+        setIsCheckingAppVersion(false);
+      }
+    }
   }
 
   async function saveConfig(): Promise<boolean> {
@@ -1824,7 +1862,8 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               <button
                 className="secondary compact-button config-info-button"
                 type="button"
-                onClick={() => void loadAppVersion()}
+                disabled={isCheckingAppVersion}
+                onClick={() => void loadAppVersion({ showStatus: true })}
                 aria-label="Refresh version status"
               >
                 <RefreshCw size={17} />
@@ -1837,10 +1876,20 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                     <span>Current version</span>
                     <strong>Crossposter {appVersion?.currentVersion || "checking..."}</strong>
                   </div>
-                  {appVersion?.updateAvailable ? (
+                  {!appVersion ? (
+                    <span className="status-pill">
+                      <RefreshCw size={14} />
+                      Checking
+                    </span>
+                  ) : appVersion.updateAvailable ? (
                     <span className="status-pill warn">
                       <AlertTriangle size={14} />
                       Update
+                    </span>
+                  ) : appVersion.latestError ? (
+                    <span className="status-pill warn">
+                      <AlertTriangle size={14} />
+                      Check
                     </span>
                   ) : (
                     <span className="status-pill ok">
@@ -1886,14 +1935,30 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                 </p>
                 <div className="inline-actions">
                   <button
-                    className="primary compact-button"
+                    className={`${versionActionIsUpdate ? "primary" : "secondary"} compact-button`}
                     type="button"
-                    disabled={isUpdatingApp}
-                    onClick={() => void updateAppPackage()}
+                    disabled={versionActionBusy}
+                    onClick={() =>
+                      void (versionActionIsUpdate
+                        ? updateAppPackage()
+                        : loadAppVersion({ showStatus: true }))
+                    }
                   >
-                    {isUpdatingApp ? <RefreshCw size={15} /> : <Download size={15} />}
-                    {isUpdatingApp ? "Updating..." : "Update now"}
+                    {versionActionBusy ? (
+                      <RefreshCw size={15} />
+                    ) : versionActionIsUpdate ? (
+                      <Download size={15} />
+                    ) : (
+                      <RefreshCw size={15} />
+                    )}
+                    {versionActionLabel}
                   </button>
+                  {versionAlreadyCurrent ? (
+                    <span className="version-ready-note">
+                      <CheckCircle2 size={15} />
+                      Already updated
+                    </span>
+                  ) : null}
                   <button
                     className="secondary compact-button"
                     type="button"
