@@ -91,7 +91,7 @@ history and removed from the Scheduler queue.
 The scheduler is local/self-hosted. The Crossposter server must be running at
 the scheduled time:
 
-- `npm run dev:local` pings the scheduler every 30 seconds
+- `npx @apoorvdarshan/crossposter@latest` pings the scheduler every 30 seconds
 - the macOS auto-start service keeps `http://localhost:2004` alive after login
 - on Render or a VPS, keep the Node service running with persistent disk
 
@@ -100,19 +100,44 @@ server starts and the scheduler tick runs.
 
 ## Run Locally
 
+Fastest path:
+
 ```bash
-npm install
-cp .env.example .env
-npm run dev:local
+npx @apoorvdarshan/crossposter@latest
 ```
 
-Open:
+The launcher opens or prints the local URL and keeps user data in the folder
+where you ran it:
 
 ```text
 http://localhost:2004
 ```
 
-That is the default bookmarkable local URL.
+For a persistent command:
+
+```bash
+npm install -g @apoorvdarshan/crossposter
+crossposter
+```
+
+For development from the Git repo:
+
+```bash
+npm install
+npm run dev:local
+```
+
+### Update The Local Package
+
+Crossposter checks npm on startup by default. You can also update manually from
+Settings > Version & Updates, or run:
+
+```bash
+npx @apoorvdarshan/crossposter@latest
+```
+
+Turn off startup update checks from Settings by setting **Auto-update on launch**
+to off.
 
 ### Change The Local Port
 
@@ -120,7 +145,7 @@ Set `POSTER_LOCAL_PORT` in Settings or `poster.config.local.json`, then restart
 the local service.
 
 ```bash
-POSTER_LOCAL_PORT=2080 npm run dev:local
+POSTER_LOCAL_PORT=2080 npx @apoorvdarshan/crossposter@latest
 ```
 
 ### macOS Auto-Start
@@ -128,7 +153,7 @@ POSTER_LOCAL_PORT=2080 npm run dev:local
 Install the launchd service:
 
 ```bash
-npm run local:install
+crossposter install-service
 ```
 
 You can also control it from:
@@ -143,13 +168,13 @@ Turn on **Always restart localhost** and macOS will keep
 Use a custom port once:
 
 ```bash
-./scripts/install-local-service.sh 2080
+crossposter install-service --port 2080
 ```
 
 Remove the service:
 
 ```bash
-npm run local:uninstall
+crossposter uninstall-service
 ```
 
 ## Configuration
@@ -322,6 +347,8 @@ INSTAGRAM_TIMEOUT_MS
 Install Python dependencies:
 
 ```bash
+crossposter install-instagram-deps
+# or, from a Git clone:
 ./scripts/install-instagram-deps.sh
 ```
 
@@ -399,6 +426,8 @@ PINTEREST_HEADLESS
 Install Python dependencies:
 
 ```bash
+crossposter install-pinterest-deps
+# or, from a Git clone:
 ./scripts/install-pinterest-deps.sh
 ```
 
@@ -569,7 +598,6 @@ the canonical policy page.
 ### Vercel
 
 ```bash
-npm install
 vercel
 ```
 

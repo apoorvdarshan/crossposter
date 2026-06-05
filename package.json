@@ -1,10 +1,37 @@
 {
-  "name": "crossposter",
+  "name": "@apoorvdarshan/crossposter",
   "version": "0.1.0",
-  "private": true,
+  "description": "Local-first social publishing dashboard for accounts you control.",
+  "license": "MIT",
+  "homepage": "https://crossposter.apoorvdarshan.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apoorvdarshan/crossposter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/apoorvdarshan/crossposter/issues"
+  },
+  "bin": {
+    "crossposter": "bin/crossposter.mjs"
+  },
+  "files": [
+    "app",
+    "bin",
+    "components",
+    "lib",
+    "public",
+    "scripts",
+    "next.config.mjs",
+    "next-env.d.ts",
+    "requirements.txt",
+    "tsconfig.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "next dev",
     "dev:local": "node scripts/run-local.mjs",
+    "crossposter": "node bin/crossposter.mjs",
     "local:install": "./scripts/install-local-service.sh",
     "local:uninstall": "./scripts/uninstall-local-service.sh",
     "build": "next build",
@@ -20,6 +47,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "simple-icons": "^16.21.0",
+    "typescript": "^5.7.2",
     "youtubei.js": "^17.0.1",
     "zod": "^3.24.1"
   },
@@ -29,8 +57,7 @@
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "eslint": "^9.17.0",
-    "eslint-config-next": "^15.1.0",
-    "typescript": "^5.7.2"
+    "eslint-config-next": "^15.1.0"
   },
   "overrides": {
     "postcss": "^8.5.10"

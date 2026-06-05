@@ -2,14 +2,16 @@
 set -euo pipefail
 
 LABEL="com.apoorvdarshan.crossposter"
-REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+APP_DIR="${CROSSPOSTER_APP_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+DATA_DIR="${CROSSPOSTER_DATA_DIR:-$APP_DIR}"
 PLIST_PATH="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG_DIR="$HOME/Library/Logs"
 PORT_VALUE="${1:-${POSTER_LOCAL_PORT:-2004}}"
+CONFIG_PATH="$DATA_DIR/poster.config.local.json"
 
-mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR"
+mkdir -p "$HOME/Library/LaunchAgents" "$LOG_DIR" "$DATA_DIR"
 
-node - "$PORT_VALUE" "$REPO_DIR/poster.config.local.json" <<'NODE'
+node - "$PORT_VALUE" "$CONFIG_PATH" <<'NODE'
 const fs = require("node:fs");
 const port = process.argv[2];
 const configPath = process.argv[3];
@@ -44,14 +46,14 @@ cat > "$PLIST_PATH" <<PLIST
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>cd "$REPO_DIR" &amp;&amp; npm run dev:local</string>
+    <string>cd "$APP_DIR" &amp;&amp; CROSSPOSTER_DATA_DIR="$DATA_DIR" npm run dev:local</string>
   </array>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
   <true/>
   <key>WorkingDirectory</key>
-  <string>$REPO_DIR</string>
+  <string>$APP_DIR</string>
   <key>StandardOutPath</key>
   <string>$LOG_DIR/crossposter.out.log</string>
   <key>StandardErrorPath</key>
@@ -67,4 +69,4 @@ launchctl enable "gui/$(id -u)/$LABEL"
 launchctl kickstart -k "gui/$(id -u)/$LABEL"
 
 echo "Crossposter will start after login and stay running at http://localhost:$PORT_VALUE"
-echo "Config file: $REPO_DIR/poster.config.local.json"
+echo "Config file: $CONFIG_PATH"

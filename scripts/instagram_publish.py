@@ -54,7 +54,7 @@ def error_message(exc):
     if any(marker in lowered for marker in ["moviepy", "ffmpeg", "video thumbnail"]):
         return (
             "Instagram video upload dependencies are missing. Run "
-            "`./scripts/install-instagram-deps.sh` in Terminal, then try again."
+            "`crossposter install-instagram-deps` or `./scripts/install-instagram-deps.sh` in Terminal, then try again."
         )
 
     if "media_needs_reupload" in lowered:
@@ -148,7 +148,7 @@ def main():
                 "ok": False,
                 "message": (
                     "instagrapi is not installed. Run "
-                    "`./scripts/install-instagram-deps.sh` in Terminal."
+                    "`crossposter install-instagram-deps` or `./scripts/install-instagram-deps.sh` in Terminal."
                 ),
             },
             2,

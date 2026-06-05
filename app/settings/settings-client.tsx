@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
   Eye,
   EyeOff,
@@ -74,6 +75,23 @@ type TailscaleResponse = {
   port: string;
   running: boolean;
   url: string;
+};
+
+type AppVersionResponse = {
+  packageName: string;
+  currentVersion: string;
+  latestVersion: string;
+  latestError: string;
+  updateAvailable: boolean;
+  autoUpdate: boolean;
+  installSource: string;
+  appRoot: string;
+  dataRoot: string;
+  updateCommand: string;
+  ok?: boolean;
+  method?: string;
+  requiresRestart?: boolean;
+  message?: string;
 };
 
 type BrowserStorageStats = {
@@ -237,7 +255,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       { label: "Instagram terms", href: "https://help.instagram.com/581066165581870" }
     ],
     steps: [
-      "Install instagrapi and video support in Terminal with ./scripts/install-instagram-deps.sh.",
+      "Install instagrapi and video support in Terminal with crossposter install-instagram-deps, or ./scripts/install-instagram-deps.sh when working from the Git repo.",
       "Add one Instagram profile here for each Instagram account.",
       "Set Instagram username and password for that account. They stay in poster.config.local.json.",
       "Set Instagram session file to a unique JSON path, for example .instagram-sessions/apoorvdarshan.json.",
@@ -298,7 +316,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       { label: "Pinterest Pin specs", href: "https://help.pinterest.com/en/article/review-pin-specs" }
     ],
     steps: [
-      "Install the local dependency in Terminal with ./scripts/install-pinterest-deps.sh.",
+      "Install py3-pinterest in Terminal with crossposter install-pinterest-deps, or ./scripts/install-pinterest-deps.sh when working from the Git repo.",
       "Add a Pinterest profile here.",
       "Set Pinterest email, password, and username for that account. They stay in poster.config.local.json.",
       "Set Pinterest board ID to the numeric board you want to publish into.",
@@ -529,6 +547,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [storage, setStorage] = useState<StorageResponse | null>(null);
   const [localService, setLocalService] = useState<LocalServiceResponse | null>(null);
   const [tailscale, setTailscale] = useState<TailscaleResponse | null>(null);
+  const [appVersion, setAppVersion] = useState<AppVersionResponse | null>(null);
   const [browserStorage, setBrowserStorage] =
     useState<BrowserStorageStats>(emptyBrowserStorage);
   const [confirmClearStorage, setConfirmClearStorage] = useState(false);
@@ -538,6 +557,8 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [importingHackerNewsCookie, setImportingHackerNewsCookie] = useState("");
   const [importingYouTubeCookie, setImportingYouTubeCookie] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
+  const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const [isTogglingAutoUpdate, setIsTogglingAutoUpdate] = useState(false);
   const [settingsView, setSettingsView] = useState<SettingsView>(initialView);
 
   const loadConfig = useCallback(async () => {
@@ -608,6 +629,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     void loadStorage();
     void loadLocalService();
     void loadTailscale();
+    void loadAppVersion();
   }, []);
 
   const statusDismissMs = useMemo(() => {
@@ -641,6 +663,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
       fields.filter(
         (field) =>
           field.name !== "POSTER_TAILSCALE_HOST" &&
+          field.name !== "POSTER_AUTO_UPDATE" &&
           !field.requiredFor?.length &&
           !field.showFor?.length
       ),
@@ -664,6 +687,22 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
 
     return displayTailscaleHost ? `http://${displayTailscaleHost}:${normalizedPort}` : "";
   }, [displayTailscaleHost, tailscale?.port, values.POSTER_LOCAL_PORT]);
+  const autoUpdateEnabled = values.POSTER_AUTO_UPDATE !== "false";
+  const versionSummary = useMemo(() => {
+    if (!appVersion) {
+      return "Checking the installed Crossposter package.";
+    }
+
+    if (appVersion.latestError) {
+      return appVersion.latestError;
+    }
+
+    if (appVersion.updateAvailable) {
+      return `Update available: ${appVersion.latestVersion}. Restart after updating.`;
+    }
+
+    return "You are on the latest version published to npm.";
+  }, [appVersion]);
   const tailscaleSummary = useMemo(() => {
     if (!tailscale) {
       return "Checking Tailscale status...";
@@ -843,6 +882,21 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     } catch {}
   }
 
+  async function loadAppVersion() {
+    try {
+      const response = await fetch("/api/app-version", { cache: "no-store" });
+      const body = (await response.json()) as AppVersionResponse;
+
+      if (response.ok) {
+        setAppVersion(body);
+        setValues((current) => ({
+          ...current,
+          POSTER_AUTO_UPDATE: body.autoUpdate ? "true" : "false"
+        }));
+      }
+    } catch {}
+  }
+
   async function saveConfig(): Promise<boolean> {
     setStatus("");
     setSaveFeedback(false);
@@ -912,6 +966,69 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
       setStatus(error instanceof Error ? error.message : "Could not update local auto-start.");
     } finally {
       setIsTogglingLocalService(false);
+    }
+  }
+
+  async function toggleAutoUpdate(enabled: boolean) {
+    setStatus("");
+    setIsTogglingAutoUpdate(true);
+
+    const nextValues = {
+      ...values,
+      POSTER_AUTO_UPDATE: enabled ? "true" : "false"
+    };
+
+    setValues(nextValues);
+
+    try {
+      const response = await fetch("/api/config", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ values: nextValues, profiles, activeProfiles })
+      });
+      const body = (await response.json()) as ConfigResponse & { error?: string };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not save auto-update setting.");
+        return;
+      }
+
+      setValues(body.values || nextValues);
+      setProfiles(body.profiles || profiles);
+      setActiveProfiles(body.activeProfiles || activeProfiles);
+      setConfigPath(body.configPath || "");
+      setLocalUrl(body.localUrl || "http://localhost:2004");
+      setAppVersion((current) => (current ? { ...current, autoUpdate: enabled } : current));
+      setStatus(enabled ? "Auto-update enabled." : "Auto-update disabled.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not save auto-update setting.");
+    } finally {
+      setIsTogglingAutoUpdate(false);
+    }
+  }
+
+  async function updateAppPackage() {
+    setStatus("");
+    setIsUpdatingApp(true);
+
+    try {
+      const response = await fetch("/api/app-version", {
+        method: "POST"
+      });
+      const body = (await response.json()) as AppVersionResponse & { error?: string };
+
+      setAppVersion(body);
+
+      if (!response.ok || body.ok === false) {
+        setStatus(body.message || body.error || "Could not update Crossposter.");
+        return;
+      }
+
+      setStatus(body.message || "Crossposter update downloaded. Restart to use it.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not update Crossposter.");
+    } finally {
+      setIsUpdatingApp(false);
     }
   }
 
@@ -1104,6 +1221,15 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
       setStatus("Copied Tailscale URL.");
     } catch {
       setStatus(displayTailscaleUrl);
+    }
+  }
+
+  async function copyText(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setStatus("Copied.");
+    } catch {
+      setStatus(value);
     }
   }
 
@@ -1589,6 +1715,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
         ) : null}
 
         {settingsView === "settings" ? (
+          <div className="settings-side-column">
           <section className="info-panel tailscale-panel">
             <div className="panel-heading compact">
               <h2>
@@ -1688,6 +1815,98 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               </div>
             </div>
           </section>
+          <section className="info-panel version-panel">
+            <div className="panel-heading compact">
+              <h2>
+                <Download size={20} />
+                Version & Updates
+              </h2>
+              <button
+                className="secondary compact-button config-info-button"
+                type="button"
+                onClick={() => void loadAppVersion()}
+                aria-label="Refresh version status"
+              >
+                <RefreshCw size={17} />
+              </button>
+            </div>
+            <div className="config-panel">
+              <div className="config-location version-card">
+                <div className="config-location-title">
+                  <div>
+                    <span>Current version</span>
+                    <strong>Crossposter {appVersion?.currentVersion || "checking..."}</strong>
+                  </div>
+                  {appVersion?.updateAvailable ? (
+                    <span className="status-pill warn">
+                      <AlertTriangle size={14} />
+                      Update
+                    </span>
+                  ) : (
+                    <span className="status-pill ok">
+                      <CheckCircle2 size={14} />
+                      Current
+                    </span>
+                  )}
+                </div>
+                <p>{versionSummary}</p>
+                <div className="tailscale-status-grid">
+                  <div>
+                    <span>Latest npm</span>
+                    <strong>{appVersion?.latestVersion || "Unknown"}</strong>
+                    <small>{appVersion?.installSource || "local"} install source</small>
+                  </div>
+                  <div>
+                    <span>Run shortcut</span>
+                    <code>{appVersion?.updateCommand || "npx @apoorvdarshan/crossposter@latest"}</code>
+                    <small>Uses this folder for local config and uploads.</small>
+                  </div>
+                </div>
+                <div className="service-switch-row app-update-row">
+                  <div>
+                    <span>Auto-update</span>
+                    <strong>Check npm when Crossposter starts</strong>
+                  </div>
+                  <button
+                    aria-pressed={autoUpdateEnabled}
+                    className={`service-switch ${autoUpdateEnabled ? "is-on" : ""}`}
+                    disabled={isTogglingAutoUpdate}
+                    type="button"
+                    onClick={() => void toggleAutoUpdate(!autoUpdateEnabled)}
+                  >
+                    <span className="sr-only">
+                      {autoUpdateEnabled ? "Disable auto-update" : "Enable auto-update"}
+                    </span>
+                    <span aria-hidden="true" />
+                  </button>
+                </div>
+                <p>
+                  Auto-update is on by default. A running app still needs a restart after a package
+                  update so the new code can boot.
+                </p>
+                <div className="inline-actions">
+                  <button
+                    className="primary compact-button"
+                    type="button"
+                    disabled={isUpdatingApp}
+                    onClick={() => void updateAppPackage()}
+                  >
+                    {isUpdatingApp ? <RefreshCw size={15} /> : <Download size={15} />}
+                    {isUpdatingApp ? "Updating..." : "Update now"}
+                  </button>
+                  <button
+                    className="secondary compact-button"
+                    type="button"
+                    onClick={() => void copyText(appVersion?.updateCommand || "npx @apoorvdarshan/crossposter@latest")}
+                  >
+                    <Copy size={15} />
+                    Copy command
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+          </div>
         ) : null}
 
         {settingsView === "storage" ? (

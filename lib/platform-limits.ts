@@ -116,7 +116,7 @@ export function titleLimitForPlatform(platform: Platform): number | undefined {
   return undefined;
 }
 
-export function xPostTextLimit(_isPremium: boolean): number {
+export function xPostTextLimit(): number {
   return xFreePostTextLimit;
 }
 
@@ -140,10 +140,7 @@ export function xMediaSizeLimit(
   return undefined;
 }
 
-export function postTextLimitForPlatform(
-  platform: Platform,
-  options?: { xPremium?: boolean }
-): number | undefined {
+export function postTextLimitForPlatform(platform: Platform): number | undefined {
   if (platform === "bluesky") {
     return blueskyPostTextLimit;
   }
@@ -169,7 +166,7 @@ export function postTextLimitForPlatform(
   }
 
   if (platform === "x") {
-    return xPostTextLimit(Boolean(options?.xPremium));
+    return xPostTextLimit();
   }
 
   return undefined;
@@ -239,7 +236,7 @@ export function postLimitIssuesForTargets(
 
     seen.add(key);
 
-    const limit = postTextLimitForPlatform(target.platform, { xPremium: target.xPremium });
+    const limit = postTextLimitForPlatform(target.platform);
 
     if (limit && length > limit) {
       const label = limitTargetLabel(target);

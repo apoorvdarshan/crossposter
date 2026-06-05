@@ -173,7 +173,7 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
   const text = compactText([ctx.text]);
   const length = textLength(text);
   const isPremium = isPremiumProfile(profileId);
-  const limit = xPostTextLimit(isPremium);
+  const limit = xPostTextLimit();
 
   if (!text) {
     throw new Error("X requires post text.");

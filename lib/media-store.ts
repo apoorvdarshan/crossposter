@@ -11,6 +11,7 @@ import {
   xPremiumVideoMediaSizeLimit,
   youtubeVideoMediaSizeLimit
 } from "@/lib/platform-limits";
+import { dataPath } from "@/lib/runtime-paths";
 
 export type MediaKind = "image" | "video" | "audio" | "file";
 
@@ -28,7 +29,7 @@ export type UploadedMedia = {
 
 type StoredMedia = Omit<UploadedMedia, "url">;
 
-const mediaDir = path.join(process.cwd(), ".poster-uploads");
+const mediaDir = dataPath(".poster-uploads");
 const mediaIdPattern = /^[a-f0-9-]{36}(?:\.[a-z0-9]{1,12})?$/i;
 const maxMediaSize = Math.max(xPremiumVideoMediaSizeLimit, youtubeVideoMediaSizeLimit);
 

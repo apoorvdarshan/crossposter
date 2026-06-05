@@ -228,9 +228,7 @@
             <span>Terminal</span>
             <button class="copy-button" type="button" data-copy-target="install-commands">Copy</button>
           </div>
-          <pre><code id="install-commands">npm install
-cp .env.example .env
-npm run dev:local</code></pre>
+          <pre><code id="install-commands">npx @apoorvdarshan/crossposter@latest</code></pre>
         </div>
       </section>
 
@@ -257,13 +255,14 @@ npm run dev:local</code></pre>
             <h2>Run Crossposter locally.</h2>
             <p>
               The publishing dashboard runs at <code>http://localhost:2004</code>.
-              The static website you are reading lives in <code>web/</code>.
+              Run it from any local folder; Crossposter keeps config, uploads, sessions,
+              and drafts in that folder.
             </p>
             <div class="note-grid">
               <article>
                 <span>01</span>
-                <strong>Install</strong>
-                <p>Install dependencies and create the local env file.</p>
+                <strong>Run</strong>
+                <p>Start with <code>npx @apoorvdarshan/crossposter@latest</code> and open localhost.</p>
               </article>
               <article>
                 <span>02</span>
@@ -274,6 +273,22 @@ npm run dev:local</code></pre>
                 <span>03</span>
                 <strong>Publish</strong>
                 <p>Select ready channels and send or schedule the draft.</p>
+              </article>
+            </div>
+            <div class="command-grid">
+              <article>
+                <span>Persistent install</span>
+                <pre><code>npm install -g @apoorvdarshan/crossposter
+crossposter</code></pre>
+              </article>
+              <article>
+                <span>Auto-start on macOS</span>
+                <pre><code>crossposter install-service
+crossposter uninstall-service</code></pre>
+              </article>
+              <article>
+                <span>Update anytime</span>
+                <pre><code>npx @apoorvdarshan/crossposter@latest</code></pre>
               </article>
             </div>
           </section>

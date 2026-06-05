@@ -15,7 +15,7 @@ def error_message(exc):
     lowered = f"{name} {text}".lower()
 
     if "module" in lowered and "py3pin" in lowered:
-        return "py3-pinterest is not installed. Run `./scripts/install-pinterest-deps.sh` in Terminal."
+        return "py3-pinterest is not installed. Run `crossposter install-pinterest-deps` or `./scripts/install-pinterest-deps.sh` in Terminal."
 
     if any(marker in lowered for marker in ["401", "403", "unauthorized", "forbidden"]):
         return (
@@ -34,7 +34,7 @@ def error_message(exc):
     if any(marker in lowered for marker in ["chromedriver", "selenium", "chrome"]):
         return (
             "Pinterest login uses Chrome through py3-pinterest. Install Google Chrome, run "
-            "`./scripts/install-pinterest-deps.sh`, then try again."
+            "`crossposter install-pinterest-deps` or `./scripts/install-pinterest-deps.sh`, then try again."
         )
 
     if any(marker in lowered for marker in ["ffprobe", "ffmpeg", "could not probe video"]):
@@ -98,7 +98,7 @@ def main():
         emit(
             {
                 "ok": False,
-                "message": "py3-pinterest is not installed. Run `./scripts/install-pinterest-deps.sh` in Terminal.",
+                "message": "py3-pinterest is not installed. Run `crossposter install-pinterest-deps` or `./scripts/install-pinterest-deps.sh` in Terminal.",
             },
             2,
         )

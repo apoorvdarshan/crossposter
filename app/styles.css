@@ -332,6 +332,16 @@ h2 {
   white-space: nowrap;
 }
 
+.status-pill.ok {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.status-pill.warn {
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+  color: var(--warning);
+}
+
 .dot {
   flex: 0 0 auto;
   width: 9px;
@@ -445,6 +455,12 @@ h2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   align-items: start;
+}
+
+.settings-side-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
 }
 
 .socials-masonry {
@@ -1691,6 +1707,23 @@ textarea {
 
 .tailscale-host-field {
   margin-top: 2px;
+}
+
+.version-card {
+  gap: 12px;
+}
+
+.version-card .status-pill {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 0.74rem;
+}
+
+.app-update-row {
+  border: 1px solid var(--line-muted);
+  border-radius: 7px;
+  background: var(--chip-bg);
+  padding: 10px;
 }
 
 .local-service-card > .service-switch-row {

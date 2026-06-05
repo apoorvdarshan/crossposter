@@ -28,6 +28,12 @@ must remain local and user-triggered.
 
 ## Development
 
+Run the published local app without cloning:
+
+```bash
+npx @apoorvdarshan/crossposter@latest
+```
+
 Install dependencies:
 
 ```bash

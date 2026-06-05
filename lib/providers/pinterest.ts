@@ -1,6 +1,5 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import path from "node:path";
 import { optionalEnv, requireEnv } from "@/lib/env";
 import { compactText } from "@/lib/http";
 import {
@@ -11,6 +10,7 @@ import {
   pinterestVideoMediaSizeLimit,
   textLength
 } from "@/lib/platform-limits";
+import { appPath, dataPath, resolveDataPath } from "@/lib/runtime-paths";
 import type { ProviderContext, PublishResult } from "@/lib/types";
 
 type PinterestRunnerResult = {
@@ -28,7 +28,7 @@ function trimOutput(value: string): string {
 }
 
 function pinterestPythonCommand(profileId: string | undefined): string {
-  const localPython = path.join(process.cwd(), ".venv", "bin", "python");
+  const localPython = dataPath(".venv", "bin", "python");
   const command =
     optionalEnv("PINTEREST_PYTHON_COMMAND", profileId)?.trim() ||
     (existsSync(localPython) ? localPython : "python3");
@@ -59,7 +59,7 @@ function pinterestCredRoot(profileId: string | undefined): string {
     throw new Error("Pinterest session folder is missing.");
   }
 
-  return value;
+  return resolveDataPath(value);
 }
 
 function validatePinterestMedia(ctx: ProviderContext): "image" | "video" {
@@ -160,7 +160,7 @@ export async function publishPinterest(ctx: ProviderContext): Promise<PublishRes
   const titleLength = textLength(title);
   const descriptionLength = textLength(description);
   const kind = validatePinterestMedia(ctx);
-  const scriptPath = path.join(process.cwd(), "scripts", "pinterest_publish.py");
+  const scriptPath = appPath("scripts", "pinterest_publish.py");
   const timeout = pinterestTimeout(profileId);
   const headless = optionalEnv("PINTEREST_HEADLESS", profileId)?.trim() !== "false";
   const sectionId = optionalEnv("PINTEREST_SECTION_ID", profileId)?.trim();

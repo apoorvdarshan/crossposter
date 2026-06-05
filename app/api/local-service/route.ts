@@ -4,6 +4,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { NextResponse } from "next/server";
 import { readLocalConfig } from "@/lib/local-config";
+import { appPath, appRoot, dataRoot } from "@/lib/runtime-paths";
 
 export const runtime = "nodejs";
 
@@ -36,7 +37,7 @@ function plistPath(): string {
 }
 
 function repoPath(filePath: string): string {
-  return path.join(process.cwd(), filePath);
+  return appPath(filePath);
 }
 
 function localPort(): string {
@@ -112,9 +113,11 @@ export async function POST() {
     const port = snapshot.port;
 
     await execFileAsync(repoPath("scripts/install-local-service.sh"), [port], {
-      cwd: process.cwd(),
+      cwd: appRoot(),
       env: {
         ...process.env,
+        CROSSPOSTER_APP_ROOT: appRoot(),
+        CROSSPOSTER_DATA_DIR: dataRoot(),
         POSTER_LOCAL_PORT: port
       }
     });
@@ -141,7 +144,7 @@ export async function DELETE() {
 
   try {
     await execFileAsync(repoPath("scripts/uninstall-local-service.sh"), [], {
-      cwd: process.cwd()
+      cwd: appRoot()
     });
 
     return NextResponse.json(await serviceSnapshot());

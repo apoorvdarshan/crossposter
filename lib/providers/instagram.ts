@@ -1,6 +1,5 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import path from "node:path";
 import { optionalEnv } from "@/lib/env";
 import { compactText } from "@/lib/http";
 import {
@@ -10,6 +9,7 @@ import {
   instagramVideoMediaSizeLimit,
   textLength
 } from "@/lib/platform-limits";
+import { appPath, dataPath, resolveDataPath } from "@/lib/runtime-paths";
 import type { ProviderContext, PublishResult } from "@/lib/types";
 
 type InstagramRunnerResult = {
@@ -29,7 +29,7 @@ function trimOutput(value: string): string {
 }
 
 function instagramPythonCommand(profileId: string | undefined): string {
-  const localPython = path.join(process.cwd(), ".venv", "bin", "python");
+  const localPython = dataPath(".venv", "bin", "python");
   const command =
     optionalEnv("INSTAGRAM_PYTHON_COMMAND", profileId)?.trim() ||
     (existsSync(localPython) ? localPython : "python3");
@@ -60,7 +60,7 @@ function instagramSessionFile(profileId: string | undefined): string {
     throw new Error("Instagram session file is missing.");
   }
 
-  return value;
+  return resolveDataPath(value);
 }
 
 function requiredCredential(name: string, profileId: string | undefined): string {
@@ -187,7 +187,7 @@ export async function publishInstagram(ctx: ProviderContext): Promise<PublishRes
 
   const kind = validateInstagramMedia(ctx);
   const timeout = instagramTimeout(profileId);
-  const scriptPath = path.join(process.cwd(), "scripts", "instagram_publish.py");
+  const scriptPath = appPath("scripts", "instagram_publish.py");
   const verificationCode = optionalEnv("INSTAGRAM_2FA_CODE", profileId)?.trim();
   const args = [
     scriptPath,

@@ -6,11 +6,12 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { NextResponse } from "next/server";
+import { dataPath } from "@/lib/runtime-paths";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const tempDir = path.join(process.cwd(), ".poster-uploads", "tmp");
+const tempDir = dataPath(".poster-uploads", "tmp");
 const maxInputSize = 1024 * 1024 * 1024;
 const defaultTargetSize = 95 * 1024 * 1024;
 const ffmpegTimeoutMs = 10 * 60 * 1000;

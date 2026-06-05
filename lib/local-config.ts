@@ -1,9 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import { configFields } from "@/lib/config-spec";
 import { isPlaceholderValue, validatePlatformConfig } from "@/lib/config-validation";
+import { dataPath } from "@/lib/runtime-paths";
 import type {
   ComposeDraft,
   Platform,
@@ -32,7 +32,7 @@ export type LocalConfigFile = {
   scheduledPosts: ScheduledPost[];
 };
 
-export const localConfigPath = path.join(process.cwd(), "poster.config.local.json");
+export const localConfigPath = dataPath("poster.config.local.json");
 const allowedFields = new Set(configFields.map((field) => field.name));
 const fieldDefaults = new Map(
   configFields

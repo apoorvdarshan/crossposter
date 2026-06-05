@@ -685,6 +685,7 @@ pre code {
 }
 
 .note-grid,
+.command-grid,
 .feature-grid,
 .provider-list,
 .split-list,
@@ -698,6 +699,10 @@ pre code {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.command-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .feature-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -708,6 +713,7 @@ pre code {
 }
 
 .note-grid article,
+.command-grid article,
 .feature-grid article,
 .split-list article,
 .provider-list article,
@@ -722,6 +728,26 @@ pre code {
 .split-list article,
 .note-grid article {
   min-height: 168px;
+}
+
+.command-grid article {
+  display: grid;
+  gap: 10px;
+}
+
+.command-grid span {
+  color: var(--soft);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.command-grid pre {
+  background: #111511;
+  border: 1px solid #303a30;
+  border-radius: var(--radius);
 }
 
 .note-grid span,
@@ -1020,6 +1046,7 @@ tbody tr:last-child td {
   }
 
   .note-grid,
+  .command-grid,
   .feature-grid,
   .feature-grid.compact,
   .split-list,
@@ -1099,6 +1126,7 @@ tbody tr:last-child td {
   }
 
   .note-grid,
+  .command-grid,
   .feature-grid,
   .feature-grid.compact,
   .split-list,

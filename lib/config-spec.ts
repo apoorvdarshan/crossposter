@@ -25,8 +25,14 @@ export const configFields: ConfigField[] = [
   {
     name: "POSTER_LOCAL_PORT",
     label: "Local app port",
-    help: "Default localhost port for npm run dev:local and the macOS auto-start service. Restart the local service after changing it.",
+    help: "Default localhost port for npx @apoorvdarshan/crossposter, npm run dev:local, and the macOS auto-start service. Restart the local service after changing it.",
     defaultValue: "2004"
+  },
+  {
+    name: "POSTER_AUTO_UPDATE",
+    label: "Auto-update on launch",
+    help: "Keep true to let the npx launcher check npm and relaunch the latest @apoorvdarshan/crossposter package on startup.",
+    defaultValue: "true"
   },
   {
     name: "POSTER_TAILSCALE_HOST",
