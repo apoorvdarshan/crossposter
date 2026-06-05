@@ -1382,8 +1382,12 @@ export default function Home() {
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [schedulePanelPlacement, setSchedulePanelPlacement] = useState<ProgressPlacement | null>(null);
   const [scheduleStatusPlacement, setScheduleStatusPlacement] = useState<ProgressPlacement>("top");
-  const [scheduledForInput, setScheduledForInput] = useState(() => datetimeLocalValue());
+  const [scheduledForInput, setScheduledForInput] = useState("");
   const [configProfiles, setConfigProfiles] = useState<Partial<Record<Platform, ProviderProfile[]>>>({});
+
+  useEffect(() => {
+    setScheduledForInput((current) => current || datetimeLocalValue());
+  }, []);
 
   const visibleTargets = useMemo<ChannelTarget[]>(
     () =>
