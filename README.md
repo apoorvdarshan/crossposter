@@ -66,7 +66,8 @@ challenges, rate limits, failed posts, or account restrictions.
 - Dashboard composer for title, body text, channel selection, and media upload
 - Multi-profile configuration per provider, with active profile selection
 - Inline Schedule draft control for local timed posting
-- Scheduler page for reviewing queued posts, editing timing, and discarding posts
+- Scheduler calendar for scanning queued posts by month and reviewing posts by day
+- Scheduler page controls for editing timing and discarding queued or failed posts
 - Per-platform profile configuration from the UI
 - Local config saved to `poster.config.local.json`
 - Local publish history
@@ -94,6 +95,8 @@ http://localhost:2004/scheduled
 
 The Scheduler page lets you:
 
+- view the current month calendar by default
+- click a calendar date to review posts scheduled for that day
 - edit the scheduled timing
 - discard queued or failed posts
 - review target channels, media, and last publish errors
