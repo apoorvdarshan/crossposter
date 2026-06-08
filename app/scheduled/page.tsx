@@ -6,6 +6,8 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   ExternalLink,
   File as FileIcon,
@@ -39,6 +41,51 @@ const platformLabels: Record<Platform, string> = {
   hackernews: "Hacker News",
   nostr: "Nostr"
 };
+
+const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function addMonths(date: Date, value: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + value, 1);
+}
+
+function dateKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function dateFromKey(value: string): Date {
+  const [year = "0", month = "1", day = "1"] = value.split("-");
+
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+function scheduledDateKey(value: string): string {
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? "" : dateKey(date);
+}
+
+function formatMonth(value: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    year: "numeric"
+  }).format(value);
+}
+
+function formatSelectedDate(value: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  }).format(dateFromKey(value));
+}
 
 function formatDateTime(value: string): string {
   const date = new Date(value);
@@ -122,6 +169,8 @@ export default function ScheduledPage() {
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
+  const [selectedDateKey, setSelectedDateKey] = useState(() => dateKey(new Date()));
 
   async function loadScheduled(showStatus = false) {
     try {
@@ -183,6 +232,46 @@ export default function ScheduledPage() {
       }),
     [posts]
   );
+  const postsByDate = useMemo(() => {
+    const grouped = new Map<string, ScheduledPost[]>();
+
+    for (const post of sortedPosts) {
+      const key = scheduledDateKey(post.scheduledFor);
+
+      if (!key) {
+        continue;
+      }
+
+      grouped.set(key, [...(grouped.get(key) || []), post]);
+    }
+
+    return grouped;
+  }, [sortedPosts]);
+  const calendarDays = useMemo(() => {
+    const first = startOfMonth(visibleMonth);
+    const start = new Date(first);
+
+    start.setDate(first.getDate() - first.getDay());
+
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(start);
+
+      date.setDate(start.getDate() + index);
+
+      const key = dateKey(date);
+      const dayPosts = postsByDate.get(key) || [];
+
+      return {
+        date,
+        key,
+        posts: dayPosts,
+        isCurrentMonth: date.getMonth() === visibleMonth.getMonth(),
+        isSelected: key === selectedDateKey,
+        isToday: key === dateKey(new Date())
+      };
+    });
+  }, [postsByDate, selectedDateKey, visibleMonth]);
+  const selectedDatePosts = postsByDate.get(selectedDateKey) || [];
 
   async function reschedule(post: ScheduledPost) {
     const scheduledFor = datetimeLocalToIso(edits[post.id] || "");
@@ -304,6 +393,104 @@ export default function ScheduledPage() {
             </div>
           </div>
 
+          <section className="scheduler-calendar" aria-label="Scheduled posts calendar">
+            <div className="scheduler-calendar-bar">
+              <div>
+                <span>Month</span>
+                <strong>{formatMonth(visibleMonth)}</strong>
+              </div>
+              <div className="scheduler-calendar-controls">
+                <button
+                  aria-label="Previous month"
+                  className="secondary compact-button scheduler-month-button"
+                  type="button"
+                  onClick={() => setVisibleMonth((current) => addMonths(current, -1))}
+                >
+                  <ChevronLeft size={17} />
+                </button>
+                <button
+                  className="secondary compact-button"
+                  type="button"
+                  onClick={() => {
+                    const today = new Date();
+
+                    setVisibleMonth(startOfMonth(today));
+                    setSelectedDateKey(dateKey(today));
+                  }}
+                >
+                  Today
+                </button>
+                <button
+                  aria-label="Next month"
+                  className="secondary compact-button scheduler-month-button"
+                  type="button"
+                  onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
+                >
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+            </div>
+
+            <div className="scheduler-weekdays" aria-hidden="true">
+              {weekdayLabels.map((day) => (
+                <span key={day}>{day}</span>
+              ))}
+            </div>
+
+            <div className="scheduler-calendar-grid">
+              {calendarDays.map((day) => {
+                const failedCount = day.posts.filter((post) => post.status === "failed").length;
+                const publishingCount = day.posts.filter((post) => post.status === "publishing").length;
+                const scheduledCount = day.posts.filter((post) => post.status === "scheduled").length;
+                const countLabel = day.posts.length === 1 ? "1 post" : `${day.posts.length} posts`;
+
+                return (
+                  <button
+                    aria-label={`${day.date.toLocaleDateString()}: ${countLabel}`}
+                    className={[
+                      "scheduler-day",
+                      day.isCurrentMonth ? "" : "is-muted",
+                      day.isSelected ? "is-selected" : "",
+                      day.isToday ? "is-today" : "",
+                      day.posts.length ? "has-posts" : ""
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    key={day.key}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDateKey(day.key);
+
+                      if (!day.isCurrentMonth) {
+                        setVisibleMonth(startOfMonth(day.date));
+                      }
+                    }}
+                  >
+                    <span className="scheduler-day-top">
+                      <span className="scheduler-day-number">{day.date.getDate()}</span>
+                      {day.posts.length ? (
+                        <span className="scheduler-day-count">{day.posts.length}</span>
+                      ) : null}
+                    </span>
+                    <span className="scheduler-day-markers" aria-hidden="true">
+                      {scheduledCount ? <span className="scheduler-day-dot" /> : null}
+                      {publishingCount ? <span className="scheduler-day-dot publishing" /> : null}
+                      {failedCount ? <span className="scheduler-day-dot failed" /> : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="scheduler-date-heading">
+            <div>
+              <span>Selected date</span>
+              <h3>{formatSelectedDate(selectedDateKey)}</h3>
+            </div>
+            <strong>{selectedDatePosts.length}</strong>
+          </div>
+
           <div className="scheduler-list">
             {isLoading ? (
               <div className="publish-empty">
@@ -321,7 +508,15 @@ export default function ScheduledPage() {
               </div>
             ) : null}
 
-            {sortedPosts.map((post) => {
+            {!isLoading && sortedPosts.length > 0 && selectedDatePosts.length === 0 ? (
+              <div className="publish-empty">
+                <CalendarClock size={24} />
+                <strong>No posts on this date</strong>
+                <span>{formatSelectedDate(selectedDateKey)}</span>
+              </div>
+            ) : null}
+
+            {selectedDatePosts.map((post) => {
               const canEdit = post.status !== "publishing";
               const okCount = post.results?.filter((result) => result.ok).length || 0;
               const postTargets: PublishTarget[] = post.targets?.length

@@ -2281,6 +2281,224 @@ a.history-platform.ok:hover {
   font-weight: 900;
 }
 
+.scheduler-calendar {
+  display: grid;
+  overflow: hidden;
+  margin: 14px 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.scheduler-calendar-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, var(--accent-wash), transparent 46%),
+    var(--chip-bg);
+}
+
+.scheduler-calendar-bar > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.scheduler-calendar-bar span,
+.scheduler-date-heading span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.scheduler-calendar-bar strong {
+  color: var(--heading-ink);
+  font-size: 1.18rem;
+  line-height: 1.1;
+}
+
+.scheduler-calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scheduler-month-button {
+  width: 38px;
+  padding: 0;
+}
+
+.scheduler-weekdays,
+.scheduler-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.scheduler-weekdays {
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-soft) 72%, var(--chip-bg));
+}
+
+.scheduler-weekdays span {
+  min-width: 0;
+  padding: 9px 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.scheduler-calendar-grid {
+  gap: 1px;
+  background: var(--line);
+}
+
+.scheduler-day {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: space-between;
+  gap: 10px;
+  min-height: 94px;
+  min-width: 0;
+  border: 0;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 10px;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.scheduler-day:hover {
+  background: color-mix(in srgb, var(--accent-wash) 42%, var(--panel));
+}
+
+.scheduler-day.is-muted {
+  background: color-mix(in srgb, var(--panel-soft) 78%, var(--panel));
+  color: var(--placeholder);
+}
+
+.scheduler-day.has-posts {
+  background:
+    linear-gradient(180deg, var(--accent-wash), transparent 58%),
+    var(--panel);
+}
+
+.scheduler-day.is-selected {
+  background: var(--selected-card-bg);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.scheduler-day-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.scheduler-day-number {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.scheduler-day.is-today .scheduler-day-number {
+  background: var(--counter-bg);
+  color: var(--heading-ink);
+}
+
+.scheduler-day.is-selected .scheduler-day-number {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.scheduler-day-count {
+  display: grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  padding: 0 7px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.scheduler-day-markers {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 10px;
+}
+
+.scheduler-day-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent-dark);
+}
+
+.scheduler-day-dot.publishing {
+  background: var(--warning);
+}
+
+.scheduler-day-dot.failed {
+  background: var(--danger);
+}
+
+.scheduler-date-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--chip-bg);
+  padding: 12px 14px;
+}
+
+.scheduler-date-heading > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.scheduler-date-heading h3 {
+  margin: 0;
+  color: var(--heading-ink);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.scheduler-date-heading strong {
+  display: grid;
+  min-width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--counter-bg);
+  color: var(--heading-ink);
+  font-size: 0.94rem;
+}
+
 .scheduled-card {
   display: grid;
   gap: 12px;
@@ -2799,6 +3017,46 @@ a.history-platform.ok:hover {
 
   .publish-feed {
     padding: 12px;
+  }
+
+  .scheduler-calendar,
+  .scheduler-date-heading {
+    margin-right: 12px;
+    margin-left: 12px;
+  }
+
+  .scheduler-calendar-bar {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .scheduler-calendar-controls {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+  }
+
+  .scheduler-day {
+    min-height: 68px;
+    padding: 6px;
+  }
+
+  .scheduler-day-number {
+    width: 26px;
+    height: 26px;
+    font-size: 0.82rem;
+  }
+
+  .scheduler-day-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    font-size: 0.66rem;
+  }
+
+  .scheduler-weekdays span {
+    padding: 8px 2px;
+    font-size: 0.66rem;
   }
 
   .result-head {
