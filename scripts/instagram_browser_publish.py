@@ -203,6 +203,128 @@ def wait_for_share_complete(page, timeout_ms):
         return False
 
 
+def candidate_usernames(page, user_data_dir):
+    """Best-effort guesses for this account's own username.
+
+    The per-profile folder is conventionally named after the account
+    (.instagram-browser/<username>); also scan the page for a profile link.
+    """
+    names = []
+    base = Path(user_data_dir).name
+    if re.fullmatch(r"[A-Za-z0-9._]{1,30}", base or "") and base != "default":
+        names.append(base)
+
+    try:
+        detected = page.evaluate(
+            """() => {
+              const skip = new Set(['/','/explore/','/reels/','/direct/inbox/','/accounts/edit/','/accounts/activity/']);
+              const h = [...document.querySelectorAll('a[href^="/"]')]
+                .map(x => x.getAttribute('href'))
+                .find(v => v && /^\\/[A-Za-z0-9._]+\\/$/.test(v) && !skip.has(v));
+              return h ? h.replace(/\\//g, '') : null;
+            }"""
+        )
+        if detected and detected not in names:
+            names.append(detected)
+    except Exception:
+        pass
+
+    return names
+
+
+def is_own_profile(page):
+    """True only on the logged-in user's own profile (has an Edit profile control)."""
+    for role in ("link", "button"):
+        try:
+            if page.get_by_role(role, name=re.compile("edit profile", re.I)).first.is_visible(
+                timeout=1500
+            ):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def first_permalink(page):
+    # Profile grid links look like /<username>/p/<code>/ or /<username>/reel/<code>/
+    # (and sometimes the bare /p/<code>/ form); the first in DOM order is newest.
+    try:
+        href = page.evaluate(
+            """() => {
+              const re = /^\\/(?:[^/]+\\/)?(p|reel)\\/[A-Za-z0-9_-]+\\/?$/;
+              const a = [...document.querySelectorAll('a[href]')]
+                .map(x => x.getAttribute('href'))
+                .find(v => v && re.test(v));
+              return a || null;
+            }"""
+        )
+        return f"{INSTAGRAM_ORIGIN}{href}" if href else None
+    except Exception:
+        return None
+
+
+def media_code_from_response(data):
+    """Pulls a media shortcode out of an Instagram configure/create JSON response."""
+    if not isinstance(data, dict):
+        return None
+
+    media = data.get("media")
+    if isinstance(media, dict) and isinstance(media.get("code"), str):
+        return media["code"]
+
+    items = data.get("items")
+    if isinstance(items, list) and items and isinstance(items[0], dict):
+        code = items[0].get("code")
+        if isinstance(code, str):
+            return code
+
+    return None
+
+
+def capture_post_url(page, user_data_dir):
+    """Fallback: read the newest permalink from the account's own profile grid.
+
+    Only reads it from the account's own profile (verified via the Edit profile
+    control) so it never returns a stranger's post URL.
+    """
+    trusted = Path(user_data_dir).name
+
+    for username in candidate_usernames(page, user_data_dir):
+        # Use a fresh tab: a full load renders the grid, whereas reusing the feed
+        # tab can trigger SPA routing that leaves the grid unrendered in headless.
+        prof = page.context.new_page()
+
+        try:
+            prof.set_default_timeout(20_000)
+            prof.goto(f"{INSTAGRAM_ORIGIN}/{username}/", wait_until="domcontentloaded")
+            prof.wait_for_timeout(3000)
+
+            # The per-account folder is named after the account, so that username is
+            # trusted; only verify ownership for a username detected from the page.
+            if username != trusted and not is_own_profile(prof):
+                continue
+
+            # The profile grid loads lazily; nudge it and poll until a permalink appears.
+            for _ in range(8):
+                url = first_permalink(prof)
+                if url:
+                    return url
+                try:
+                    prof.mouse.wheel(0, 1400)
+                except Exception:
+                    pass
+                prof.wait_for_timeout(1500)
+        except Exception:
+            pass
+        finally:
+            try:
+                prof.close()
+            except Exception:
+                pass
+
+    return None
+
+
 def run_publish(context, args):
     page = first_page(context)
     page.set_default_timeout(STEP_TIMEOUT_MS)
@@ -235,10 +357,45 @@ def run_publish(context, args):
         )
 
     fill_caption(page, args.caption)
-    share_post(page)
 
-    if wait_for_share_complete(page, args.timeout_ms):
-        return {"ok": True, "message": f"Published with {args.kind}."}
+    # Capture the new post's shortcode from Instagram's configure response — the
+    # most reliable source for the permalink (profile-grid scraping is flaky).
+    captured = {}
+
+    def on_response(response):
+        try:
+            url = response.url
+            if "configure" not in url and "/create/" not in url:
+                return
+            if "json" not in (response.headers or {}).get("content-type", ""):
+                return
+            code = media_code_from_response(response.json())
+            if code:
+                captured["code"] = code
+        except Exception:
+            pass
+
+    page.on("response", on_response)
+    share_post(page)
+    shared = wait_for_share_complete(page, args.timeout_ms)
+
+    try:
+        page.remove_listener("response", on_response)
+    except Exception:
+        pass
+
+    if shared:
+        url = (
+            f"{INSTAGRAM_ORIGIN}/p/{captured['code']}/"
+            if captured.get("code")
+            else capture_post_url(page, args.user_data_dir)
+        )
+
+        return {
+            "ok": True,
+            "message": f"Published with {args.kind}.",
+            **({"url": url} if url else {}),
+        }
 
     return {
         "ok": False,
