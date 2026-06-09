@@ -109,19 +109,39 @@ def attach_media(page, media_path):
         ) from exc
 
 
-def advance_to_caption(page):
-    """Clicks through the crop and edit screens to reach the caption step."""
-    for _ in range(3):
+def share_button(page):
+    return page.get_by_role("button", name=re.compile("^Share$", re.I)).first
+
+
+def is_visible(locator, timeout=1500):
+    try:
+        return locator.is_visible(timeout=timeout)
+    except Exception:
+        return False
+
+
+def advance_to_share(page):
+    """Clicks 'Next' through the crop/edit screens until the Share step appears.
+
+    Instagram varies the number of intermediate screens, so this advances until
+    the Share control is visible rather than assuming a fixed count.
+    """
+    for _ in range(6):
         dismiss_optional_dialog(page)
 
-        advanced = click_first(
-            page,
-            [page.get_by_role("button", name=re.compile("^Next$", re.I))],
-            timeout=8_000,
-        )
+        if is_visible(share_button(page), timeout=1200):
+            return True
 
-        if not advanced:
+        nxt = page.get_by_role("button", name=re.compile("^Next$", re.I)).first
+
+        try:
+            nxt.wait_for(state="visible", timeout=8_000)
+            nxt.click()
+            page.wait_for_timeout(1500)
+        except Exception:
             break
+
+    return is_visible(share_button(page), timeout=4_000)
 
 
 def fill_caption(page, caption):
@@ -147,16 +167,30 @@ def fill_caption(page, caption):
 
 
 def share_post(page):
-    shared = click_first(
-        page,
-        [
-            page.get_by_role("button", name=re.compile("^Share$", re.I)),
-            page.get_by_role("link", name=re.compile("^Share$", re.I)),
-        ],
-    )
+    share = share_button(page)
 
-    if not shared:
-        raise RuntimeError("Could not find the Instagram Share button.")
+    try:
+        share.wait_for(state="visible", timeout=STEP_TIMEOUT_MS)
+    except Exception as exc:
+        raise RuntimeError("Could not find the Instagram Share button.") from exc
+
+    try:
+        share.scroll_into_view_if_needed(timeout=5_000)
+    except Exception:
+        pass
+
+    try:
+        share.click(timeout=10_000)
+        return
+    except Exception:
+        pass
+
+    try:
+        share.click(timeout=10_000, force=True)
+    except Exception as exc:
+        raise RuntimeError(
+            "Found the Instagram Share button but could not click it."
+        ) from exc
 
 
 def wait_for_share_complete(page, timeout_ms):
@@ -190,7 +224,12 @@ def run_publish(context, args):
     dismiss_optional_dialog(page)
     open_create_dialog(page)
     attach_media(page, args.media)
-    advance_to_caption(page)
+
+    if not advance_to_share(page):
+        raise RuntimeError(
+            "Could not reach the Instagram caption/share screen after attaching media."
+        )
+
     fill_caption(page, args.caption)
     share_post(page)
 
@@ -226,6 +265,14 @@ def main():
             )
             result = run_publish(context, args)
         except Exception as exc:
+            # Leave a screenshot in the profile folder to debug layout/flow failures.
+            try:
+                if context is not None and context.pages:
+                    shot = Path(args.user_data_dir).expanduser() / "last-error.png"
+                    context.pages[0].screenshot(path=str(shot))
+            except Exception:
+                pass
+
             result = {"ok": False, "message": friendly_error(exc)}
         finally:
             if context is not None:
