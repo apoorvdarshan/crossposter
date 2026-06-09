@@ -249,19 +249,20 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   instagram: {
     title: "Instagram setup",
     intro:
-      "Unofficial local posting through instagrapi. Crossposter saves one mobile API session JSON per Instagram profile.",
+      "Unofficial local posting. The browser method (recommended) drives a dedicated, isolated headless Chromium with a one-time login per account, separate from your own Chrome. The mobile method uses instagrapi.",
     links: [
+      { label: "Playwright", href: "https://playwright.dev/python/" },
       { label: "instagrapi", href: "https://github.com/subzeroid/instagrapi" },
       { label: "Instagram terms", href: "https://help.instagram.com/581066165581870" }
     ],
     steps: [
-      "Install instagrapi and video support in Terminal with crossposter install-instagram-deps, or ./scripts/install-instagram-deps.sh when working from the Git repo.",
-      "Add one Instagram profile here for each Instagram account.",
-      "Set Instagram username and password for that account. They stay in poster.config.local.json.",
-      "Set Instagram session file to a unique JSON path, for example .instagram-sessions/apoorvdarshan.json.",
-      "If Instagram asks for 2FA on first publish, paste the current code into Instagram 2FA code, save, publish once, then clear it.",
-      "Use the Dashboard Post field as the caption.",
-      "Attach one local JPG, PNG, WebP, MP4, or MOV file before publishing.",
+      "Install the browser engine in Terminal with crossposter install-instagram-browser-deps, or ./scripts/install-instagram-browser-deps.sh when working from the Git repo.",
+      "Add one Instagram profile here for each Instagram account, and keep Instagram method on Browser.",
+      "Set Instagram browser profile folder to a unique folder per account, for example .instagram-browser/apoorvdarshan.",
+      "Click Log in to Instagram. A real browser window opens once. Sign in (including any 2FA), then it saves the session and closes.",
+      "Keep Instagram browser headless on so future posts run invisibly. Set it to false only to watch the browser if a post fails.",
+      "Use the Dashboard Post field as the caption and attach one local JPG, PNG, WebP, MP4, or MOV file before publishing.",
+      "Mobile method instead: run crossposter install-instagram-deps, set Instagram method to Mobile, then fill username, password, and a unique session file path.",
       "Avoid parallel or high-volume posting. Instagram may challenge, rate limit, or restrict accounts for suspicious automation."
     ]
   },
@@ -556,6 +557,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState("");
   const [importingHackerNewsCookie, setImportingHackerNewsCookie] = useState("");
   const [importingYouTubeCookie, setImportingYouTubeCookie] = useState("");
+  const [connectingInstagram, setConnectingInstagram] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
   const [isCheckingAppVersion, setIsCheckingAppVersion] = useState(false);
@@ -1216,6 +1218,41 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  async function connectInstagram(profile: ProviderProfile) {
+    setConnectingInstagram(profile.id);
+    setStatus("A browser window is opening. Sign in to Instagram (including any 2FA), then it saves and closes.");
+
+    try {
+      const saved = await saveConfig();
+
+      if (!saved) {
+        return;
+      }
+
+      const response = await fetch("/api/auth/instagram/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ profileId: profile.id })
+      });
+      const body = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not complete the Instagram browser login.");
+        return;
+      }
+
+      await loadConfig();
+      setStatus(body.message || "Instagram session saved for this profile.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not complete the Instagram browser login.");
+    } finally {
+      setConnectingInstagram("");
+    }
+  }
+
   async function openConfigFile() {
     setStatus("");
 
@@ -1390,31 +1427,9 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               </ol>
             </section>
           ) : null}
-          {providerProfiles.length > 0 ? (
-            <label className="config-field">
-              <span>Active profile</span>
-              <select
-                value={activeProfiles[platform.id] || ""}
-                onChange={(event) =>
-                  setActiveProfiles((current) => ({
-                    ...current,
-                    [platform.id]: event.target.value
-                  }))
-                }
-              >
-                {providerProfiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {profile.label}
-                  </option>
-                ))}
-              </select>
-              <span className="field-hint">
-                Publishing uses the active profile for this provider.
-              </span>
-            </label>
-          ) : (
+          {providerProfiles.length === 0 ? (
             <p className="hint">No profiles yet. Add one to connect this social locally.</p>
-          )}
+          ) : null}
 
           {providerProfiles.map((profile) => (
             <section className="config-group" key={profile.id}>
@@ -1439,6 +1454,18 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                     >
                       <RefreshCw size={15} />
                       Connect Dribbble
+                    </button>
+                  ) : null}
+                  {platform.id === "instagram" &&
+                  (profile.values.INSTAGRAM_METHOD || "browser") !== "mobile" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void connectInstagram(profile)}
+                      disabled={Boolean(connectingInstagram)}
+                    >
+                      <RefreshCw size={15} />
+                      {connectingInstagram === profile.id ? "Opening browser..." : "Log in to Instagram"}
                     </button>
                   ) : null}
                   {platform.id === "hackernews" ? (
@@ -1500,12 +1527,43 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                 const isBooleanField =
                   field.name === "X_PREMIUM_LONG_POSTS" ||
                   field.name === "DRIBBBLE_LOW_PROFILE" ||
-                  field.name === "PINTEREST_HEADLESS";
+                  field.name === "PINTEREST_HEADLESS" ||
+                  field.name === "INSTAGRAM_BROWSER_HEADLESS";
+                const isMethodField = field.name === "INSTAGRAM_METHOD";
                 const issue = validateConfigField(
                   field,
                   fieldValue,
                   Boolean(field.requiredFor?.includes(platform.id))
                 );
+
+                if (isMethodField) {
+                  return (
+                    <label
+                      className={`config-field ${issue ? "is-invalid" : ""}`}
+                      key={field.name}
+                    >
+                      <span>{field.label}</span>
+                      <select
+                        value={fieldValue === "mobile" ? "mobile" : "browser"}
+                        onChange={(event) =>
+                          updateProfile(platform.id, profile.id, {
+                            ...profile,
+                            values: {
+                              ...profile.values,
+                              [field.name]: event.target.value
+                            }
+                          })
+                        }
+                      >
+                        <option value="browser">Browser (recommended)</option>
+                        <option value="mobile">Mobile (instagrapi)</option>
+                      </select>
+                      <span className={`field-hint ${issue ? "is-warning" : ""}`}>
+                        {issue?.message || field.help}
+                      </span>
+                    </label>
+                  );
+                }
 
                 if (isBooleanField) {
                   return (
@@ -1537,6 +1595,10 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                               ? fieldValue === "true"
                                 ? "Headless Chrome login"
                                 : "Visible Chrome login"
+                            : field.name === "INSTAGRAM_BROWSER_HEADLESS"
+                              ? fieldValue === "true"
+                                ? "Invisible posting"
+                                : "Visible browser"
                             : fieldValue === "true"
                               ? "Premium video limit"
                               : "280 chars / 512 MB video"}

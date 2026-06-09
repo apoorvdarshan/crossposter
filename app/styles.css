@@ -2160,10 +2160,15 @@ a.history-platform.ok:hover {
 .config-group {
   display: grid;
   gap: 10px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
+  border: 1px solid var(--line-hover);
+  border-radius: 9px;
   background: var(--panel-soft);
-  padding: 12px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.config-group + .config-group {
+  margin-top: 6px;
 }
 
 .config-group-title {
@@ -2171,6 +2176,8 @@ a.history-platform.ok:hover {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
 }
 
 .config-group-title strong {
@@ -3071,5 +3078,279 @@ a.history-platform.ok:hover {
   .history-media img,
   .history-media video {
     max-height: 230px;
+  }
+}
+
+/* ============================================================
+   SIGNAL CONSOLE — UI upgrade layer
+   Distinctive typography, layered depth, atmosphere, and motion.
+   Layered last so it refines the base via the cascade; no markup
+   changes, so every page levels up together.
+   ============================================================ */
+
+/* --- Depth + accent tokens (theme-aware) --- */
+:root {
+  --accent-grad: linear-gradient(135deg, #2fc56c 0%, #169247 100%);
+  --accent-glow: 0 10px 26px -10px rgba(32, 177, 90, 0.55);
+  --ring: 0 0 0 3px var(--accent-ring-strong);
+  --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --elev-1: 0 1px 2px rgba(33, 38, 29, 0.05), 0 8px 20px -12px rgba(33, 38, 29, 0.2);
+  --elev-2: 0 2px 6px rgba(33, 38, 29, 0.06), 0 26px 56px -22px rgba(33, 38, 29, 0.26);
+  --grain-opacity: 0.05;
+  --radius: 13px;
+}
+
+:root[data-theme="dark"] {
+  --accent-grad: linear-gradient(135deg, #37c873 0%, #1c9a4f 100%);
+  --accent-glow: 0 12px 30px -10px rgba(49, 183, 102, 0.5);
+  --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.55), 0 10px 24px -12px rgba(0, 0, 0, 0.55);
+  --elev-2: 0 2px 8px rgba(0, 0, 0, 0.5), 0 30px 64px -24px rgba(0, 0, 0, 0.66);
+  --grain-opacity: 0.04;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent-grad: linear-gradient(135deg, #37c873 0%, #1c9a4f 100%);
+    --accent-glow: 0 12px 30px -10px rgba(49, 183, 102, 0.5);
+    --hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --elev-1: 0 1px 2px rgba(0, 0, 0, 0.55), 0 10px 24px -12px rgba(0, 0, 0, 0.55);
+    --elev-2: 0 2px 8px rgba(0, 0, 0, 0.5), 0 30px 64px -24px rgba(0, 0, 0, 0.66);
+    --grain-opacity: 0.04;
+  }
+}
+
+/* --- Typography --- */
+body {
+  font-family: var(--font-body), "Avenir Next", "Segoe UI", sans-serif;
+  letter-spacing: -0.004em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+.panel-heading h2,
+.brand-copy strong {
+  font-family: var(--font-display), "Avenir Next", system-ui, sans-serif;
+  letter-spacing: -0.022em;
+}
+
+h1 {
+  font-weight: 700;
+  letter-spacing: -0.038em;
+}
+
+.eyebrow {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+  font-weight: 600;
+  font-size: 0.67rem;
+  letter-spacing: 0.2em;
+}
+
+.counter,
+code,
+pre,
+pre code,
+.command-text,
+.path-input,
+kbd {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+/* --- Atmosphere: backdrop glow + fine grain --- */
+body {
+  background:
+    radial-gradient(1100px circle at 50% -120px, var(--glow), transparent 55%),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    var(--bg);
+  background-size: auto, 40px 40px, 40px 40px, auto;
+  background-attachment: fixed;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(1000px circle at 50% -160px, rgba(49, 183, 102, 0.12), transparent 58%),
+    radial-gradient(760px circle at 100% -60px, rgba(49, 183, 102, 0.06), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body {
+    background:
+      radial-gradient(1000px circle at 50% -160px, rgba(49, 183, 102, 0.12), transparent 58%),
+      radial-gradient(760px circle at 100% -60px, rgba(49, 183, 102, 0.06), transparent 55%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.workspace {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Masthead + panels: layered depth --- */
+.masthead {
+  border-color: var(--masthead-line);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-2), var(--hairline-top);
+  backdrop-filter: saturate(1.3) blur(14px);
+}
+
+.info-panel {
+  border-radius: var(--radius);
+  box-shadow: var(--elev-2), var(--hairline-top);
+}
+
+/* --- Nav tabs + status --- */
+.top-tabs {
+  backdrop-filter: blur(8px);
+}
+
+.top-tab {
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.top-tab:hover {
+  background: var(--masthead-soft);
+  transform: translateY(-1px);
+}
+
+.top-tab.is-active {
+  background: var(--accent-grad);
+  color: #06140b;
+  box-shadow: var(--accent-glow);
+}
+
+.top-tab.is-active:hover {
+  transform: translateY(-1px);
+}
+
+.status-pill {
+  border: 1px solid var(--masthead-line);
+}
+
+/* --- Buttons --- */
+.primary,
+.secondary,
+.danger-button {
+  border-radius: 10px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease,
+    border-color 0.16s ease, background 0.16s ease;
+}
+
+.primary {
+  border: 0;
+  background: var(--accent-grad);
+  color: #04140a;
+  font-weight: 700;
+  box-shadow: var(--accent-glow), var(--hairline-top);
+}
+
+.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.primary:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+.secondary {
+  background: var(--chip-bg);
+  box-shadow: var(--elev-1);
+}
+
+.secondary:hover:not(:disabled) {
+  border-color: var(--line-hover);
+  transform: translateY(-1px);
+}
+
+.danger-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--danger);
+}
+
+/* --- Inputs --- */
+input,
+textarea,
+select {
+  border-radius: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+/* --- Accessible focus for everything else --- */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* --- Cards: align radius with new system --- */
+.config-group,
+.setup-guide {
+  border-radius: 12px;
+}
+
+/* --- Page-load reveal (staggered) --- */
+@keyframes cp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.workspace > *:not(.masthead) {
+  animation: cp-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.workspace > *:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.workspace > *:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.workspace > *:nth-child(4) {
+  animation-delay: 0.16s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

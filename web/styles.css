@@ -19,10 +19,11 @@
   --hero-image-filter: invert(1) grayscale(0.12) brightness(1.14) contrast(0.76) saturate(0.72);
   --hero-image-opacity: 0.72;
   --hero-overlay: rgba(244, 246, 240, 0.42);
-  --radius: 8px;
-  --display: "Avenir Next", "Gill Sans", "Trebuchet MS", system-ui, sans-serif;
-  --body: "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --radius: 13px;
+  --display: "Bricolage Grotesque", "Avenir Next", "Gill Sans", system-ui, sans-serif;
+  --body: "Hanken Grotesk", "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --accent-grad: linear-gradient(135deg, #2fc56c 0%, #169247 100%);
 }
 
 :root[data-theme="dark"] {
@@ -46,6 +47,7 @@
   --hero-image-filter: none;
   --hero-image-opacity: 0.7;
   --hero-overlay: rgba(5, 5, 5, 0.42);
+  --accent-grad: linear-gradient(135deg, #37c873 0%, #1c9a4f 100%);
 }
 
 * {
@@ -1261,4 +1263,50 @@ tbody tr:last-child td {
     font-size: 0.82rem;
     padding: 14px;
   }
+}
+
+/* ============================================================
+   SIGNAL CONSOLE — landing refinement layer
+   Matches the app: gradient accent, tighter display type, smoothing.
+   ============================================================ */
+body {
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.004em;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.022em;
+}
+
+.hero h1,
+#hero-title {
+  letter-spacing: -0.04em;
+}
+
+.eyebrow {
+  font-weight: 600;
+}
+
+.nav-button,
+.button.primary,
+.theme-button[aria-pressed="true"] {
+  background: var(--accent-grad);
+  border-color: transparent;
+  box-shadow: 0 10px 26px -10px rgba(32, 177, 90, 0.5);
+}
+
+.site-nav a.nav-button:hover,
+.theme-button[aria-pressed="true"]:hover,
+.button.primary:hover {
+  background: var(--accent-grad);
+  border-color: transparent;
+  box-shadow: 0 12px 30px -10px rgba(32, 177, 90, 0.55);
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
 }
