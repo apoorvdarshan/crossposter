@@ -3270,13 +3270,18 @@ export default function Home() {
             {results.length > 0 ? (
               <div className="result-list" aria-label="Latest publish result">
                 <p className="result-section-label">Latest result</p>
-                {results.map((result, index) => (
+                {results.map((result, index) => {
+                  const channelLabel =
+                    channels.find((item) => item.id === result.platform)?.label || result.platform;
+                  const resultLabel =
+                    result.profileLabel && result.profileLabel !== channelLabel
+                      ? `${channelLabel} · ${result.profileLabel}`
+                      : channelLabel;
+
+                  return (
                   <div className="result" key={result.targetId || `${result.platform}:${index}`}>
                     <div className="result-head">
-                      <strong>
-                        {result.platform}
-                        {result.profileLabel ? ` · ${result.profileLabel}` : ""}
-                      </strong>
+                      <strong>{resultLabel}</strong>
                       <span className={`badge ${result.ok ? "ok" : "err"}`}>
                         {result.ok ? "ok" : "error"}
                       </span>
@@ -3289,7 +3294,8 @@ export default function Home() {
                       </a>
                     ) : null}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : null}
 
@@ -3349,9 +3355,11 @@ export default function Home() {
                         {post.results.map((result, index) => {
                           const channel = channels.find((item) => item.id === result.platform);
                           const className = `history-platform ${result.ok ? "ok" : "err"}`;
-                          const label = `${channel?.label || result.platform}${
-                            result.profileLabel ? ` · ${result.profileLabel}` : ""
-                          }`;
+                          const channelLabel = channel?.label || result.platform;
+                          const label =
+                            result.profileLabel && result.profileLabel !== channelLabel
+                              ? `${channelLabel} · ${result.profileLabel}`
+                              : channelLabel;
                           const content = (
                             <>
                               <SocialLogo platform={result.platform} size="sm" />
