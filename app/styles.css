@@ -3354,3 +3354,30 @@ button:focus-visible,
     transition-duration: 0.001ms !important;
   }
 }
+
+/* --- Sticky compose action bar (single bar, stays under the masthead) --- */
+.compose-panel {
+  overflow: visible;
+}
+
+.compose-sticky {
+  position: sticky;
+  top: 116px;
+  z-index: 20;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+  background: var(--panel-alpha);
+  backdrop-filter: saturate(1.3) blur(12px);
+}
+
+.compose-sticky .panel-heading {
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+@media (max-width: 900px) {
+  .compose-sticky {
+    position: static;
+    backdrop-filter: none;
+  }
+}

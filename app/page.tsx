@@ -1373,7 +1373,7 @@ export default function Home() {
   const [isCroppingMedia, setIsCroppingMedia] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
   const [progress, setProgress] = useState<ProgressState | null>(null);
-  const [progressPlacement, setProgressPlacement] = useState<ProgressPlacement>("bottom");
+  const [progressPlacement, setProgressPlacement] = useState<ProgressPlacement>("top");
   const publishAbortRef = useRef<AbortController | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [configHydrated, setConfigHydrated] = useState(false);
@@ -1829,7 +1829,7 @@ export default function Home() {
   }
 
   async function clearPublishedPosts() {
-    setProgressPlacement("bottom");
+    setProgressPlacement("top");
     setProgress({ label: "Clearing publish history", value: 60 });
     setPublishedPosts([]);
     await fetch("/api/draft?scope=history", { method: "DELETE" }).catch(() => undefined);
@@ -2041,7 +2041,7 @@ export default function Home() {
     }
   }
 
-  async function publish(placement: ProgressPlacement = "bottom") {
+  async function publish(placement: ProgressPlacement = "top") {
     setError("");
     setScheduleStatus("");
     setResults([]);
@@ -2195,7 +2195,7 @@ export default function Home() {
     }
   }
 
-  async function scheduleDraft(placement: ProgressPlacement = "bottom") {
+  async function scheduleDraft(placement: ProgressPlacement = "top") {
     setError("");
     setScheduleStatus("");
     setResults([]);
@@ -2528,8 +2528,6 @@ export default function Home() {
   const compressionProgress = isCompressingMedia || isCroppingMedia ? progress : null;
   const actionProgress = progress && !isCompressingMedia && !isCroppingMedia ? progress : null;
   const topActionProgress = actionProgress && progressPlacement === "top" ? actionProgress : null;
-  const bottomActionProgress =
-    actionProgress && progressPlacement === "bottom" ? actionProgress : null;
   const publishButtonLabel = isCompressingMedia
     ? "Compressing..."
     : isCroppingMedia
@@ -2675,6 +2673,7 @@ export default function Home() {
 
       <section className="dashboard">
         <section className="compose-panel" aria-labelledby="composeTitle">
+          <div className="compose-sticky">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Publish now</p>
@@ -2728,6 +2727,7 @@ export default function Home() {
               {scheduleStatus}
             </p>
           ) : null}
+          </div>
 
           <div className="composer">
             <div className="field">
@@ -3167,41 +3167,6 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="actions">
-              <button className="primary" disabled={!canPublish} onClick={() => void publish("bottom")}>
-                <Send size={18} />
-                {publishButtonLabel}
-              </button>
-              <button
-                className="secondary"
-                disabled={!canOpenSchedule}
-                onClick={() => toggleSchedulePanel("bottom")}
-                type="button"
-              >
-                <CalendarClock size={18} />
-                Schedule draft
-              </button>
-              <button
-                className="secondary"
-                type="button"
-                onClick={() => void clearDraft()}
-              >
-                Clear draft
-              </button>
-            </div>
-            {schedulePanelPlacement === "bottom" ? renderSchedulePopup("bottom") : null}
-            {scheduleStatus && scheduleStatusPlacement === "bottom" ? (
-              <p className="schedule-status" role="status">
-                <CheckCircle2 size={16} />
-                {scheduleStatus}
-              </p>
-            ) : null}
-            {bottomActionProgress ? (
-              <ProgressBox
-                onCancel={cancelProgressAction}
-                progress={bottomActionProgress}
-              />
-            ) : null}
           </div>
         </section>
 
