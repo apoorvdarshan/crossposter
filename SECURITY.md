@@ -41,6 +41,7 @@ Do not commit:
 - `poster.config.local.json`
 - `.env`
 - `.instagram-sessions`
+- `.instagram-browser`
 - `.pinterest-sessions`
 - `.poster-uploads`
 - access tokens

@@ -64,7 +64,7 @@ challenges, rate limits, failed posts, or account restrictions.
 ## Features
 
 - Dashboard composer for title, body text, channel selection, and media upload
-- Multi-profile configuration per provider, with active profile selection
+- Multiple account profiles per provider, selected as publish targets on the dashboard
 - Inline Schedule draft control for local timed posting
 - Scheduler calendar for scanning queued posts by month and reviewing posts by day
 - Scheduler page controls for editing timing and discarding queued or failed posts

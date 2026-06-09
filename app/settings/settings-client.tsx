@@ -2137,14 +2137,20 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
               </div>
               <div className="config-panel">
                 <p className="hint">
-                  Crossposter supports a mix of official APIs and local unofficial flows.
-                  X / Twitter, Instagram, YouTube, Pinterest, Peerlist, and Hacker News may
-                  use cookies, local sessions, private APIs, or normal web submit flows.
+                  Crossposter mixes official APIs with local, unofficial flows. X / Twitter,
+                  Instagram, YouTube, Pinterest, Peerlist, and Hacker News may use your own
+                  browser sessions, saved cookies, private APIs, or normal web submit flows —
+                  all running locally on this machine.
                 </p>
                 <p className="hint">
-                  Use these only for accounts you own or manage. Platforms can change,
-                  challenge, rate-limit, reject, or restrict accounts that violate their
-                  rules or automation policies.
+                  Instagram (browser method) signs in to a dedicated, isolated browser once per
+                  account and reuses that real session, so there is no stored password and no
+                  fake mobile login. It is still automation, not an official API.
+                </p>
+                <p className="hint">
+                  Use these only for accounts you own or manage, and keep posting occasional and
+                  human-paced. Platforms can change, challenge, rate-limit, reject, or restrict
+                  accounts for automated or high-volume activity.
                 </p>
               </div>
             </section>

@@ -340,7 +340,7 @@ crossposter uninstall-service</code></pre>
               <article><img src="assets/social/linkedin.svg" alt="" width="42" height="42"><strong>LinkedIn</strong><span>OAuth · profiles/pages</span></article>
               <article><img src="assets/social/bluesky.svg" alt="" width="42" height="42"><strong>Bluesky</strong><span>app password · text/images</span></article>
               <article><img src="assets/social/mastodon.svg" alt="" width="42" height="42"><strong>Mastodon</strong><span>access token · text/media</span></article>
-              <article><img src="assets/social/instagram.svg" alt="" width="42" height="42"><strong>Instagram</strong><span>instagrapi · images/video</span></article>
+              <article><img src="assets/social/instagram.svg" alt="" width="42" height="42"><strong>Instagram</strong><span>signed-in browser · images/video</span></article>
               <article><img src="assets/social/youtube.svg" alt="" width="42" height="42"><strong>YouTube</strong><span>InnerTube · video upload</span></article>
               <article><img src="assets/social/devto.svg" alt="" width="42" height="42"><strong>Dev.to</strong><span>API key · markdown articles</span></article>
               <article><img src="assets/social/pinterest.svg" alt="" width="42" height="42"><strong>Pinterest</strong><span>py3-pinterest · Pins</span></article>
@@ -352,10 +352,13 @@ crossposter uninstall-service</code></pre>
             <div class="disclaimer-box">
               <h3>Unofficial provider notice</h3>
               <p>
-                Crossposter includes a mix of official APIs and local unofficial integrations.
-                X / Twitter, Instagram, YouTube, Pinterest, Peerlist, and Hacker News may use
-                cookies, local sessions, private APIs, third-party tools, or normal web submit
-                flows. Use them only with accounts you own or manage.
+                Crossposter mixes official APIs with local, unofficial integrations. X / Twitter,
+                Instagram, YouTube, Pinterest, Peerlist, and Hacker News may use your own browser
+                sessions, saved cookies, private APIs, third-party tools, or normal web submit
+                flows, all running locally. Instagram signs in to a dedicated, isolated browser
+                once per account and reuses that real session (no stored password, no fake mobile
+                login), but it is still automation, not an official API. Use these only with
+                accounts you own or manage, and keep posting occasional and human-paced.
               </p>
             </div>
           </section>
@@ -370,11 +373,11 @@ crossposter uninstall-service</code></pre>
               </article>
               <article>
                 <h3>Local sessions</h3>
-                <p>X, Instagram, YouTube, Pinterest, Peerlist, and Hacker News use local cookies, sessions, tools, or normal submit flows.</p>
+                <p>X, Instagram, YouTube, Pinterest, Peerlist, and Hacker News use your own browser sessions, local cookies, tools, or normal submit flows. Instagram signs in to a dedicated, isolated browser once per account.</p>
               </article>
               <article>
                 <h3>Multiple profiles</h3>
-                <p>Provider profiles are saved in <code>poster.config.local.json</code>, with active profile selection managed in Settings.</p>
+                <p>Provider profiles are saved in <code>poster.config.local.json</code>. Pick which accounts to post to per publish on the dashboard.</p>
               </article>
             </div>
           </section>
