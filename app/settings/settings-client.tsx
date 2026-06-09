@@ -249,7 +249,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   instagram: {
     title: "Instagram setup",
     intro:
-      "Unofficial local posting through a dedicated, isolated headless Chromium with a one-time login per account, separate from your own Chrome. It reuses your real signed-in session, so there is no stored password.",
+      "Unofficial local posting through a dedicated, isolated browser with a one-time login per account, in its own profile folder separate from your own Chrome profile. It reuses your real signed-in session, so there is no stored password. It prefers your installed Google Chrome and falls back to bundled Chromium.",
     links: [
       { label: "Playwright", href: "https://playwright.dev/python/" },
       { label: "Instagram terms", href: "https://help.instagram.com/581066165581870" }
@@ -261,6 +261,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Click Log in to Instagram. A real browser window opens once. Sign in (including any 2FA), then it saves the session and closes.",
       "Keep Instagram browser headless on so future posts run invisibly. Set it to false only to watch the browser if a post fails.",
       "Use the Dashboard Post field as the caption and attach one local JPG, PNG, WebP, MP4, or MOV file before publishing.",
+      "Video (MP4/MOV) uploads require Google Chrome installed; bundled Chromium can read images but not H.264 video. Image posts work either way.",
       "Avoid parallel or high-volume posting. Instagram may challenge, rate limit, or restrict accounts for suspicious automation."
     ]
   },

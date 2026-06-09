@@ -358,10 +358,16 @@ Mastodon post text is limited to 500 characters.
 ### Instagram
 
 Instagram publishing is unofficial local posting through a dedicated, isolated
-headless Chromium (Playwright's bundled browser) with a one-time login per
-account. It never touches your own Chrome, reuses your real signed-in session
-(no stored password), and posts invisibly. It is still automation, not an
-official API, so use it for accounts you own and keep posting human-paced.
+headless browser with a one-time login per account, using its own profile folder
+(separate from your own Chrome profile). It reuses your real signed-in session
+(no stored password) and posts invisibly. It is still automation, not an official
+API, so use it for accounts you own and keep posting human-paced.
+
+It prefers your installed **Google Chrome** (run in a separate, isolated profile),
+falling back to Playwright's bundled Chromium when Chrome is not installed.
+**Video (MP4/MOV) uploads require Google Chrome** — the bundled Chromium lacks the
+H.264/AAC codecs Instagram's web uploader needs to read video, so it rejects MP4s
+with "could not be read by your browser". Image posts work on either.
 
 Install the browser engine once (Playwright + Chromium):
 

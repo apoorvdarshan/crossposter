@@ -212,6 +212,8 @@ def run_publish(context, args):
     except Exception:
         pass
 
+    page.wait_for_timeout(3000)
+
     if not is_logged_in(context):
         return {
             "ok": False,
@@ -222,8 +224,10 @@ def run_publish(context, args):
         }
 
     dismiss_optional_dialog(page)
+    page.wait_for_timeout(800)
     open_create_dialog(page)
     attach_media(page, args.media)
+    page.wait_for_timeout(4000)
 
     if not advance_to_share(page):
         raise RuntimeError(

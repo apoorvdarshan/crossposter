@@ -42,18 +42,45 @@ def import_playwright():
         )
 
 
-def launch_persistent(playwright, user_data_dir, headless):
-    """Launches an isolated Chromium with a persistent per-profile session."""
-    Path(user_data_dir).expanduser().mkdir(parents=True, exist_ok=True)
+def launch_persistent(playwright, user_data_dir, headless, channel="auto"):
+    """Launches an isolated browser with a persistent per-profile session.
 
-    return playwright.chromium.launch_persistent_context(
-        str(Path(user_data_dir).expanduser()),
+    Prefers the installed Google Chrome ("chrome" channel) because it ships the
+    proprietary codecs (H.264/AAC) Instagram needs to read uploaded video.
+    Playwright's bundled Chromium lacks those codecs and rejects MP4 video with
+    "could not be read by your browser", so it is only the fallback when Chrome
+    is not installed. The per-profile user-data dir keeps each account isolated
+    and separate from the user's own Chrome profile either way.
+    """
+    path = str(Path(user_data_dir).expanduser())
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+    opts = dict(
         headless=headless,
         user_agent=DESKTOP_USER_AGENT,
         viewport={"width": 1280, "height": 900},
         locale="en-US",
         args=["--disable-blink-features=AutomationControlled"],
     )
+
+    if channel == "chromium":
+        order = [None]
+    elif channel == "chrome":
+        order = ["chrome"]
+    else:
+        order = ["chrome", None]
+
+    last_error = None
+
+    for ch in order:
+        try:
+            if ch:
+                return playwright.chromium.launch_persistent_context(path, channel=ch, **opts)
+            return playwright.chromium.launch_persistent_context(path, **opts)
+        except Exception as exc:
+            last_error = exc
+
+    raise last_error
 
 
 def is_logged_in(context):
