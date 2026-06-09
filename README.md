@@ -52,7 +52,7 @@ challenges, rate limits, failed posts, or account restrictions.
 | LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
 | Bluesky | Text posts and local image media |
 | Mastodon | Text posts and local media |
-| Instagram | Unofficial local media publishing through an isolated headless browser session (or legacy `instagrapi`) |
+| Instagram | Unofficial local media publishing through an isolated headless browser session |
 | YouTube | Unofficial local video uploads through YouTube.js/InnerTube cookies |
 | Dev.to | Markdown articles |
 | Pinterest | Unofficial local Pin uploads through `py3-pinterest` session folders |
@@ -357,15 +357,11 @@ Mastodon post text is limited to 500 characters.
 
 ### Instagram
 
-Instagram publishing is unofficial local posting. Pick a method per profile with
-`INSTAGRAM_METHOD`:
-
-- **`browser` (default, recommended)** drives a dedicated, isolated headless
-  Chromium (Playwright's bundled browser) with a one-time login per account. It
-  never touches your own Chrome, supports any account, and posts invisibly.
-- **`mobile`** uses the legacy `instagrapi` username/password flow.
-
-#### Browser method
+Instagram publishing is unofficial local posting through a dedicated, isolated
+headless Chromium (Playwright's bundled browser) with a one-time login per
+account. It never touches your own Chrome, reuses your real signed-in session
+(no stored password), and posts invisibly. It is still automation, not an
+official API, so use it for accounts you own and keep posting human-paced.
 
 Install the browser engine once (Playwright + Chromium):
 
@@ -378,10 +374,10 @@ crossposter install-instagram-browser-deps
 Fields:
 
 ```text
-INSTAGRAM_METHOD                # browser (default)
 INSTAGRAM_BROWSER_PROFILE_DIR   # unique per account, e.g. .instagram-browser/apoorvdarshan
 INSTAGRAM_BROWSER_HEADLESS      # true (invisible posting); false to watch the browser
 INSTAGRAM_BROWSER_TIMEOUT_MS    # login wait + publish step timeout, default 180000
+INSTAGRAM_PYTHON_COMMAND        # optional; defaults to .venv/bin/python, then python3
 ```
 
 Add one profile per Instagram account, give each a unique browser profile
@@ -392,35 +388,7 @@ add another profile with its own folder and log in again. If Instagram changes
 its create-post layout and a publish fails, set `INSTAGRAM_BROWSER_HEADLESS` to
 `false` to watch the flow.
 
-#### Mobile method (instagrapi)
-
-```bash
-crossposter install-instagram-deps
-# or, from a Git clone:
-./scripts/install-instagram-deps.sh
-```
-
-Required fields (when `INSTAGRAM_METHOD=mobile`):
-
-```text
-INSTAGRAM_USERNAME
-INSTAGRAM_PASSWORD
-INSTAGRAM_SESSION_FILE
-```
-
-Optional fields:
-
-```text
-INSTAGRAM_2FA_CODE
-INSTAGRAM_PYTHON_COMMAND
-INSTAGRAM_TIMEOUT_MS
-```
-
-On first login or after a challenge, Instagram may require a current 2FA code
-or web/app verification. After the session file is saved, later publishes reuse
-that session until Instagram invalidates or challenges it.
-
-Supported media (both methods):
+Supported media:
 
 - image: JPG, PNG, or WebP up to 8 MB
 - video: MP4 or MOV up to 300 MB

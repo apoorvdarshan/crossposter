@@ -73,18 +73,11 @@ export const configFields: ConfigField[] = [
     requiredFor: ["devto"]
   },
   {
-    name: "INSTAGRAM_METHOD",
-    label: "Instagram method",
-    help: "browser uses a dedicated headless Chromium with a per-profile login (recommended, works for any account). mobile uses the legacy instagrapi username/password flow.",
-    defaultValue: "browser",
-    showFor: ["instagram"]
-  },
-  {
     name: "INSTAGRAM_BROWSER_PROFILE_DIR",
     label: "Instagram browser profile folder",
-    help: "Folder for this account's isolated browser session, for example .instagram-browser/apoorvdarshan. Use a unique folder per Instagram account. Used by the browser method.",
+    help: "Folder for this account's isolated browser session, for example .instagram-browser/apoorvdarshan. Use a unique folder per Instagram account.",
     defaultValue: ".instagram-browser/default",
-    showFor: ["instagram"]
+    requiredFor: ["instagram"]
   },
   {
     name: "INSTAGRAM_BROWSER_HEADLESS",
@@ -101,42 +94,9 @@ export const configFields: ConfigField[] = [
     showFor: ["instagram"]
   },
   {
-    name: "INSTAGRAM_USERNAME",
-    label: "Instagram username",
-    help: "Required for the mobile (instagrapi) method. Instagram username for this profile.",
-    showFor: ["instagram"]
-  },
-  {
-    name: "INSTAGRAM_PASSWORD",
-    label: "Instagram password",
-    help: "Required for the mobile (instagrapi) method. Saved locally and used with the saved session to refresh the mobile API login.",
-    secret: true,
-    showFor: ["instagram"]
-  },
-  {
-    name: "INSTAGRAM_SESSION_FILE",
-    label: "Instagram session file",
-    help: "Required for the mobile (instagrapi) method. Path to this account's instagrapi session JSON, for example .instagram-sessions/apoorvdarshan.json.",
-    showFor: ["instagram"]
-  },
-  {
-    name: "INSTAGRAM_2FA_CODE",
-    label: "Instagram 2FA code",
-    help: "Mobile method only. Optional one-time code for first login or challenge recovery. Clear it after the session is saved.",
-    secret: true,
-    showFor: ["instagram"]
-  },
-  {
     name: "INSTAGRAM_PYTHON_COMMAND",
     label: "Instagram Python command",
-    help: "Python command with the Instagram dependencies installed. Leave blank to use .venv/bin/python when present, then python3.",
-    showFor: ["instagram"]
-  },
-  {
-    name: "INSTAGRAM_TIMEOUT_MS",
-    label: "Instagram timeout",
-    help: "Mobile method only. Timeout for instagrapi publishing in milliseconds.",
-    defaultValue: "300000",
+    help: "Python command with Playwright installed. Leave blank to use .venv/bin/python when present, then python3.",
     showFor: ["instagram"]
   },
   {

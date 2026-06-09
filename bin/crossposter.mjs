@@ -62,7 +62,6 @@ Commands:
   crossposter --version
   crossposter install-service
   crossposter uninstall-service
-  crossposter install-instagram-deps
   crossposter install-instagram-browser-deps
   crossposter install-pinterest-deps
 
@@ -321,11 +320,6 @@ async function main() {
   const localConfig = readLocalConfig(configPath);
   const dotEnvValues = parseDotEnv(envPath);
   const command = process.argv.slice(2).find((arg) => !arg.startsWith("-"));
-
-  if (command === "install-instagram-deps") {
-    runHelperScript("install-instagram-deps.sh", dataRoot);
-    return;
-  }
 
   if (command === "install-instagram-browser-deps") {
     runHelperScript("install-instagram-browser-deps.sh", dataRoot);

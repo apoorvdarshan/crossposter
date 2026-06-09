@@ -95,9 +95,9 @@ const channels: Array<{
   {
     id: "instagram",
     label: "Instagram",
-    note: "Private API media post",
+    note: "Browser session media post",
     uses: ["Post", "Media"],
-    target: "Uses the active Instagram instagrapi profile from Settings.",
+    target: "Posts through this profile's signed-in Instagram browser session.",
     media: "Requires a local JPG, PNG, WebP image up to 8 MB, or MP4/MOV video up to 300 MB."
   },
   {
@@ -175,16 +175,10 @@ const envLabels: Record<string, string> = {
   MASTODON_INSTANCE: "instance",
   MASTODON_ACCESS_TOKEN: "access token",
   DEVTO_API_KEY: "API key",
-  INSTAGRAM_METHOD: "method",
   INSTAGRAM_BROWSER_PROFILE_DIR: "browser profile folder",
   INSTAGRAM_BROWSER_HEADLESS: "headless",
   INSTAGRAM_BROWSER_TIMEOUT_MS: "browser timeout",
-  INSTAGRAM_USERNAME: "username",
-  INSTAGRAM_PASSWORD: "password",
-  INSTAGRAM_SESSION_FILE: "session file",
-  INSTAGRAM_2FA_CODE: "2FA code",
   INSTAGRAM_PYTHON_COMMAND: "Python command",
-  INSTAGRAM_TIMEOUT_MS: "timeout",
   YOUTUBE_COOKIE_SOURCE: "cookie source",
   YOUTUBE_CHROME_PROFILE: "Chrome profile",
   YOUTUBE_COOKIE: "cookie",
@@ -766,7 +760,7 @@ function mediaPreflightIssues(
     if (kind === "image" && !instagramImageTypes.has(file.type)) {
       issues.push({
         id: "instagram-image-type",
-        message: `Instagram supports JPG, PNG, and WebP images through instagrapi; selected file is ${file.type || "unknown"}.`,
+        message: `Instagram supports JPG, PNG, and WebP images; selected file is ${file.type || "unknown"}.`,
         compress: file.type === "image/gif" ? undefined : "image"
       });
     } else if (kind === "image" && file.size > instagramPhotoMediaSizeLimit) {
@@ -778,7 +772,7 @@ function mediaPreflightIssues(
     } else if (kind === "video" && !instagramVideoTypes.has(file.type)) {
       issues.push({
         id: "instagram-video-type",
-        message: `Instagram supports MP4 and MOV videos through instagrapi; selected file is ${file.type || "unknown"}.`,
+        message: `Instagram supports MP4 and MOV videos; selected file is ${file.type || "unknown"}.`,
         compress: "video"
       });
     } else if (kind === "video" && file.size > instagramVideoMediaSizeLimit) {
