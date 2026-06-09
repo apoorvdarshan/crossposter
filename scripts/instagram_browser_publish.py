@@ -65,9 +65,9 @@ def open_create_dialog(page):
     opened = click_first(
         page,
         [
+            page.locator('svg[aria-label="New post"]'),
             page.get_by_role("link", name=re.compile("New post", re.I)),
             page.get_by_role("button", name=re.compile("New post", re.I)),
-            page.locator('svg[aria-label="New post"]'),
             page.get_by_role("link", name=re.compile("^Create$", re.I)),
             page.get_by_role("button", name=re.compile("^Create$", re.I)),
         ],
@@ -75,17 +75,27 @@ def open_create_dialog(page):
 
     if not opened:
         raise RuntimeError(
-            "Could not open the Instagram create-post dialog. Instagram may have changed its "
-            "layout, or this session needs Log in to Instagram again."
+            "Could not open the Instagram create menu. Instagram may have changed its layout, "
+            "or this session needs Log in to Instagram again."
         )
 
-    # Some layouts expand a menu where the actual entry is labelled "Post".
-    click_first(
+    # "New post" expands a menu of options (Post, Reel, Story, Live, Ad). The feed-post
+    # entry is an element with aria-label "Post"; clicking it opens the upload dialog.
+    opened_post = click_first(
         page,
-        [page.get_by_role("link", name=re.compile("^Post$", re.I)),
-         page.get_by_role("menuitem", name=re.compile("^Post$", re.I))],
-        timeout=4_000,
+        [
+            page.locator('[aria-label="Post"]'),
+            page.get_by_role("link", name=re.compile("^Post$", re.I)),
+            page.get_by_role("menuitem", name=re.compile("^Post$", re.I)),
+        ],
+        timeout=8_000,
     )
+
+    if not opened_post:
+        raise RuntimeError(
+            "Could not open the Instagram upload dialog from the create menu. Instagram may "
+            "have changed its layout."
+        )
 
 
 def attach_media(page, media_path):
