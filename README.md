@@ -52,7 +52,7 @@ challenges, rate limits, failed posts, or account restrictions.
 | LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
 | Bluesky | Text posts and local image media |
 | Mastodon | Text posts and local media |
-| Instagram | Unofficial local media publishing through `instagrapi` session files |
+| Instagram | Unofficial local media publishing through an isolated headless browser session (or legacy `instagrapi`) |
 | YouTube | Unofficial local video uploads through YouTube.js/InnerTube cookies |
 | Dev.to | Markdown articles |
 | Pinterest | Unofficial local Pin uploads through `py3-pinterest` session folders |
@@ -357,10 +357,50 @@ Mastodon post text is limited to 500 characters.
 
 ### Instagram
 
-Instagram publishing is unofficial local posting through `instagrapi`.
-Crossposter stores one session JSON per Instagram profile.
+Instagram publishing is unofficial local posting. Pick a method per profile with
+`INSTAGRAM_METHOD`:
 
-Required fields:
+- **`browser` (default, recommended)** drives a dedicated, isolated headless
+  Chromium (Playwright's bundled browser) with a one-time login per account. It
+  never touches your own Chrome, supports any account, and posts invisibly.
+- **`mobile`** uses the legacy `instagrapi` username/password flow.
+
+#### Browser method
+
+Install the browser engine once (Playwright + Chromium):
+
+```bash
+crossposter install-instagram-browser-deps
+# or, from a Git clone:
+./scripts/install-instagram-browser-deps.sh
+```
+
+Fields:
+
+```text
+INSTAGRAM_METHOD                # browser (default)
+INSTAGRAM_BROWSER_PROFILE_DIR   # unique per account, e.g. .instagram-browser/apoorvdarshan
+INSTAGRAM_BROWSER_HEADLESS      # true (invisible posting); false to watch the browser
+INSTAGRAM_BROWSER_TIMEOUT_MS    # login wait + publish step timeout, default 180000
+```
+
+Add one profile per Instagram account, give each a unique browser profile
+folder, then click **Log in to Instagram** in Settings. A real browser window
+opens once so you can sign in (including any 2FA or checkpoint); the session is
+saved into that folder and reused headlessly afterward. To add another account,
+add another profile with its own folder and log in again. If Instagram changes
+its create-post layout and a publish fails, set `INSTAGRAM_BROWSER_HEADLESS` to
+`false` to watch the flow.
+
+#### Mobile method (instagrapi)
+
+```bash
+crossposter install-instagram-deps
+# or, from a Git clone:
+./scripts/install-instagram-deps.sh
+```
+
+Required fields (when `INSTAGRAM_METHOD=mobile`):
 
 ```text
 INSTAGRAM_USERNAME
@@ -376,19 +416,11 @@ INSTAGRAM_PYTHON_COMMAND
 INSTAGRAM_TIMEOUT_MS
 ```
 
-Install Python dependencies:
-
-```bash
-crossposter install-instagram-deps
-# or, from a Git clone:
-./scripts/install-instagram-deps.sh
-```
-
 On first login or after a challenge, Instagram may require a current 2FA code
 or web/app verification. After the session file is saved, later publishes reuse
 that session until Instagram invalidates or challenges it.
 
-Supported media:
+Supported media (both methods):
 
 - image: JPG, PNG, or WebP up to 8 MB
 - video: MP4 or MOV up to 300 MB
@@ -663,8 +695,8 @@ Before exposing it publicly:
 - set `POSTER_REQUIRE_ADMIN_PASSWORD=true`
 - use a strong `POSTER_ADMIN_PASSWORD`
 - keep `poster.config.local.json` private
-- keep `.instagram-sessions`, `.pinterest-sessions`, and `.poster-uploads`
-  private
+- keep `.instagram-sessions`, `.instagram-browser`, `.pinterest-sessions`, and
+  `.poster-uploads` private
 - never commit API keys, access tokens, refresh tokens, app secrets, browser
   cookies, session files, or platform passwords
 - only connect accounts, pages, and profiles you own or are authorized to manage

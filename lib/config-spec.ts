@@ -73,41 +73,69 @@ export const configFields: ConfigField[] = [
     requiredFor: ["devto"]
   },
   {
+    name: "INSTAGRAM_METHOD",
+    label: "Instagram method",
+    help: "browser uses a dedicated headless Chromium with a per-profile login (recommended, works for any account). mobile uses the legacy instagrapi username/password flow.",
+    defaultValue: "browser",
+    showFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_BROWSER_PROFILE_DIR",
+    label: "Instagram browser profile folder",
+    help: "Folder for this account's isolated browser session, for example .instagram-browser/apoorvdarshan. Use a unique folder per Instagram account. Used by the browser method.",
+    defaultValue: ".instagram-browser/default",
+    showFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_BROWSER_HEADLESS",
+    label: "Instagram browser headless",
+    help: "Keep true so publishing runs invisibly. Set false to watch the browser if Instagram changes its layout or shows a checkpoint.",
+    defaultValue: "true",
+    showFor: ["instagram"]
+  },
+  {
+    name: "INSTAGRAM_BROWSER_TIMEOUT_MS",
+    label: "Instagram browser timeout",
+    help: "Timeout in milliseconds for the browser login wait and publish steps. Login needs enough time to sign in and pass 2FA.",
+    defaultValue: "180000",
+    showFor: ["instagram"]
+  },
+  {
     name: "INSTAGRAM_USERNAME",
     label: "Instagram username",
-    help: "Instagram username for this profile. Use one profile per account.",
-    requiredFor: ["instagram"]
+    help: "Required for the mobile (instagrapi) method. Instagram username for this profile.",
+    showFor: ["instagram"]
   },
   {
     name: "INSTAGRAM_PASSWORD",
     label: "Instagram password",
-    help: "Saved locally. instagrapi uses this with the saved session to refresh the mobile API login.",
+    help: "Required for the mobile (instagrapi) method. Saved locally and used with the saved session to refresh the mobile API login.",
     secret: true,
-    requiredFor: ["instagram"]
+    showFor: ["instagram"]
   },
   {
     name: "INSTAGRAM_SESSION_FILE",
     label: "Instagram session file",
-    help: "Path to this account's instagrapi session JSON, for example .instagram-sessions/apoorvdarshan.json.",
-    requiredFor: ["instagram"]
+    help: "Required for the mobile (instagrapi) method. Path to this account's instagrapi session JSON, for example .instagram-sessions/apoorvdarshan.json.",
+    showFor: ["instagram"]
   },
   {
     name: "INSTAGRAM_2FA_CODE",
     label: "Instagram 2FA code",
-    help: "Optional one-time code for first login or challenge recovery. Clear it after the session is saved.",
+    help: "Mobile method only. Optional one-time code for first login or challenge recovery. Clear it after the session is saved.",
     secret: true,
     showFor: ["instagram"]
   },
   {
     name: "INSTAGRAM_PYTHON_COMMAND",
     label: "Instagram Python command",
-    help: "Python command with instagrapi installed. Leave blank to use .venv/bin/python when present, then python3.",
+    help: "Python command with the Instagram dependencies installed. Leave blank to use .venv/bin/python when present, then python3.",
     showFor: ["instagram"]
   },
   {
     name: "INSTAGRAM_TIMEOUT_MS",
     label: "Instagram timeout",
-    help: "Timeout for instagrapi publishing in milliseconds.",
+    help: "Mobile method only. Timeout for instagrapi publishing in milliseconds.",
     defaultValue: "300000",
     showFor: ["instagram"]
   },

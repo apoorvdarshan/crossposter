@@ -139,6 +139,23 @@ function invalidReason(name: string, value: string): string | null {
 
       return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
     }
+    case "INSTAGRAM_METHOD":
+      return /^(browser|mobile)$/.test(value) ? null : "must be browser or mobile";
+    case "INSTAGRAM_BROWSER_PROFILE_DIR":
+      return /^[^\0\r\n]{1,500}$/.test(value)
+        ? null
+        : "must be a local browser session folder path";
+    case "INSTAGRAM_BROWSER_HEADLESS":
+      return value === "true" || value === "false" ? null : "must be true or false";
+    case "INSTAGRAM_BROWSER_TIMEOUT_MS": {
+      if (!/^\d+$/.test(value)) {
+        return "must be milliseconds";
+      }
+
+      const timeout = Number(value);
+
+      return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
+    }
     case "PINTEREST_EMAIL":
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : "must be an email address";
     case "PINTEREST_USERNAME":
@@ -300,6 +317,27 @@ export function validateConfigField(
     : null;
 }
 
+const instagramMobileFields = new Set([
+  "INSTAGRAM_USERNAME",
+  "INSTAGRAM_PASSWORD",
+  "INSTAGRAM_SESSION_FILE"
+]);
+
+function isFieldRequired(
+  field: ConfigField,
+  platform: Platform,
+  values: Record<string, string>
+): boolean {
+  if (platform === "instagram" && instagramMobileFields.has(field.name)) {
+    // The browser method logs in through a saved browser session, so the
+    // instagrapi username/password/session fields are only required when the
+    // profile is set to the mobile method.
+    return values.INSTAGRAM_METHOD?.trim() === "mobile";
+  }
+
+  return Boolean(field.requiredFor?.includes(platform));
+}
+
 export function validatePlatformConfig(
   platform: Platform,
   values: Record<string, string>
@@ -307,11 +345,7 @@ export function validatePlatformConfig(
   return configFields
     .filter((field) => field.requiredFor?.includes(platform) || field.showFor?.includes(platform))
     .map((field) =>
-      validateConfigField(
-        field,
-        values[field.name] || field.defaultValue,
-        Boolean(field.requiredFor?.includes(platform))
-      )
+      validateConfigField(field, values[field.name] || field.defaultValue, isFieldRequired(field, platform, values))
     )
     .filter((issue): issue is ConfigIssue => Boolean(issue));
 }

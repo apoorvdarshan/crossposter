@@ -3,6 +3,7 @@
 .env*.local
 poster.config.local.json
 .instagram-sessions
+.instagram-browser
 .pinterest-sessions
 .poster-uploads
 .venv
@@ -13,3 +14,4 @@ dist
 coverage
 *.log
 *.tsbuildinfo
+__pycache__

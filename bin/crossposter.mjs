@@ -63,6 +63,7 @@ Commands:
   crossposter install-service
   crossposter uninstall-service
   crossposter install-instagram-deps
+  crossposter install-instagram-browser-deps
   crossposter install-pinterest-deps
 
 The app code runs from the installed package. Local config, uploads, sessions,
@@ -323,6 +324,11 @@ async function main() {
 
   if (command === "install-instagram-deps") {
     runHelperScript("install-instagram-deps.sh", dataRoot);
+    return;
+  }
+
+  if (command === "install-instagram-browser-deps") {
+    runHelperScript("install-instagram-browser-deps.sh", dataRoot);
     return;
   }
 
