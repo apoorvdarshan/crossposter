@@ -45,6 +45,7 @@ import {
 import type {
   ComposeDraft,
   Platform,
+  PublishedMedia,
   PublishedPost,
   PublishResult,
   PublishTarget,
@@ -591,6 +592,42 @@ async function saveStoredDraftMedia(file: File | null): Promise<void> {
     } satisfies StoredDraftMedia)
   );
   await withDraftStore("readwrite", (store) => store.delete(draftMediaKey), legacyDraftDbName);
+}
+
+// Re-download an already-uploaded draft media (e.g. staged by an agent via the
+// API) so it becomes the normal local Compose media — preview, limit checks, and
+// publishing then all work unchanged.
+async function fileFromDraftMedia(media: PublishedMedia): Promise<File | null> {
+  if (!media?.url) {
+    return null;
+  }
+
+  // The stored URL may use the server's bind host (e.g. 0.0.0.0); fetch the path
+  // on the current origin so it resolves in the browser.
+  let target = media.url;
+
+  try {
+    const parsed = new URL(media.url, window.location.origin);
+    target = `${parsed.pathname}${parsed.search}`;
+  } catch {
+    // keep the original url
+  }
+
+  try {
+    const response = await fetch(target, { cache: "no-store" });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const blob = await response.blob();
+
+    return new File([blob], media.filename || "draft-media", {
+      type: media.contentType || blob.type || "application/octet-stream"
+    });
+  } catch {
+    return null;
+  }
 }
 
 function formatApiError(error: unknown): string {
@@ -1506,7 +1543,14 @@ export default function Home() {
         const browserDraft = readStoredDraft();
         const draft = newestDraft(body.draft, browserDraft);
         const hasDraft = draftTimestamp(draft) > 0;
-        const storedMedia = await readStoredDraftMedia();
+        // Prefer media attached to the server draft when it is the newest draft
+        // (e.g. an agent staged a post + image via the API); otherwise fall back
+        // to this browser's locally attached media.
+        const serverMediaImport =
+          body.draft?.media && draftTimestamp(body.draft) >= draftTimestamp(browserDraft)
+            ? await fileFromDraftMedia(body.draft.media)
+            : null;
+        const storedMedia = serverMediaImport || (await readStoredDraftMedia());
 
         if (!active) {
           return;

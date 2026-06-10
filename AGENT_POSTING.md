@@ -191,6 +191,22 @@ To put a composed post into the human's Compose screen for them to review/send:
              "platforms": ["x"], "targets": [] } }
 ```
 
+**To stage a draft with an image/video** so it previews in Compose: first upload
+via `POST /api/media` (§4), then include the **whole returned media object** as
+`media` (not just the id):
+
+```jsonc
+{ "draft": {
+    "text": "Caption to review",
+    "platforms": ["instagram"],
+    "media": { "id": "a1b2c3...", "url": "/api/media/a1b2c3...", "filename": "photo.jpg",
+               "contentType": "image/jpeg", "size": 482311, "kind": "image" }
+} }
+```
+
+When the human opens the Compose screen, the attached media is imported and shown
+in the preview, ready for them to publish or schedule.
+
 `GET /api/draft` returns the current draft + recent published history.
 `DELETE /api/draft?scope=draft` clears it (`?scope=history` clears history).
 

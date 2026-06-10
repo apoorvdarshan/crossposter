@@ -54,6 +54,7 @@ export type ComposeDraft = {
   linkUrl: string;
   platforms: Platform[];
   targets?: PublishTarget[];
+  media?: PublishedMedia;
   updatedAt?: string;
 };
 

@@ -183,6 +183,7 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
 
   const record = value as Record<string, unknown>;
   const updatedAt = stringValue(record.updatedAt, 40);
+  const media = normalizePublishedMedia(record.media);
 
   return {
     title: stringValue(record.title, 300),
@@ -190,6 +191,7 @@ function normalizeComposeDraft(value: unknown): ComposeDraft {
     linkUrl: stringValue(record.linkUrl, 2048) || stringValue(record.url, 2048),
     platforms: normalizePlatforms(record.platforms),
     targets: normalizePublishTargets(record.targets),
+    ...(media ? { media } : {}),
     ...(updatedAt ? { updatedAt } : {})
   };
 }
