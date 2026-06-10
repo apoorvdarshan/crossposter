@@ -119,8 +119,7 @@ function targetLimitInput(target: PublishTarget) {
   return {
     platform: target.platform,
     profileLabel: target.profileLabel,
-    xPremium: target.platform === "x" && getConfigValue("X_PREMIUM_LONG_POSTS", target.profileId) === "true",
-    xMethod: getConfigValue("X_METHOD", target.profileId) === "browser" ? "browser" : "bird"
+    xPremium: target.platform === "x" && getConfigValue("X_PREMIUM_LONG_POSTS", target.profileId) === "true"
   };
 }
 

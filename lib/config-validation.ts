@@ -233,27 +233,6 @@ function invalidReason(name: string, value: string): string | null {
       return /^[A-Za-z0-9_-]{2,20}$/.test(value)
         ? null
         : "must be a Hacker News username";
-    case "X_METHOD":
-      return /^(bird|browser)$/.test(value) ? null : "must be bird or browser";
-    case "X_BROWSER_PROFILE_DIR":
-      return /^[^\0\r\n]{1,500}$/.test(value)
-        ? null
-        : "must be a local browser session folder path";
-    case "X_BROWSER_HEADLESS":
-      return value === "true" || value === "false" ? null : "must be true or false";
-    case "X_BROWSER_TIMEOUT_MS": {
-      if (!/^\d+$/.test(value)) {
-        return "must be milliseconds";
-      }
-
-      const timeout = Number(value);
-
-      return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
-    }
-    case "X_PYTHON_COMMAND":
-      return /^[A-Za-z0-9_./-]+$/.test(value)
-        ? null
-        : "must be a command name or path without spaces";
     case "X_BIRD_COMMAND":
       return /^[A-Za-z0-9_./-]+$/.test(value)
         ? null

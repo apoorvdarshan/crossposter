@@ -1458,9 +1458,7 @@ export default function Home() {
       selectedTargets.map((target) => ({
         platform: target.id,
         profileLabel: target.profileLabel,
-        xPremium: target.id === "x" && target.profileValues.X_PREMIUM_LONG_POSTS === "true",
-        xMethod:
-          target.id === "x" && target.profileValues.X_METHOD === "browser" ? "browser" : "bird"
+        xPremium: target.id === "x" && target.profileValues.X_PREMIUM_LONG_POSTS === "true"
       })),
     [selectedTargets]
   );
@@ -2381,9 +2379,7 @@ export default function Home() {
   const titleLimitWarnings = titleLimitHints.filter((hint) => hint.isWarning);
   const postLimitHints = selectedLimitTargets
     .map((target) => {
-      const xLongPosts =
-        target.platform === "x" && target.xPremium === true && target.xMethod === "browser";
-      const limit = postTextLimitForPlatform(target.platform, xLongPosts);
+      const limit = postTextLimitForPlatform(target.platform);
 
       if (!limit) {
         return null;
