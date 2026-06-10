@@ -44,6 +44,32 @@ function parseTweetUrl(output: string): string | undefined {
   return id ? `https://x.com/i/status/${id}` : undefined;
 }
 
+function friendlyBirdError(detail: string): string {
+  const lowered = detail.toLowerCase();
+
+  if (lowered.includes("(344)") || lowered.includes("daily limit")) {
+    return "X is rate-limiting this account (daily Tweet/message limit, code 344). Wait a while before posting again.";
+  }
+
+  if (lowered.includes("(326)") || lowered.includes("temporarily locked")) {
+    return "This X account is temporarily locked. Resolve it on x.com, then try again.";
+  }
+
+  if (lowered.includes("(187)") || lowered.includes("duplicate")) {
+    return "X rejected this as a duplicate of a recent post. Change the text and try again.";
+  }
+
+  if (lowered.includes("(88)") || lowered.includes("rate limit")) {
+    return "X rate limit reached. Wait a few minutes before posting again.";
+  }
+
+  if (lowered.includes("tweet created but no id returned")) {
+    return "bird could not confirm the post — X likely blocked or rate-limited it. Check the account on x.com before retrying.";
+  }
+
+  return detail || "bird failed. Run `bird check` in Terminal to verify your X browser cookies.";
+}
+
 function birdCommand(profileId: string | undefined): string {
   const command = optionalEnv("X_BIRD_COMMAND", profileId)?.trim() || "bird";
 
@@ -150,12 +176,7 @@ async function runBird(command: string, args: string[], timeout: number): Promis
         if (error) {
           const detail = trimOutput([stderr, stdout, error.message].filter(Boolean).join(" "));
 
-          reject(
-            new Error(
-              detail ||
-                "bird failed. Run `bird check` in Terminal to verify your X browser cookies."
-            )
-          );
+          reject(new Error(friendlyBirdError(detail)));
           return;
         }
 
