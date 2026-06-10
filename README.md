@@ -262,6 +262,16 @@ Media limits:
 Use this only for accounts you control. X can still challenge, limit, or lock
 accounts for suspicious or high-volume automation.
 
+**Rate limits.** `bird` posts through X's own web GraphQL API using your session,
+so X applies its anti-automation rules to those requests. Bursty or repeated
+automated posts (including failed/retried attempts) can trip X's throttle, which
+surfaces as **error 344 ("daily limit for sending Tweets and messages")** even
+when normal browser posting still works for the same account. This is X
+rate-limiting the automated request pattern, not a Crossposter or `bird` bug.
+Crossposter maps common X errors (344 daily limit, 326 locked, 187 duplicate,
+88 rate limit) to clear messages. If you hit one, wait a while and post one at a
+time, spaced out, rather than in bursts.
+
 ### LinkedIn
 
 LinkedIn can be connected from the local Settings page after creating a LinkedIn
