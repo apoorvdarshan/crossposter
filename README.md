@@ -114,6 +114,15 @@ the scheduled time:
 If the server is offline when a post is due, it will publish the next time the
 server starts and the scheduler tick runs.
 
+## Posting From An Agent (HTTP API)
+
+Crossposter exposes a small local HTTP API (`/api/health`, `/api/config`,
+`/api/media`, `/api/publish`, `/api/scheduled`, `/api/draft`) so an external
+agent or script can publish, schedule, or stage drafts (including media) without
+the UI. See [`AGENT_POSTING.md`](AGENT_POSTING.md) — a self-contained guide you
+can hand to an agent so it can post through your running server on
+`http://localhost:2004`.
+
 ## Run Locally
 
 ### Recommended: npx Launcher

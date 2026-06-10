@@ -1,6 +1,6 @@
 {
   "name": "@apoorvdarshan/crossposter",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Local-first social publishing dashboard for accounts you control.",
   "license": "MIT",
   "homepage": "https://crossposter.apoorvdarshan.com",
@@ -27,7 +27,8 @@
     "tsconfig.json",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "AGENT_POSTING.md"
   ],
   "scripts": {
     "dev": "next dev",

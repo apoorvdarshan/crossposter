@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Add `AGENT_POSTING.md`, a self-contained guide an external agent can use to publish, schedule, or stage drafts through the local HTTP API without reading the source.
+- Persist media on the compose draft so a draft staged via the API (with an already-uploaded image/video) previews in Compose, ready to publish or schedule.
+
 ## 1.1.0
 
 - Add a dedicated headless-browser Instagram publishing method: a one-time per-account login in real Chrome (isolated profile, separate from your own Chrome), then invisible posting via the web app. Replaces the legacy instagrapi flow.
