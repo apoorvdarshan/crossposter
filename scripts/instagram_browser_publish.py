@@ -109,6 +109,59 @@ def attach_media(page, media_path):
         ) from exc
 
 
+def set_aspect_ratio(page):
+    """On the crop screen, pick the aspect matching the media's orientation.
+
+    Instagram defaults the crop to 1:1 (square). We open the crop selector and
+    choose the preset that matches the source orientation so a vertical video
+    posts as a vertical reel instead of being square-cropped. The crop presets
+    are matched by their icon labels (Crop portrait/landscape/square icon) so we
+    never accidentally hit unrelated controls like "Original audio".
+    """
+    opened = False
+    for sel in ('svg[aria-label="Select crop"]', '[aria-label="Select crop"]'):
+        try:
+            crop = page.locator(sel).first
+            if crop.is_visible(timeout=3000):
+                crop.click()
+                opened = True
+                break
+        except Exception:
+            continue
+
+    if not opened:
+        return
+
+    page.wait_for_timeout(900)
+
+    dims = page.evaluate(
+        """() => {
+          const v = document.querySelector('[role=dialog] video');
+          if (v && v.videoWidth) return {w: v.videoWidth, h: v.videoHeight};
+          const img = [...document.querySelectorAll('[role=dialog] img')].find(i => i.naturalWidth > 200);
+          if (img) return {w: img.naturalWidth, h: img.naturalHeight};
+          return null;
+        }"""
+    )
+
+    if dims and dims["h"] > dims["w"] * 1.02:
+        targets = ["Crop portrait icon", "Crop square icon"]
+    elif dims and dims["w"] > dims["h"] * 1.02:
+        targets = ["Crop landscape icon", "Crop square icon"]
+    else:
+        targets = ["Crop square icon"]
+
+    for label in targets:
+        try:
+            option = page.get_by_role("button", name=re.compile(re.escape(label), re.I)).first
+            if option.is_visible(timeout=1200):
+                option.click()
+                page.wait_for_timeout(700)
+                return
+        except Exception:
+            continue
+
+
 def share_button(page):
     return page.get_by_role("button", name=re.compile("^Share$", re.I)).first
 
@@ -228,6 +281,7 @@ def run_publish(context, args):
     open_create_dialog(page)
     attach_media(page, args.media)
     page.wait_for_timeout(4000)
+    set_aspect_ratio(page)
 
     if not advance_to_share(page):
         raise RuntimeError(
