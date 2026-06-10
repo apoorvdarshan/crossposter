@@ -150,14 +150,6 @@ async function runBird(command: string, args: string[], timeout: number): Promis
         if (error) {
           const detail = trimOutput([stderr, stdout, error.message].filter(Boolean).join(" "));
 
-          // bird posts the tweet but sometimes can't read back the tweet ID
-          // (common with video). It then exits non-zero with "Tweet created but
-          // no ID returned" even though the post went through — treat as success.
-          if (/tweet created but no id returned/i.test(detail)) {
-            resolve({ stdout, stderr });
-            return;
-          }
-
           reject(
             new Error(
               detail ||
@@ -204,9 +196,6 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
   ];
   const result = await runBird(command, args, timeout);
   const output = [result.stdout, result.stderr].join("\n");
-  const url = parseTweetUrl(output);
-  const base = ctx.media ? `Published with ${ctx.media.kind}` : "Published";
-  const noLink = !url && /tweet created but no id returned/i.test(output);
 
   return {
     platform: "x",
@@ -214,7 +203,7 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
     profileId,
     profileLabel: ctx.target?.profileLabel,
     ok: true,
-    message: noLink ? `${base} (X did not return a post link)` : base,
-    url
+    message: ctx.media ? `Published with ${ctx.media.kind}` : "Published",
+    url: parseTweetUrl(output)
   };
 }
