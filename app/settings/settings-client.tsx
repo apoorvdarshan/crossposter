@@ -226,24 +226,21 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   x: {
     title: "X / Twitter setup",
     intro:
-      "Unofficial local posting through @steipete/bird. Crossposter calls bird locally and bird uses your existing browser cookies.",
+      "Unofficial local posting with two methods. Bird (default) calls @steipete/bird with your existing browser cookies. Browser drives a dedicated headless Chrome with a one-time per-profile login, like Instagram, and supports X Premium long posts (up to 25,000 characters).",
     links: [
       { label: "bird.fast", href: "https://bird.fast/" },
       { label: "@steipete/bird", href: "https://www.npmjs.com/package/@steipete/bird" },
+      { label: "Playwright", href: "https://playwright.dev/python/" },
       { label: "X automation rules", href: "https://help.x.com/articles/76915-automation-rules-and-best-practices" }
     ],
     steps: [
-      "Install bird in Terminal with npm install -g @steipete/bird.",
-      "Log in to x.com in Chrome, Firefox, or Safari.",
-      "Run bird check in Terminal and confirm it says Ready to tweet.",
-      "Add an X / Twitter profile here.",
-      "Leave X bird command as bird unless you need an absolute path such as /opt/homebrew/bin/bird.",
-      "Optionally set cookie source to chrome, firefox, or safari.",
-      "Optionally set Chrome or Firefox profile names if bird check needs them.",
-      "Turn on X Premium media limits only for Premium accounts. Text still uses Bird's 280-character tweet limit; Premium raises video size.",
-      "Save config, then select X / Twitter on the Dashboard.",
-      "Crossposter publishes user-triggered posts only. X may still limit or lock accounts for spammy or automated-looking behavior.",
-      "Local images, GIFs, and MP4 video are passed to bird as media attachments."
+      "Bird method: install bird with npm install -g @steipete/bird, log in to x.com in Chrome/Firefox/Safari, run bird check, and leave X method on Bird.",
+      "Browser method: install the engine with crossposter install-instagram-browser-deps, set X method to Browser, set X browser profile folder to a unique folder per account (for example .x-browser/yourhandle), then click Log in to X and sign in once.",
+      "Add one X profile here for each account.",
+      "Turn on X Premium limits only for Premium accounts. It raises video size to 16 GB, and with the Browser method raises the post text limit from 280 to 25,000 characters. Bird always caps text at 280.",
+      "Keep X browser headless on so posting runs invisibly; set it false only to watch the browser if a post fails.",
+      "Save config, then select X / Twitter on the Dashboard. Attach a local JPG, PNG, WebP, GIF, or MP4 if you want media.",
+      "Crossposter publishes user-triggered posts only. X may still limit or lock accounts for spammy or automated-looking behavior."
     ]
   },
   instagram: {
@@ -557,6 +554,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [importingHackerNewsCookie, setImportingHackerNewsCookie] = useState("");
   const [importingYouTubeCookie, setImportingYouTubeCookie] = useState("");
   const [connectingInstagram, setConnectingInstagram] = useState("");
+  const [connectingX, setConnectingX] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
   const [isCheckingAppVersion, setIsCheckingAppVersion] = useState(false);
@@ -1252,6 +1250,41 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  async function connectX(profile: ProviderProfile) {
+    setConnectingX(profile.id);
+    setStatus("A browser window is opening. Sign in to X (including any 2FA), then it saves and closes.");
+
+    try {
+      const saved = await saveConfig();
+
+      if (!saved) {
+        return;
+      }
+
+      const response = await fetch("/api/auth/x/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ profileId: profile.id })
+      });
+      const body = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not complete the X browser login.");
+        return;
+      }
+
+      await loadConfig();
+      setStatus(body.message || "X session saved for this profile.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not complete the X browser login.");
+    } finally {
+      setConnectingX("");
+    }
+  }
+
   async function openConfigFile() {
     setStatus("");
 
@@ -1466,6 +1499,17 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                       {connectingInstagram === profile.id ? "Opening browser..." : "Log in to Instagram"}
                     </button>
                   ) : null}
+                  {platform.id === "x" && (profile.values.X_METHOD || "bird") === "browser" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void connectX(profile)}
+                      disabled={Boolean(connectingX)}
+                    >
+                      <RefreshCw size={15} />
+                      {connectingX === profile.id ? "Opening browser..." : "Log in to X"}
+                    </button>
+                  ) : null}
                   {platform.id === "hackernews" ? (
                     <button
                       className="secondary compact-button"
@@ -1526,12 +1570,42 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                   field.name === "X_PREMIUM_LONG_POSTS" ||
                   field.name === "DRIBBBLE_LOW_PROFILE" ||
                   field.name === "PINTEREST_HEADLESS" ||
-                  field.name === "INSTAGRAM_BROWSER_HEADLESS";
+                  field.name === "INSTAGRAM_BROWSER_HEADLESS" ||
+                  field.name === "X_BROWSER_HEADLESS";
                 const issue = validateConfigField(
                   field,
                   fieldValue,
                   Boolean(field.requiredFor?.includes(platform.id))
                 );
+
+                if (field.name === "X_METHOD") {
+                  return (
+                    <label
+                      className={`config-field ${issue ? "is-invalid" : ""}`}
+                      key={field.name}
+                    >
+                      <span>{field.label}</span>
+                      <select
+                        value={fieldValue === "browser" ? "browser" : "bird"}
+                        onChange={(event) =>
+                          updateProfile(platform.id, profile.id, {
+                            ...profile,
+                            values: {
+                              ...profile.values,
+                              [field.name]: event.target.value
+                            }
+                          })
+                        }
+                      >
+                        <option value="bird">Bird CLI (default)</option>
+                        <option value="browser">Browser (headless Chrome)</option>
+                      </select>
+                      <span className={`field-hint ${issue ? "is-warning" : ""}`}>
+                        {issue?.message || field.help}
+                      </span>
+                    </label>
+                  );
+                }
 
                 if (isBooleanField) {
                   return (
@@ -1563,12 +1637,13 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                               ? fieldValue === "true"
                                 ? "Headless Chrome login"
                                 : "Visible Chrome login"
-                            : field.name === "INSTAGRAM_BROWSER_HEADLESS"
+                            : field.name === "INSTAGRAM_BROWSER_HEADLESS" ||
+                                field.name === "X_BROWSER_HEADLESS"
                               ? fieldValue === "true"
                                 ? "Invisible posting"
                                 : "Visible browser"
                             : fieldValue === "true"
-                              ? "Premium video limit"
+                              ? "Premium limits (25k text / 16 GB video)"
                               : "280 chars / 512 MB video"}
                         </span>
                       </span>

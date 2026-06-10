@@ -7,7 +7,14 @@ import {
   xMediaSizeLimit,
   xPostTextLimit
 } from "@/lib/platform-limits";
+import { appPath } from "@/lib/runtime-paths";
 import type { ProviderContext, PublishResult } from "@/lib/types";
+import {
+  runXScript,
+  xBrowserHeadless,
+  xBrowserProfileDir,
+  xBrowserTimeout
+} from "@/lib/x-browser";
 
 type BirdRunResult = {
   stdout: string;
@@ -99,19 +106,23 @@ function isPremiumProfile(profileId: string | undefined): boolean {
   return optionalEnv("X_PREMIUM_LONG_POSTS", profileId)?.trim() === "true";
 }
 
-function mediaArgs(ctx: ProviderContext, isPremium: boolean): string[] {
+function xMethod(profileId: string | undefined): "bird" | "browser" {
+  return optionalEnv("X_METHOD", profileId)?.trim() === "browser" ? "browser" : "bird";
+}
+
+function validateXMedia(ctx: ProviderContext, isPremium: boolean): "image" | "video" | undefined {
   if (!ctx.media) {
-    return [];
+    return undefined;
   }
 
   if (ctx.media.kind === "image" && !xImageTypes.has(ctx.media.contentType)) {
     throw new Error(
-      `X supports JPG, PNG, WebP, and GIF images through bird; selected file is ${ctx.media.contentType}.`
+      `X supports JPG, PNG, WebP, and GIF images; selected file is ${ctx.media.contentType}.`
     );
   }
 
   if (ctx.media.kind === "video" && !xVideoTypes.has(ctx.media.contentType)) {
-    throw new Error(`X supports MP4 video through bird; selected file is ${ctx.media.contentType}.`);
+    throw new Error(`X supports MP4 video; selected file is ${ctx.media.contentType}.`);
   }
 
   if (ctx.media.kind !== "image" && ctx.media.kind !== "video") {
@@ -126,11 +137,51 @@ function mediaArgs(ctx: ProviderContext, isPremium: boolean): string[] {
     );
   }
 
+  return ctx.media.kind;
+}
+
+function mediaArgs(ctx: ProviderContext, isPremium: boolean): string[] {
+  if (!validateXMedia(ctx, isPremium) || !ctx.media) {
+    return [];
+  }
+
   return [
     "--media",
     ctx.media.path,
     ...(ctx.title?.trim() ? ["--alt", ctx.title.trim()] : [])
   ];
+}
+
+async function publishViaBrowser(
+  ctx: ProviderContext,
+  text: string
+): Promise<{ message: string; url?: string }> {
+  const profileId = ctx.target?.profileId;
+  const isPremium = isPremiumProfile(profileId);
+  const kind = validateXMedia(ctx, isPremium);
+  const userDataDir = xBrowserProfileDir(profileId);
+  const headless = xBrowserHeadless(profileId);
+  const base = xBrowserTimeout(profileId);
+  const timeout = kind === "video" ? Math.max(base, videoBirdTimeoutMs) : base;
+  const scriptPath = appPath("scripts", "x_browser_publish.py");
+  const args = [
+    scriptPath,
+    "--user-data-dir",
+    userDataDir,
+    "--text",
+    text,
+    ...(kind ? ["--media", ctx.media?.path || "", "--kind", kind] : ["--kind", "none"]),
+    "--headless",
+    headless ? "true" : "false",
+    "--timeout-ms",
+    String(timeout)
+  ];
+  const result = await runXScript(args, timeout, profileId);
+
+  return {
+    message: kind ? `Published with ${kind}` : "Published",
+    url: result.url
+  };
 }
 
 async function runBird(command: string, args: string[], timeout: number): Promise<BirdRunResult> {
@@ -173,7 +224,9 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
   const text = compactText([ctx.text]);
   const length = textLength(text);
   const isPremium = isPremiumProfile(profileId);
-  const limit = xPostTextLimit();
+  const method = xMethod(profileId);
+  // Long posts (up to 25k) require X Premium AND the browser method; bird caps at 280.
+  const limit = xPostTextLimit(isPremium && method === "browser");
 
   if (!text) {
     throw new Error("X requires post text.");
@@ -181,6 +234,20 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
 
   if (length > limit) {
     throw new Error(`X allows ${limit} characters for this profile; this post is ${length}.`);
+  }
+
+  if (method === "browser") {
+    const result = await publishViaBrowser(ctx, text);
+
+    return {
+      platform: "x",
+      targetId: ctx.target?.id,
+      profileId,
+      profileLabel: ctx.target?.profileLabel,
+      ok: true,
+      message: result.message,
+      url: result.url
+    };
   }
 
   const command = birdCommand(profileId);

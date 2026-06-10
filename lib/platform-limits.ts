@@ -6,6 +6,7 @@ export const linkedInPostTextLimit = 3_000;
 export const mastodonPostTextLimit = 500;
 export const youtubeDescriptionLimit = 5_000;
 export const xFreePostTextLimit = 280;
+export const xPremiumPostTextLimit = 25_000;
 export const xPhotoMediaSizeLimit = 5 * 1024 * 1024;
 export const xGifMediaSizeLimit = 15 * 1024 * 1024;
 export const xFreeVideoMediaSizeLimit = 512 * 1024 * 1024;
@@ -117,8 +118,8 @@ export function titleLimitForPlatform(platform: Platform): number | undefined {
   return undefined;
 }
 
-export function xPostTextLimit(): number {
-  return xFreePostTextLimit;
+export function xPostTextLimit(longPosts = false): number {
+  return longPosts ? xPremiumPostTextLimit : xFreePostTextLimit;
 }
 
 export function xMediaSizeLimit(
@@ -141,7 +142,7 @@ export function xMediaSizeLimit(
   return undefined;
 }
 
-export function postTextLimitForPlatform(platform: Platform): number | undefined {
+export function postTextLimitForPlatform(platform: Platform, xLongPosts = false): number | undefined {
   if (platform === "bluesky") {
     return blueskyPostTextLimit;
   }
@@ -171,7 +172,7 @@ export function postTextLimitForPlatform(platform: Platform): number | undefined
   }
 
   if (platform === "x") {
-    return xPostTextLimit();
+    return xPostTextLimit(xLongPosts);
   }
 
   return undefined;
@@ -224,7 +225,7 @@ export function postLimitIssues(platforms: Platform[], text: string): DraftLimit
 }
 
 export function postLimitIssuesForTargets(
-  targets: Array<{ platform: Platform; profileLabel?: string; xPremium?: boolean }>,
+  targets: Array<{ platform: Platform; profileLabel?: string; xPremium?: boolean; xMethod?: string }>,
   text: string
 ): DraftLimitIssue[] {
   const textValue = text.trim();
@@ -241,7 +242,9 @@ export function postLimitIssuesForTargets(
 
     seen.add(key);
 
-    const limit = postTextLimitForPlatform(target.platform);
+    const xLongPosts =
+      target.platform === "x" && target.xPremium === true && target.xMethod === "browser";
+    const limit = postTextLimitForPlatform(target.platform, xLongPosts);
 
     if (limit && length > limit) {
       const label = limitTargetLabel(target);

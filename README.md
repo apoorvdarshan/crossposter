@@ -48,7 +48,7 @@ challenges, rate limits, failed posts, or account restrictions.
 
 | Channel | Current support |
 | --- | --- |
-| X / Twitter | Unofficial local posting through `bird`, with text, images, GIFs, and video |
+| X / Twitter | Unofficial local posting through `bird` or an isolated headless browser session, with text, images, GIFs, and video |
 | LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
 | Bluesky | Text posts and local image media |
 | Mastodon | Text posts and local media |
@@ -229,29 +229,60 @@ POSTER_ADMIN_PASSWORD=strong-password-here
 
 ### X / Twitter
 
-X publishing is unofficial local posting through
-[`@steipete/bird`](https://github.com/steipete/bird). `bird` uses browser
-cookies from an account you are already signed into.
+X publishing is unofficial local posting with two methods, chosen per profile
+with `X_METHOD`:
 
-Required field:
+- **`bird` (default)** uses [`@steipete/bird`](https://github.com/steipete/bird),
+  which reads browser cookies from an account you are already signed into.
+- **`browser`** drives a dedicated, isolated headless Chrome with a one-time
+  per-profile login (like the Instagram browser method) and supports X Premium
+  long posts.
+
+#### Bird method
 
 ```text
-X_BIRD_COMMAND
+X_BIRD_COMMAND            # required (defaults to "bird")
+X_BIRD_COOKIE_SOURCE      # optional: chrome | firefox | safari
+X_BIRD_CHROME_PROFILE     # optional
+X_BIRD_FIREFOX_PROFILE    # optional
+X_BIRD_TIMEOUT_MS         # optional
 ```
 
-Optional fields:
+Install bird with `npm install -g @steipete/bird`, sign in to x.com in your
+browser, run `bird check`, and leave `X_METHOD=bird`.
+
+#### Browser method
+
+Install the shared browser engine once (same as Instagram):
+
+```bash
+crossposter install-instagram-browser-deps
+# or, from a Git clone:
+./scripts/install-instagram-browser-deps.sh
+```
 
 ```text
-X_BIRD_COOKIE_SOURCE
-X_BIRD_CHROME_PROFILE
-X_BIRD_FIREFOX_PROFILE
-X_BIRD_TIMEOUT_MS
-X_PREMIUM_LONG_POSTS
+X_METHOD                  # set to "browser"
+X_BROWSER_PROFILE_DIR     # unique per account, e.g. .x-browser/yourhandle
+X_BROWSER_HEADLESS        # true (invisible posting); false to watch the browser
+X_BROWSER_TIMEOUT_MS      # login wait + publish step timeout, default 180000
+X_PYTHON_COMMAND          # optional; defaults to .venv/bin/python, then python3
 ```
 
-Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. Crossposter uses
-Bird's 280 character tweet limit for X text. The Premium toggle is only used
-for larger X video uploads.
+Set `X_METHOD=browser`, give each account a unique browser profile folder, then
+click **Log in to X** in Settings and sign in once. It prefers your installed
+Google Chrome (falling back to bundled Chromium); video uploads require Chrome.
+
+#### Character limit
+
+```text
+X_PREMIUM_LONG_POSTS      # true only for X Premium accounts
+```
+
+X allows **280** characters by default and up to **25,000** for X Premium. The
+25,000 limit applies only with `X_PREMIUM_LONG_POSTS=true` **and** the browser
+method — the bird method always caps text at 280. The Premium toggle also raises
+the video size limit from 512 MB to 16 GB.
 
 Media limits:
 

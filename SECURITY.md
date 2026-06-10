@@ -42,6 +42,7 @@ Do not commit:
 - `.env`
 - `.instagram-sessions`
 - `.instagram-browser`
+- `.x-browser`
 - `.pinterest-sessions`
 - `.poster-uploads`
 - access tokens

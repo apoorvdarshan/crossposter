@@ -344,9 +344,43 @@ export const configFields: ConfigField[] = [
     showFor: ["hackernews"]
   },
   {
+    name: "X_METHOD",
+    label: "X method",
+    help: "bird uses the @steipete/bird CLI with your browser cookies (default). browser uses a dedicated headless Chrome with a per-profile login, like Instagram, and supports X Premium long posts.",
+    defaultValue: "bird",
+    showFor: ["x"]
+  },
+  {
+    name: "X_BROWSER_PROFILE_DIR",
+    label: "X browser profile folder",
+    help: "Folder for this account's isolated browser session, for example .x-browser/yourhandle. Use a unique folder per X account. Used by the browser method.",
+    defaultValue: ".x-browser/default",
+    showFor: ["x"]
+  },
+  {
+    name: "X_BROWSER_HEADLESS",
+    label: "X browser headless",
+    help: "Keep true so posting runs invisibly. Set false to watch the browser if X changes its layout or shows a checkpoint. Used by the browser method.",
+    defaultValue: "true",
+    showFor: ["x"]
+  },
+  {
+    name: "X_BROWSER_TIMEOUT_MS",
+    label: "X browser timeout",
+    help: "Timeout in milliseconds for the browser login wait and publish steps. Used by the browser method.",
+    defaultValue: "180000",
+    showFor: ["x"]
+  },
+  {
+    name: "X_PYTHON_COMMAND",
+    label: "X Python command",
+    help: "Python command with Playwright installed. Leave blank to use .venv/bin/python when present, then python3. Used by the browser method.",
+    showFor: ["x"]
+  },
+  {
     name: "X_BIRD_COMMAND",
     label: "X bird command",
-    help: "Command or absolute path for @steipete/bird. Leave as bird when it is on PATH.",
+    help: "Command or absolute path for @steipete/bird. Leave as bird when it is on PATH. Used by the bird method.",
     defaultValue: "bird",
     showFor: ["x"]
   },
@@ -377,8 +411,8 @@ export const configFields: ConfigField[] = [
   },
   {
     name: "X_PREMIUM_LONG_POSTS",
-    label: "X Premium media limits",
-    help: "Set true only for X Premium accounts. Text still uses Bird's 280-character tweet limit; Premium raises video size from 512 MB to 16 GB.",
+    label: "X Premium limits",
+    help: "Set true only for X Premium accounts. Raises video size from 512 MB to 16 GB. With the browser method it also raises the post text limit from 280 to 25,000 characters; the bird method always caps text at 280.",
     defaultValue: "false",
     showFor: ["x"]
   }
