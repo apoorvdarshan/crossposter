@@ -238,7 +238,19 @@ def run_publish(context, args):
     share_post(page)
 
     if wait_for_share_complete(page, args.timeout_ms):
-        return {"ok": True, "message": f"Published with {args.kind}."}
+        # Link to the account profile (folder is named after the account).
+        username = Path(args.user_data_dir).name
+        url = (
+            f"https://www.instagram.com/{username}/"
+            if re.fullmatch(r"[A-Za-z0-9._]{1,30}", username or "") and username != "default"
+            else None
+        )
+
+        return {
+            "ok": True,
+            "message": f"Published with {args.kind}.",
+            **({"url": url} if url else {}),
+        }
 
     return {
         "ok": False,
