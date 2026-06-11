@@ -416,10 +416,6 @@ export function writeLocalConfig(config: LocalConfigFile): LocalConfigFile {
 export function appendPublishedPost(post: PublishedPost): PublishedPost | undefined {
   const localConfig = readLocalConfig();
 
-  if (!post.results.some((result) => result.ok)) {
-    return undefined;
-  }
-
   const [saved] = writeLocalConfig({
     ...localConfig,
     publishedPosts: [post, ...localConfig.publishedPosts]
