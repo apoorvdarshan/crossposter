@@ -2425,13 +2425,7 @@ a.history-platform.ok:hover {
 }
 
 .scheduler-day.is-today .scheduler-day-number {
-  background: var(--counter-bg);
-  color: var(--heading-ink);
-}
-
-.scheduler-day.is-selected .scheduler-day-number {
-  background: var(--accent);
-  color: var(--accent-contrast);
+  color: var(--accent);
 }
 
 .scheduler-day-count {
