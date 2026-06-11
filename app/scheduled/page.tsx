@@ -17,6 +17,7 @@ import {
   Trash2,
   Video
 } from "lucide-react";
+import { ProjectLinks } from "@/components/project-links";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Platform, PublishTarget, ScheduledPost } from "@/lib/types";
@@ -341,9 +342,10 @@ export default function ScheduledPage() {
             src="/assets/logo-crossposter.png"
             width="46"
           />
-          <div>
+          <div className="brand-copy">
             <p className="eyebrow">Posting queue</p>
             <h1>Scheduler</h1>
+            <ProjectLinks />
           </div>
         </div>
         <div className="masthead-actions">

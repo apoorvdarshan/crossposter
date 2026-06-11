@@ -19,6 +19,7 @@ import {
   Save,
   Trash2
 } from "lucide-react";
+import { ProjectLinks } from "@/components/project-links";
 import { SocialLogo } from "@/components/social-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { ConfigField } from "@/lib/config-spec";
@@ -1646,9 +1647,10 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
             src="/assets/logo-crossposter.png"
             width="46"
           />
-          <div>
+          <div className="brand-copy">
             <p className="eyebrow">Configuration</p>
             <h1>{settingsViews.find((view) => view.id === settingsView)?.label || "Settings"}</h1>
+            <ProjectLinks />
           </div>
         </div>
         <div className="masthead-actions">
