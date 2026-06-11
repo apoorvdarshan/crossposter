@@ -1295,7 +1295,7 @@ function formatDateTime(value: string): string {
     return "Saved locally";
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(date);

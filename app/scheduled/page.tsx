@@ -72,14 +72,14 @@ function scheduledDateKey(value: string): string {
 }
 
 function formatMonth(value: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-US", {
     month: "long",
     year: "numeric"
   }).format(value);
 }
 
 function formatSelectedDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -94,7 +94,7 @@ function formatDateTime(value: string): string {
     return "Invalid time";
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(date);
@@ -446,7 +446,7 @@ export default function ScheduledPage() {
 
                 return (
                   <button
-                    aria-label={`${day.date.toLocaleDateString()}: ${countLabel}`}
+                    aria-label={`${day.date.toLocaleDateString("en-US")}: ${countLabel}`}
                     className={[
                       "scheduler-day",
                       day.isCurrentMonth ? "" : "is-muted",
