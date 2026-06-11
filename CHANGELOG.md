@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+- Fix a React hydration error on the Scheduler and Dashboard caused by locale-dependent date/time formatting (server rendered `31/5/2026`, client `5/31/2026`); all date/time formatting is now pinned to a fixed locale so server and client match.
+- Show the project links (Star, Follow, Ko-fi, Vote) on every page masthead — Scheduler, Settings, Storage, and Socials — not just the Dashboard.
+- Drop the redundant eyebrow label ("Posting queue" / "Configuration") above the title on the Scheduler and settings pages so they match the Dashboard masthead.
+- Remove the filled circle behind the selected/today day number in the scheduler calendar; selection stays indicated by the day cell border and the per-day post-count badge is unchanged.
+
 ## 1.1.1
 
 - Add `AGENT_POSTING.md`, a self-contained guide an external agent can use to publish, schedule, or stage drafts through the local HTTP API without reading the source.
