@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3
+
+- Keep failed posts in the publish history. Previously a post where no channel published successfully was dropped and vanished from "Published" on refresh; now every attempt — manual or scheduled — is saved with its per-channel error results and persists across reloads.
+
 ## 1.1.2
 
 - Fix a React hydration error on the Scheduler and Dashboard caused by locale-dependent date/time formatting (server rendered `31/5/2026`, client `5/31/2026`); all date/time formatting is now pinned to a fixed locale so server and client match.
