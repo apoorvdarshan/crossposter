@@ -343,7 +343,6 @@ export default function ScheduledPage() {
             width="46"
           />
           <div className="brand-copy">
-            <p className="eyebrow">Posting queue</p>
             <h1>Scheduler</h1>
             <ProjectLinks />
           </div>

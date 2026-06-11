@@ -1648,7 +1648,6 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
             width="46"
           />
           <div className="brand-copy">
-            <p className="eyebrow">Configuration</p>
             <h1>{settingsViews.find((view) => view.id === settingsView)?.label || "Settings"}</h1>
             <ProjectLinks />
           </div>
