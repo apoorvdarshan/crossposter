@@ -110,6 +110,13 @@ curl -fsS -X POST http://localhost:2004/api/media -F "file=@/abs/path/to/photo.j
 Use the returned **`media.id`** as `mediaId` in the publish/schedule request. One media
 item per post. (Re-uploading the same file for a new post is fine.)
 
+The server infers the media type from the **file extension** when your upload client
+doesn't send a content type (e.g. `curl -F` sends `application/octet-stream`), so a
+`.mp4`/`.mov` is treated as `video` and `.jpg`/`.png`/`.webp`/`.gif` as `image`. Always
+upload with a correct extension so the file is typed right. Check the returned
+`media.kind` is `image`/`video` (not `file`) before attaching it to a video/image post —
+providers reject `kind: "file"`.
+
 ---
 
 ## 5. Publish now
@@ -228,6 +235,32 @@ Drafts do **not** post anything — use this when the human wants to review firs
 | pinterest | optional (pin title) | optional | **required: image/video** | `linkUrl` = pin destination |
 | instagram | ignored | required (caption) | **required: image/video** | |
 | peerlist | optional | text **or** media | optional | title-only is rejected |
+
+### Media criteria & text limits per platform
+
+`text` = post body/caption (or markdown body for Dev.to, description for YouTube/Pinterest).
+Over-limit text and unsupported/oversized media are rejected with a clear `error`.
+
+| Platform | Text limit | Title limit | Image formats / max size | Video formats / max size |
+|---|---|---|---|---|
+| x | 280 | — (alt text) | JPG, PNG, WebP, GIF — photo ≤ 5 MB, GIF ≤ 15 MB | MP4 — ≤ 512 MB |
+| bluesky | 300 | — | JPEG, PNG, WebP, GIF — **≤ 1 MB** | none (image only) |
+| mastodon | 500 | — | image — instance limits (often ≤ 16 MB) | video — instance limits (often ≤ 40–99 MB) |
+| linkedin | 3,000 | — | JPG, PNG, GIF | MP4 — 75 KB – 500 MB |
+| instagram | 2,200 | — | JPG, PNG, WebP — ≤ 8 MB | MP4, MOV — ≤ 300 MB |
+| peerlist | 2,000 | optional, ≤ 120 | JPG, PNG, WebP, GIF — ≤ 15 MB | none (image only) |
+| youtube | 5,000 (description) | **required**, ≤ 100 | — | 3GPP, AVI, MP4, MPEG, MOV, WebM, FLV — ≤ 256 GB |
+| pinterest | 800 (description) | optional, ≤ 100 | JPG, PNG, GIF, WebP — ≤ 20 MB | MP4, MOV — ≤ 100 MB |
+| dribbble | optional | **required** | JPG, PNG, GIF — **exactly 400×300 or 800×600**, ≤ 8 MB | none (image only) |
+| devto | ≤ 800 KB (markdown body) | optional, ≤ 128 | none — embed image URLs in the markdown | none |
+| hackernews | optional (text post) | **required**, ≤ 80 | none — `linkUrl` is the submitted URL | none |
+| nostr | no limit | — | none — paste media links in the text | none |
+
+Notes: Bluesky and Peerlist are **image-only** (no video); Bluesky's 1 MB image cap is
+strict, so compress screenshots first. Dev.to, Hacker News, and Nostr take **no local
+media upload** — put image/video URLs in the text/markdown. X (bird), Instagram,
+Pinterest, Peerlist, YouTube, and Hacker News use local/unofficial flows; LinkedIn,
+Bluesky, Mastodon, Dribbble, and Dev.to use official APIs.
 
 General validation the API enforces (it returns a clear `error` if violated):
 

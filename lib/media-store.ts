@@ -61,6 +61,37 @@ function extensionFromFilename(filename: string): string {
   return extension;
 }
 
+const extensionContentTypes: Record<string, string> = {
+  ".mp4": "video/mp4",
+  ".m4v": "video/mp4",
+  ".mov": "video/quicktime",
+  ".webm": "video/webm",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".heic": "image/heic",
+  ".mp3": "audio/mpeg",
+  ".m4a": "audio/mp4",
+  ".wav": "audio/wav",
+  ".aac": "audio/aac",
+  ".ogg": "audio/ogg"
+};
+
+// Browsers and some upload clients send no MIME type (or a generic
+// "application/octet-stream"), which would file a real video/image as a plain
+// "file" and get it rejected by providers. Fall back to the filename extension.
+export function resolveContentType(filename: string, contentType: string | undefined): string {
+  const trimmed = (contentType || "").trim();
+
+  if (trimmed && trimmed !== "application/octet-stream" && trimmed.includes("/")) {
+    return trimmed;
+  }
+
+  return extensionContentTypes[extensionFromFilename(filename)] || trimmed || "application/octet-stream";
+}
+
 export function mediaKind(contentType: string): MediaKind {
   if (contentType.startsWith("image/")) {
     return "image";
@@ -114,7 +145,7 @@ export async function saveUploadedMedia(file: File, requestUrl: string): Promise
 
   const filename = cleanFilename(file.name);
   const id = `${randomUUID()}${extensionFromFilename(filename)}`;
-  const contentType = file.type || "application/octet-stream";
+  const contentType = resolveContentType(filename, file.type);
   const kind = mediaKind(contentType);
   const destination = mediaPath(id);
 
@@ -146,13 +177,14 @@ export async function getUploadedMedia(id: string, requestUrl = "http://localhos
   const metadata = JSON.parse(await readFile(metadataPath(id), "utf8")) as StoredMedia;
   const storedPath = mediaPath(metadata.id);
   const fileStat = await stat(storedPath);
+  const contentType = resolveContentType(metadata.filename, metadata.contentType);
 
   return {
     id: metadata.id,
     filename: metadata.filename,
-    contentType: metadata.contentType,
+    contentType,
     size: fileStat.size,
-    kind: mediaKind(metadata.contentType),
+    kind: mediaKind(contentType),
     path: storedPath,
     url: mediaUrl(metadata.id, requestUrl),
     width: metadata.width,

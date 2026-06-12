@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.4
+
+- Fix videos (and other media) being rejected by LinkedIn, Mastodon, X, etc. when uploaded without a MIME type. Uploads that arrive as `application/octet-stream` (common from `curl`/agent clients) are now typed from the file extension — `.mp4`/`.mov` → `video`, `.jpg`/`.png`/`.webp`/`.gif` → `image` — instead of a generic `file` that providers reject. Applied on read as well, so already-uploaded media is corrected without re-uploading.
+- `AGENT_POSTING.md`: document per-platform media formats and size limits and text/title limits for every channel, plus a note that media type is inferred from the file extension.
+
 ## 1.1.3
 
 - Keep failed posts in the publish history. Previously a post where no channel published successfully was dropped and vanished from "Published" on refresh; now every attempt — manual or scheduled — is saved with its per-channel error results and persists across reloads.
