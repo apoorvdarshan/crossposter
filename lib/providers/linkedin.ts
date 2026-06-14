@@ -201,6 +201,29 @@ async function uploadLinkedInMedia(
   throw new Error("LinkedIn local upload supports image and MP4 video files only");
 }
 
+// LinkedIn's /rest/posts `commentary` field uses the "little" text format, where
+// these characters are reserved for inline elements (mentions, hashtags, links,
+// emphasis) and MUST be escaped with a backslash even when used as plain text —
+// otherwise LinkedIn silently truncates the post body at the first unescaped one.
+// See: little Text Format (learn.microsoft.com .../shares/little-text-format).
+const linkedInReservedChars = /[\\|{}@[\]()<>*_~]/g;
+
+function escapeLinkedInSegment(segment: string): string {
+  return segment
+    .replace(linkedInReservedChars, (char) => `\\${char}`)
+    // Keep functional hashtags (#word) clickable; escape only literal '#'.
+    .replace(/#(?![\w])/g, "\\#");
+}
+
+// Escape reserved characters, but leave http(s) URLs untouched so LinkedIn still
+// auto-links them (their characters would otherwise be mangled by escaping).
+export function escapeLinkedInCommentary(text: string): string {
+  return text
+    .split(/(https?:\/\/[^\s]+)/gi)
+    .map((segment, index) => (index % 2 === 1 ? segment : escapeLinkedInSegment(segment)))
+    .join("");
+}
+
 export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResult> {
   const profileId = ctx.target?.profileId;
   const accessToken = requireEnv("LINKEDIN_ACCESS_TOKEN", profileId);
@@ -213,7 +236,7 @@ export async function publishLinkedIn(ctx: ProviderContext): Promise<PublishResu
     headers: linkedInHeaders(accessToken, version, "application/json"),
     body: JSON.stringify({
       author,
-      commentary: compactText([ctx.text]),
+      commentary: escapeLinkedInCommentary(compactText([ctx.text])),
       visibility: "PUBLIC",
       ...(media
         ? {

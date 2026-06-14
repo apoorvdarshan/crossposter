@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.5
+
+- Fix LinkedIn posts being silently truncated mid-text (e.g. at the first parenthesis). LinkedIn's `/rest/posts` `commentary` uses the "little" text format, where `\ | { } @ [ ] ( ) < > # * _ ~` are reserved and must be backslash-escaped — unescaped, LinkedIn cuts the post body at the first one (so a post could publish "successfully" yet only show its first sentence, with no "…more"). Commentary is now escaped before sending: URLs are left intact so they still auto-link, and `#hashtags` stay clickable.
+
 ## 1.1.4
 
 - Fix videos (and other media) being rejected by LinkedIn, Mastodon, X, etc. when uploaded without a MIME type. Uploads that arrive as `application/octet-stream` (common from `curl`/agent clients) are now typed from the file extension — `.mp4`/`.mov` → `video`, `.jpg`/`.png`/`.webp`/`.gif` → `image` — instead of a generic `file` that providers reject. Applied on read as well, so already-uploaded media is corrected without re-uploading.
