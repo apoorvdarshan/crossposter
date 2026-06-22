@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.8
+
+- Capture the posted tweet's URL when publishing X through the browser method (read from X's "Your post was sent — View" toast), so the link shows in the Published history like every other platform. Falls back gracefully (still reports success) if X doesn't surface the link.
+
 ## 1.1.7
 
 - Raise the X text limit to 25,000 characters for X Premium accounts (`X_PREMIUM_LONG_POSTS=true`), matching X's long-post limit. Free accounts keep the 280-character limit. Since X now posts through the real composer UI, Premium long posts are genuinely supported end to end (compose counter, publish, and schedule validation are all Premium-aware). Long posts type in without a per-key delay.

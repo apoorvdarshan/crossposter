@@ -168,21 +168,45 @@ def click_post(page, timeout_ms):
 
 
 def wait_for_sent(page, timeout_ms):
-    # Success = a confirmation toast, or the composer textbox going away.
+    """Returns (sent, url). url is the new post's link from the success toast.
+
+    After a post sends, X shows a toast ("Your post was sent. View") whose View
+    link points at the new status URL, so we read that href to surface the link
+    in the publish history.
+    """
+    toast_timeout = min(max(timeout_ms, 10_000), 20_000)
     try:
-        page.get_by_text(
-            re.compile("your post was sent|your tweet was sent|view", re.I)
-        ).first.wait_for(state="visible", timeout=timeout_ms)
-        return True
+        page.locator('[data-testid="toast"]').first.wait_for(
+            state="visible", timeout=toast_timeout
+        )
+        href = page.evaluate(
+            """() => {
+              const t = document.querySelector('[data-testid="toast"]');
+              if (!t) return null;
+              const a = t.querySelector('a[href*="/status/"]');
+              return a ? a.getAttribute('href') : null;
+            }"""
+        )
+        if href:
+            url = ("https://x.com" + href) if href.startswith("/") else href
+            return True, url
+        # A toast without a link still confirms the post sent.
+        try:
+            text = page.locator('[data-testid="toast"]').first.inner_text(timeout=1500)
+        except Exception:
+            text = ""
+        if re.search("sent|posted", text, re.I):
+            return True, None
     except Exception:
         pass
+    # Fallback: the composer closing means the post went through (no link captured).
     try:
         page.locator('div[data-testid="tweetTextarea_0"]').first.wait_for(
             state="detached", timeout=8_000
         )
-        return True
+        return True, None
     except Exception:
-        return False
+        return False, None
 
 
 def run_publish(context, args):
@@ -212,11 +236,15 @@ def run_publish(context, args):
 
     click_post(page, args.timeout_ms)
 
-    if wait_for_sent(page, args.timeout_ms):
-        return {
+    sent, url = wait_for_sent(page, args.timeout_ms)
+    if sent:
+        result = {
             "ok": True,
             "message": ("Published with %s" % args.kind) if args.kind != "none" else "Published",
         }
+        if url:
+            result["url"] = url
+        return result
 
     return {
         "ok": False,
