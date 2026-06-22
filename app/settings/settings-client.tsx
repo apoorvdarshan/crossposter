@@ -2155,9 +2155,9 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                   all running locally on this machine.
                 </p>
                 <p className="hint">
-                  Instagram signs in to a dedicated, isolated browser once per account and reuses
-                  that real session, so there is no stored password. It is still automation, not
-                  an official API.
+                  Instagram and X / Twitter sign in to a dedicated, isolated browser once per
+                  account and reuse that real session, so there is no stored password. It is still
+                  automation, not an official API.
                 </p>
                 <p className="hint">
                   Use these only for accounts you own or manage, and keep posting occasional and

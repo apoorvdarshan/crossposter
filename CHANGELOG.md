@@ -1,25 +1,10 @@
 # Changelog
 
-## 1.1.10
-
-- Fix X image/video posts going out text-only. X keeps two composers in the DOM — the modal (`role="dialog"`) and a hidden inline one — each with its own textarea and file input. The publisher typed into the modal but attached the file to the *inline* composer (via `.last`), so the media never made it onto the posted tweet. Now the textarea, file input, and Post button are all scoped to the same modal `[role="dialog"]`. Verified live: image and video posts include their media. (This is the real fix for what 1.1.9 set out to do.)
-
-## 1.1.9
-
-- Harden the X browser publisher's media step so it can never silently post text-only: after attaching an image/video it now waits for the composer's attachment preview to actually appear, re-checks it right before clicking Post, and aborts with a clear error + screenshot (`last-error.png`) if the media didn't attach. Also waits for the Post button to enable (video processing) before clicking. Verified end to end with live text, image, and video posts.
-
-## 1.1.8
-
-- Capture the posted tweet's URL when publishing X through the browser method (read from X's "Your post was sent — View" toast), so the link shows in the Published history like every other platform. Falls back gracefully (still reports success) if X doesn't surface the link.
-
-## 1.1.7
-
-- Raise the X text limit to 25,000 characters for X Premium accounts (`X_PREMIUM_LONG_POSTS=true`), matching X's long-post limit. Free accounts keep the 280-character limit. Since X now posts through the real composer UI, Premium long posts are genuinely supported end to end (compose counter, publish, and schedule validation are all Premium-aware). Long posts type in without a per-key delay.
-
 ## 1.1.6
 
-- Replace the X / Twitter publishing method: instead of `bird` (which calls X's GraphQL API with browser cookies and trips X's automation rate-limit, error 344, even at low volume), X now posts through a **dedicated, isolated headless browser** — the same approach as Instagram. A one-time **Log in to X** saves the session into an isolated per-profile folder (never your personal Chrome), and posts are typed and sent through X's own web composer headlessly, so X's own frontend signs the request.
-- Remove `bird` entirely. New X config fields: `X_BROWSER_PROFILE_DIR` (required), `X_BROWSER_HEADLESS`, `X_BROWSER_TIMEOUT_MS`, `X_PYTHON_COMMAND` (replacing `X_BIRD_*`). The X browser method reuses the Instagram browser engine — install once with `crossposter install-instagram-browser-deps`.
+- Replace X / Twitter publishing with a dedicated, isolated **headless browser** method — the same approach as Instagram — and remove `bird` entirely. `bird` called X's GraphQL API with browser cookies and tripped X's automation rate-limit (error 344) even at low volume. Now a one-time **Log in to X** saves the session into an isolated per-profile folder (never your personal Chrome), and posts are typed and sent through X's own web composer headlessly, so X's own frontend generates and signs the request. Posts text, images, GIFs, and MP4 video, and captures the posted tweet's URL into the Published history.
+- New X config fields replace `X_BIRD_*`: `X_BROWSER_PROFILE_DIR` (required), `X_BROWSER_HEADLESS`, `X_BROWSER_TIMEOUT_MS`, and `X_PYTHON_COMMAND`. The X browser method reuses the Instagram browser engine — install once with `crossposter install-instagram-browser-deps`.
+- X Premium accounts (`X_PREMIUM_LONG_POSTS=true`) get the 25,000-character long-post limit (free accounts stay at 280), applied consistently across the compose character counter, publishing, and schedule validation. Premium also raises the video size limit from 512 MB to 16 GB.
 
 ## 1.1.5
 
