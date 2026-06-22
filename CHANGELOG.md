@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.9
+
+- Harden the X browser publisher's media step so it can never silently post text-only: after attaching an image/video it now waits for the composer's attachment preview to actually appear, re-checks it right before clicking Post, and aborts with a clear error + screenshot (`last-error.png`) if the media didn't attach. Also waits for the Post button to enable (video processing) before clicking. Verified end to end with live text, image, and video posts.
+
 ## 1.1.8
 
 - Capture the posted tweet's URL when publishing X through the browser method (read from X's "Your post was sent — View" toast), so the link shows in the Published history like every other platform. Falls back gracefully (still reports success) if X doesn't surface the link.

@@ -24,6 +24,20 @@ from x_browser_lib import (
 
 STEP_TIMEOUT_MS = 60_000
 
+# A visible attachment preview is proof the media actually landed in the composer.
+MEDIA_PREVIEW_SELECTOR = (
+    '[data-testid="attachments"], [data-testid="removeMedia"], '
+    '[aria-label="Remove media"], [data-testid="attachments"] img, '
+    '[role="dialog"] [data-testid="attachments"]'
+)
+
+
+def media_attached(page):
+    try:
+        return page.locator(MEDIA_PREVIEW_SELECTOR).first.is_visible(timeout=1000)
+    except Exception:
+        return False
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Publish a post to X via the web composer.")
@@ -84,42 +98,39 @@ def type_text(page, box, text):
 
 
 def attach_media(page, media_path, kind, timeout_ms):
-    selectors = [
-        'input[data-testid="fileInput"]',
-        'input[type="file"]',
-    ]
-    attached = False
-    for sel in selectors:
+    file_input = None
+    for sel in ('input[data-testid="fileInput"]', 'input[type="file"]'):
+        loc = page.locator(sel).last
         try:
-            file_input = page.locator(sel).last
-            file_input.wait_for(state="attached", timeout=STEP_TIMEOUT_MS)
-            file_input.set_input_files(media_path)
-            attached = True
+            loc.wait_for(state="attached", timeout=STEP_TIMEOUT_MS)
+            file_input = loc
             break
         except Exception:
             continue
 
-    if not attached:
-        raise RuntimeError("Could not attach the media file in the X composer.")
+    if file_input is None:
+        raise RuntimeError("Could not find the X media upload control.")
 
-    # Wait for the upload/processing to finish. Video can take a while.
-    wait_ms = max(timeout_ms, 300_000) if kind == "video" else 30_000
-    deadline = wait_ms
+    file_input.set_input_files(media_path)
+
+    # Confirm the media actually attached. Critically, we must NOT post text-only
+    # if the upload failed, so this raises instead of continuing when no preview
+    # shows up. Video uploads/process slower than images.
+    wait_ms = max(timeout_ms, 300_000) if kind == "video" else 90_000
     step = 1500
     waited = 0
-    while waited < deadline:
+    while waited < wait_ms:
         page.wait_for_timeout(step)
         waited += step
-        # A removable media preview means the upload landed.
-        try:
-            if page.locator('[data-testid="removeMedia"], [aria-label="Remove media"]').first.is_visible(timeout=800):
-                # Give video a moment past the preview for processing.
-                page.wait_for_timeout(2500 if kind == "video" else 800)
-                return
-        except Exception:
-            pass
+        if media_attached(page):
+            # Let video finish processing past the first preview frame.
+            page.wait_for_timeout(3000 if kind == "video" else 1200)
+            return
 
-    # Continue anyway; the post button gate below is the real check.
+    raise RuntimeError(
+        "Media did not attach in the X composer (no preview appeared). X may have changed the "
+        "upload control or rejected the file. Set X browser headless to false to watch the flow."
+    )
 
 
 def post_button(page):
@@ -133,16 +144,16 @@ def post_button(page):
     return page.locator('[data-testid="tweetButton"]').first
 
 
-def click_post(page, timeout_ms):
+def click_post(page, enable_timeout_ms):
     btn = post_button(page)
     try:
         btn.wait_for(state="visible", timeout=STEP_TIMEOUT_MS)
     except Exception as exc:
         raise RuntimeError("Could not find the X Post button.") from exc
 
-    # Wait until X enables the button (text/media accepted).
+    # Wait until X enables the button (text/media accepted; video must finish processing).
     waited = 0
-    while waited < 30_000:
+    while waited < enable_timeout_ms:
         try:
             disabled = btn.get_attribute("aria-disabled")
         except Exception:
@@ -233,8 +244,14 @@ def run_publish(context, args):
 
     if args.kind in ("image", "video") and args.media:
         attach_media(page, args.media, args.kind, args.timeout_ms)
+        # Final guard right before sending: if the preview vanished, do NOT post text-only.
+        if not media_attached(page):
+            raise RuntimeError(
+                "Media is not attached right before posting; aborting so it does not go out as a "
+                "text-only post."
+            )
 
-    click_post(page, args.timeout_ms)
+    click_post(page, 180_000 if args.kind == "video" else 30_000)
 
     sent, url = wait_for_sent(page, args.timeout_ms)
     if sent:
