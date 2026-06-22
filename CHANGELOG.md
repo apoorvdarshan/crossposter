@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.10
+
+- Fix X image/video posts going out text-only. X keeps two composers in the DOM — the modal (`role="dialog"`) and a hidden inline one — each with its own textarea and file input. The publisher typed into the modal but attached the file to the *inline* composer (via `.last`), so the media never made it onto the posted tweet. Now the textarea, file input, and Post button are all scoped to the same modal `[role="dialog"]`. Verified live: image and video posts include their media. (This is the real fix for what 1.1.9 set out to do.)
+
 ## 1.1.9
 
 - Harden the X browser publisher's media step so it can never silently post text-only: after attaching an image/video it now waits for the composer's attachment preview to actually appear, re-checks it right before clicking Post, and aborts with a clear error + screenshot (`last-error.png`) if the media didn't attach. Also waits for the Post button to enable (video processing) before clicking. Verified end to end with live text, image, and video posts.

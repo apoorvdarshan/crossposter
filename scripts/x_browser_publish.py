@@ -24,11 +24,13 @@ from x_browser_lib import (
 
 STEP_TIMEOUT_MS = 60_000
 
-# A visible attachment preview is proof the media actually landed in the composer.
+# Proof the media ACTUALLY landed: the blob preview image/video or the Remove button.
+# (The bare [data-testid="attachments"] container can exist empty, so it is NOT used here
+# or it gives a false positive and the post goes out text-only.)
 MEDIA_PREVIEW_SELECTOR = (
-    '[data-testid="attachments"], [data-testid="removeMedia"], '
-    '[aria-label="Remove media"], [data-testid="attachments"] img, '
-    '[role="dialog"] [data-testid="attachments"]'
+    '[aria-label="Remove media"], [data-testid="removeMedia"], '
+    'img[src^="blob:"], [data-testid="attachments"] img, '
+    '[data-testid="attachments"] video, video[src^="blob:"]'
 )
 
 
@@ -37,6 +39,24 @@ def media_attached(page):
         return page.locator(MEDIA_PREVIEW_SELECTOR).first.is_visible(timeout=1000)
     except Exception:
         return False
+
+
+def wait_upload_complete(page, kind, timeout_ms):
+    """After the preview appears, X keeps uploading in the background and disables
+    Post until done. Wait for any progress indicator to clear so we never click
+    Post mid-upload (which drops the media)."""
+    settle = max(timeout_ms, 300_000) if kind == "video" else 60_000
+    waited = 0
+    while waited < settle:
+        try:
+            busy = page.locator('[role="progressbar"]').first.is_visible(timeout=400)
+        except Exception:
+            busy = False
+        if not busy:
+            break
+        page.wait_for_timeout(1000)
+        waited += 1000
+    page.wait_for_timeout(3000 if kind == "video" else 1500)
 
 
 def parse_args():
@@ -64,8 +84,14 @@ def open_composer(page):
 
     page.wait_for_timeout(2500)
 
+    # X keeps a background inline composer AND the modal one in the DOM, each with its
+    # own textarea + file input. Prefer the modal ([role="dialog"]) so text, media, and
+    # Post all target the SAME composer (otherwise media lands in the other one and the
+    # post goes out text-only).
     selectors = [
+        '[role="dialog"] [data-testid="tweetTextarea_0"]',
         'div[data-testid="tweetTextarea_0"]',
+        '[role="dialog"] div[aria-label="Post text"]',
         'div[aria-label="Post text"]',
         'div[role="textbox"][contenteditable="true"]',
     ]
@@ -98,9 +124,17 @@ def type_text(page, box, text):
 
 
 def attach_media(page, media_path, kind, timeout_ms):
+    # Use the file input inside the SAME modal composer as the textarea/Post button.
+    # (Plain .last grabs the background inline composer's input, so the media never
+    # makes it onto the posted tweet.)
     file_input = None
-    for sel in ('input[data-testid="fileInput"]', 'input[type="file"]'):
-        loc = page.locator(sel).last
+    for sel in (
+        '[role="dialog"] input[data-testid="fileInput"]',
+        '[role="dialog"] input[type="file"]',
+        'input[data-testid="fileInput"]',
+        'input[type="file"]',
+    ):
+        loc = page.locator(sel).first
         try:
             loc.wait_for(state="attached", timeout=STEP_TIMEOUT_MS)
             file_input = loc
@@ -113,28 +147,34 @@ def attach_media(page, media_path, kind, timeout_ms):
 
     file_input.set_input_files(media_path)
 
-    # Confirm the media actually attached. Critically, we must NOT post text-only
-    # if the upload failed, so this raises instead of continuing when no preview
-    # shows up. Video uploads/process slower than images.
+    # 1) Wait for the REAL preview (blob image/video or Remove button) so we know the
+    #    file actually loaded into the composer, not just an empty container.
     wait_ms = max(timeout_ms, 300_000) if kind == "video" else 90_000
-    step = 1500
     waited = 0
     while waited < wait_ms:
-        page.wait_for_timeout(step)
-        waited += step
         if media_attached(page):
-            # Let video finish processing past the first preview frame.
-            page.wait_for_timeout(3000 if kind == "video" else 1200)
-            return
+            break
+        page.wait_for_timeout(1000)
+        waited += 1000
 
-    raise RuntimeError(
-        "Media did not attach in the X composer (no preview appeared). X may have changed the "
-        "upload control or rejected the file. Set X browser headless to false to watch the flow."
-    )
+    if not media_attached(page):
+        raise RuntimeError(
+            "Media did not attach in the X composer (no preview appeared). X may have changed the "
+            "upload control or rejected the file. Set X browser headless to false to watch the flow."
+        )
+
+    # 2) Wait for the background upload to finish so Post never fires mid-upload (which
+    #    is what was dropping the media and posting text-only).
+    wait_upload_complete(page, kind, timeout_ms)
 
 
 def post_button(page):
-    for sel in ('[data-testid="tweetButton"]', '[data-testid="tweetButtonInline"]'):
+    for sel in (
+        '[role="dialog"] [data-testid="tweetButton"]',
+        '[data-testid="tweetButton"]',
+        '[role="dialog"] [data-testid="tweetButtonInline"]',
+        '[data-testid="tweetButtonInline"]',
+    ):
         loc = page.locator(sel).first
         try:
             if loc.count() > 0:
