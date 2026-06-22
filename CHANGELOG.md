@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.6
+
+- Replace the X / Twitter publishing method: instead of `bird` (which calls X's GraphQL API with browser cookies and trips X's automation rate-limit, error 344, even at low volume), X now posts through a **dedicated, isolated headless browser** — the same approach as Instagram. A one-time **Log in to X** saves the session into an isolated per-profile folder (never your personal Chrome), and posts are typed and sent through X's own web composer headlessly, so X's own frontend signs the request.
+- Remove `bird` entirely. New X config fields: `X_BROWSER_PROFILE_DIR` (required), `X_BROWSER_HEADLESS`, `X_BROWSER_TIMEOUT_MS`, `X_PYTHON_COMMAND` (replacing `X_BIRD_*`). The X browser method reuses the Instagram browser engine — install once with `crossposter install-instagram-browser-deps`.
+
 ## 1.1.5
 
 - Fix LinkedIn posts being silently truncated mid-text (e.g. at the first parenthesis). LinkedIn's `/rest/posts` `commentary` uses the "little" text format, where `\ | { } @ [ ] ( ) < > # * _ ~` are reserved and must be backslash-escaped — unescaped, LinkedIn cuts the post body at the first one (so a post could publish "successfully" yet only show its first sentence, with no "…more"). Commentary is now escaped before sending: URLs are left intact so they still auto-link, and `#hashtags` stay clickable.

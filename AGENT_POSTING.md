@@ -258,8 +258,8 @@ Over-limit text and unsupported/oversized media are rejected with a clear `error
 
 Notes: Bluesky and Peerlist are **image-only** (no video); Bluesky's 1 MB image cap is
 strict, so compress screenshots first. Dev.to, Hacker News, and Nostr take **no local
-media upload** — put image/video URLs in the text/markdown. X (bird), Instagram,
-Pinterest, Peerlist, YouTube, and Hacker News use local/unofficial flows; LinkedIn,
+media upload** — put image/video URLs in the text/markdown. X (headless browser),
+Instagram, Pinterest, Peerlist, YouTube, and Hacker News use local/unofficial flows; LinkedIn,
 Bluesky, Mastodon, Dribbble, and Dev.to use official APIs.
 
 General validation the API enforces (it returns a clear `error` if violated):

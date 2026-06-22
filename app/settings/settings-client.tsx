@@ -227,24 +227,20 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
   x: {
     title: "X / Twitter setup",
     intro:
-      "Unofficial local posting through @steipete/bird. Crossposter calls bird locally and bird uses your existing browser cookies.",
+      "Local posting through a dedicated, isolated browser, the same way Instagram works. You log in once in a separate window; posts are then typed and sent through X's own composer, headlessly. It never touches your personal Chrome profile.",
     links: [
-      { label: "bird.fast", href: "https://bird.fast/" },
-      { label: "@steipete/bird", href: "https://www.npmjs.com/package/@steipete/bird" },
       { label: "X automation rules", href: "https://help.x.com/articles/76915-automation-rules-and-best-practices" }
     ],
     steps: [
-      "Install bird in Terminal with npm install -g @steipete/bird.",
-      "Log in to x.com in Chrome, Firefox, or Safari.",
-      "Run bird check in Terminal and confirm it says Ready to tweet.",
-      "Add an X / Twitter profile here.",
-      "Leave X bird command as bird unless you need an absolute path such as /opt/homebrew/bin/bird.",
-      "Optionally set cookie source to chrome, firefox, or safari.",
-      "Optionally set Chrome or Firefox profile names if bird check needs them.",
-      "Turn on X Premium media limits only for Premium accounts. Text still uses Bird's 280-character tweet limit; Premium raises video size.",
+      "Install the browser engine in Terminal with crossposter install-instagram-browser-deps, or ./scripts/install-instagram-browser-deps.sh when working from the Git repo (the X method reuses the same engine).",
+      "Add one X / Twitter profile here for each X account.",
+      "Set X browser profile folder to a unique folder per account, for example .x-browser/apoorvdarshan.",
+      "Click Log in to X. A real browser window opens once. Sign in (including any 2FA), then it saves the session and closes.",
+      "Keep X browser headless on so future posts run invisibly. Set it to false only to watch the browser if a post fails.",
+      "Turn on X Premium media limits only for Premium accounts. Text still uses the 280-character limit; Premium raises video size.",
       "Save config, then select X / Twitter on the Dashboard.",
-      "Crossposter publishes user-triggered posts only. X may still limit or lock accounts for spammy or automated-looking behavior.",
-      "Local images, GIFs, and MP4 video are passed to bird as media attachments."
+      "Crossposter publishes user-triggered posts only. X may still challenge, limit, or lock accounts for automated-looking behavior, so keep posting occasional and human-paced.",
+      "Local images, GIFs, and MP4 video are attached in the composer."
     ]
   },
   instagram: {
@@ -558,6 +554,7 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
   const [importingHackerNewsCookie, setImportingHackerNewsCookie] = useState("");
   const [importingYouTubeCookie, setImportingYouTubeCookie] = useState("");
   const [connectingInstagram, setConnectingInstagram] = useState("");
+  const [connectingX, setConnectingX] = useState("");
   const [isTogglingLocalService, setIsTogglingLocalService] = useState(false);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
   const [isCheckingAppVersion, setIsCheckingAppVersion] = useState(false);
@@ -1253,6 +1250,41 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
     }
   }
 
+  async function connectX(profile: ProviderProfile) {
+    setConnectingX(profile.id);
+    setStatus("A browser window is opening. Sign in to X (including any 2FA), then it saves and closes.");
+
+    try {
+      const saved = await saveConfig();
+
+      if (!saved) {
+        return;
+      }
+
+      const response = await fetch("/api/auth/x/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ profileId: profile.id })
+      });
+      const body = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setStatus(body.error || "Could not complete the X browser login.");
+        return;
+      }
+
+      await loadConfig();
+      setStatus(body.message || "X session saved for this profile.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not complete the X browser login.");
+    } finally {
+      setConnectingX("");
+    }
+  }
+
   async function openConfigFile() {
     setStatus("");
 
@@ -1465,6 +1497,17 @@ export default function SettingsClient({ initialView = "settings" }: { initialVi
                     >
                       <RefreshCw size={15} />
                       {connectingInstagram === profile.id ? "Opening browser..." : "Log in to Instagram"}
+                    </button>
+                  ) : null}
+                  {platform.id === "x" ? (
+                    <button
+                      className="secondary compact-button"
+                      type="button"
+                      onClick={() => void connectX(profile)}
+                      disabled={Boolean(connectingX)}
+                    >
+                      <RefreshCw size={15} />
+                      {connectingX === profile.id ? "Opening browser..." : "Log in to X"}
                     </button>
                   ) : null}
                   {platform.id === "hackernews" ? (

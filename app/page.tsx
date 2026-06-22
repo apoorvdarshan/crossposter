@@ -64,9 +64,9 @@ const channels: Array<{
   {
     id: "x",
     label: "X / Twitter",
-    note: "Unofficial bird post",
+    note: "Local browser post",
     uses: ["Post", "Media"],
-    target: "Uses the active X / Twitter bird profile from Settings.",
+    target: "Uses the active X / Twitter browser profile from Settings.",
     media: "Photos up to 5 MB, GIF up to 15 MB, video up to 512 MB or 16 GB with Premium."
   },
   {
@@ -204,11 +204,10 @@ const envLabels: Record<string, string> = {
   NOSTR_RELAYS: "relays",
   HACKERNEWS_USERNAME: "username",
   HACKERNEWS_PASSWORD: "password",
-  X_BIRD_COMMAND: "bird command",
-  X_BIRD_COOKIE_SOURCE: "cookie source",
-  X_BIRD_CHROME_PROFILE: "Chrome profile",
-  X_BIRD_FIREFOX_PROFILE: "Firefox profile",
-  X_BIRD_TIMEOUT_MS: "timeout",
+  X_BROWSER_PROFILE_DIR: "browser profile folder",
+  X_BROWSER_HEADLESS: "headless toggle",
+  X_BROWSER_TIMEOUT_MS: "timeout",
+  X_PYTHON_COMMAND: "Python command",
   X_PREMIUM_LONG_POSTS: "Premium media toggle"
 };
 
@@ -769,13 +768,13 @@ function mediaPreflightIssues(
     if (kind === "image" && !xImageTypes.has(file.type)) {
       issues.push({
         id: "x-image-type",
-        message: `X supports JPG, PNG, WebP, and GIF images through bird; selected file is ${file.type || "unknown"}.`,
+        message: `X supports JPG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`,
         compress: "image"
       });
     } else if (kind === "video" && !xVideoTypes.has(file.type)) {
       issues.push({
         id: "x-video-type",
-        message: `X supports MP4 video through bird; selected file is ${file.type || "unknown"}.`,
+        message: `X supports MP4 video; selected file is ${file.type || "unknown"}.`,
         compress: "video"
       });
     } else if (kind !== "image" && kind !== "video") {

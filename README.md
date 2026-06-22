@@ -48,7 +48,7 @@ challenges, rate limits, failed posts, or account restrictions.
 
 | Channel | Current support |
 | --- | --- |
-| X / Twitter | Unofficial local posting through `bird`, with text, images, GIFs, and video |
+| X / Twitter | Local posting through a dedicated, isolated headless browser (one-time login, like Instagram), with text, images, GIFs, and video |
 | LinkedIn | Personal profile posts and approved Page posts, with optional images or MP4 video |
 | Bluesky | Text posts and local image media |
 | Mastodon | Text posts and local media |
@@ -238,29 +238,41 @@ POSTER_ADMIN_PASSWORD=strong-password-here
 
 ### X / Twitter
 
-X publishing is unofficial local posting through
-[`@steipete/bird`](https://github.com/steipete/bird). `bird` uses browser
-cookies from an account you are already signed into.
+X publishing drives a **dedicated, isolated headless browser** — the same
+approach as Instagram. You log in once in a separate window, the session is
+saved into an isolated per-profile folder (never your personal Chrome), and
+posts are then typed and sent through **X's own web composer**, headlessly.
+Because X's own frontend generates and signs the request, this avoids the
+hand-crafted-API rate-limit pattern that direct API clients trip.
+
+It reuses the same browser engine as Instagram. Install it once in Terminal with
+`crossposter install-instagram-browser-deps` (or
+`./scripts/install-instagram-browser-deps.sh` from the Git repo).
 
 Required field:
 
 ```text
-X_BIRD_COMMAND
+X_BROWSER_PROFILE_DIR
 ```
 
 Optional fields:
 
 ```text
-X_BIRD_COOKIE_SOURCE
-X_BIRD_CHROME_PROFILE
-X_BIRD_FIREFOX_PROFILE
-X_BIRD_TIMEOUT_MS
+X_BROWSER_HEADLESS
+X_BROWSER_TIMEOUT_MS
+X_PYTHON_COMMAND
 X_PREMIUM_LONG_POSTS
 ```
 
-Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. Crossposter uses
-Bird's 280 character tweet limit for X text. The Premium toggle is only used
-for larger X video uploads.
+Set `X_BROWSER_PROFILE_DIR` to a unique folder per X account, for example
+`.x-browser/apoorvdarshan`. Keep `X_BROWSER_HEADLESS=true` so posting runs
+invisibly; set it to `false` to watch the browser if X changes its layout or
+shows a checkpoint. Click **Log in to X** in Settings once to sign in (including
+2FA); the session is reused for every post after.
+
+Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. Crossposter uses the
+280 character tweet limit for X text. The Premium toggle is only used for larger
+X video uploads.
 
 Media limits:
 
@@ -268,18 +280,9 @@ Media limits:
 - GIFs: 15 MB
 - video: 512 MB, or 16 GB when `X_PREMIUM_LONG_POSTS=true`
 
-Use this only for accounts you control. X can still challenge, limit, or lock
-accounts for suspicious or high-volume automation.
-
-**Rate limits.** `bird` posts through X's own web GraphQL API using your session,
-so X applies its anti-automation rules to those requests. Bursty or repeated
-automated posts (including failed/retried attempts) can trip X's throttle, which
-surfaces as **error 344 ("daily limit for sending Tweets and messages")** even
-when normal browser posting still works for the same account. This is X
-rate-limiting the automated request pattern, not a Crossposter or `bird` bug.
-Crossposter maps common X errors (344 daily limit, 326 locked, 187 duplicate,
-88 rate limit) to clear messages. If you hit one, wait a while and post one at a
-time, spaced out, rather than in bursts.
+Use this only for accounts you control, and keep posting occasional and
+human-paced. X is strict about automation and can still challenge, limit, or
+lock accounts for suspicious or high-volume activity.
 
 ### LinkedIn
 

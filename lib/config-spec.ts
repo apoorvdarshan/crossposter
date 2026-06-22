@@ -344,41 +344,36 @@ export const configFields: ConfigField[] = [
     showFor: ["hackernews"]
   },
   {
-    name: "X_BIRD_COMMAND",
-    label: "X bird command",
-    help: "Command or absolute path for @steipete/bird. Leave as bird when it is on PATH.",
-    defaultValue: "bird",
+    name: "X_BROWSER_PROFILE_DIR",
+    label: "X browser profile folder",
+    help: "Folder for this account's isolated browser session, for example .x-browser/apoorvdarshan. Use a unique folder per X account. It never touches your personal Chrome profile.",
+    defaultValue: ".x-browser/default",
+    requiredFor: ["x"]
+  },
+  {
+    name: "X_BROWSER_HEADLESS",
+    label: "X browser headless",
+    help: "Keep true so publishing runs invisibly. Set false to watch the browser if X changes its layout or shows a checkpoint.",
+    defaultValue: "true",
     showFor: ["x"]
   },
   {
-    name: "X_BIRD_COOKIE_SOURCE",
-    label: "X cookie source",
-    help: "Optional browser source for bird, such as chrome, firefox, or safari. Leave blank to use bird defaults/config.",
+    name: "X_BROWSER_TIMEOUT_MS",
+    label: "X browser timeout",
+    help: "Timeout in milliseconds for the browser login wait and publish steps. Login needs enough time to sign in and pass 2FA.",
+    defaultValue: "180000",
     showFor: ["x"]
   },
   {
-    name: "X_BIRD_CHROME_PROFILE",
-    label: "X Chrome profile",
-    help: "Optional Chrome profile name for bird, for example Default or Profile 1.",
-    showFor: ["x"]
-  },
-  {
-    name: "X_BIRD_FIREFOX_PROFILE",
-    label: "X Firefox profile",
-    help: "Optional Firefox profile name for bird, for example default-release.",
-    showFor: ["x"]
-  },
-  {
-    name: "X_BIRD_TIMEOUT_MS",
-    label: "X request timeout",
-    help: "Timeout for bird text and image requests in milliseconds. X video posts automatically use at least 300000 ms.",
-    defaultValue: "60000",
+    name: "X_PYTHON_COMMAND",
+    label: "X Python command",
+    help: "Python command with Playwright installed. Leave blank to use .venv/bin/python when present, then python3.",
     showFor: ["x"]
   },
   {
     name: "X_PREMIUM_LONG_POSTS",
     label: "X Premium media limits",
-    help: "Set true only for X Premium accounts. Text still uses Bird's 280-character tweet limit; Premium raises video size from 512 MB to 16 GB.",
+    help: "Set true only for X Premium accounts. Text still uses the 280-character limit; Premium raises video size from 512 MB to 16 GB.",
     defaultValue: "false",
     showFor: ["x"]
   }

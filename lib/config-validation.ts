@@ -233,29 +233,24 @@ function invalidReason(name: string, value: string): string | null {
       return /^[A-Za-z0-9_-]{2,20}$/.test(value)
         ? null
         : "must be a Hacker News username";
-    case "X_BIRD_COMMAND":
+    case "X_PYTHON_COMMAND":
       return /^[A-Za-z0-9_./-]+$/.test(value)
         ? null
         : "must be a command name or path without spaces";
-    case "X_BIRD_COOKIE_SOURCE": {
-      const sources = value.split(/[\s,]+/).filter(Boolean);
-      const invalid = sources.find((source) => !/^(chrome|firefox|safari)$/i.test(source));
-
-      return invalid ? `unsupported source ${invalid}` : null;
-    }
-    case "X_BIRD_CHROME_PROFILE":
-    case "X_BIRD_FIREFOX_PROFILE":
-      return /^[A-Za-z0-9 _.-]{1,120}$/.test(value)
+    case "X_BROWSER_PROFILE_DIR":
+      return /^[^\0\r\n]{1,500}$/.test(value)
         ? null
-        : "must be a browser profile name";
-    case "X_BIRD_TIMEOUT_MS": {
+        : "must be a local browser session folder path";
+    case "X_BROWSER_HEADLESS":
+      return value === "true" || value === "false" ? null : "must be true or false";
+    case "X_BROWSER_TIMEOUT_MS": {
       if (!/^\d+$/.test(value)) {
         return "must be milliseconds";
       }
 
       const timeout = Number(value);
 
-      return timeout >= 5_000 && timeout <= 300_000 ? null : "must be between 5000 and 300000";
+      return timeout >= 30_000 && timeout <= 900_000 ? null : "must be between 30000 and 900000";
     }
     case "X_PREMIUM_LONG_POSTS":
       return value === "true" || value === "false" ? null : "must be true or false";
