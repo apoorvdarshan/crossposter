@@ -2422,7 +2422,7 @@ export default function Home() {
   const titleLimitWarnings = titleLimitHints.filter((hint) => hint.isWarning);
   const postLimitHints = selectedLimitTargets
     .map((target) => {
-      const limit = postTextLimitForPlatform(target.platform);
+      const limit = postTextLimitForPlatform(target.platform, target.xPremium);
 
       if (!limit) {
         return null;

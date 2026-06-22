@@ -58,9 +58,10 @@ function validateXMedia(ctx: ProviderContext, isPremium: boolean): "image" | "vi
 
 export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
   const profileId = ctx.target?.profileId;
+  const isPremium = isPremiumProfile(profileId);
   const text = compactText([ctx.text]);
   const length = textLength(text);
-  const limit = xPostTextLimit();
+  const limit = xPostTextLimit(isPremium);
 
   if (!text) {
     throw new Error("X requires post text.");
@@ -70,7 +71,7 @@ export async function publishX(ctx: ProviderContext): Promise<PublishResult> {
     throw new Error(`X allows ${limit} characters for this profile; this post is ${length}.`);
   }
 
-  const kind = validateXMedia(ctx, isPremiumProfile(profileId));
+  const kind = validateXMedia(ctx, isPremium);
   const userDataDir = xBrowserProfileDir(profileId);
   const headless = xBrowserHeadless(profileId);
   const timeout =

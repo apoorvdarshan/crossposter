@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.7
+
+- Raise the X text limit to 25,000 characters for X Premium accounts (`X_PREMIUM_LONG_POSTS=true`), matching X's long-post limit. Free accounts keep the 280-character limit. Since X now posts through the real composer UI, Premium long posts are genuinely supported end to end (compose counter, publish, and schedule validation are all Premium-aware). Long posts type in without a per-key delay.
+
 ## 1.1.6
 
 - Replace the X / Twitter publishing method: instead of `bird` (which calls X's GraphQL API with browser cookies and trips X's automation rate-limit, error 344, even at low volume), X now posts through a **dedicated, isolated headless browser** — the same approach as Instagram. A one-time **Log in to X** saves the session into an isolated per-profile folder (never your personal Chrome), and posts are typed and sent through X's own web composer headlessly, so X's own frontend signs the request.

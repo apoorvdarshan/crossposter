@@ -76,7 +76,9 @@ def type_text(page, box, text):
         box.click()
         page.wait_for_timeout(300)
         # type() dispatches real key events so X's React composer registers the input.
-        page.keyboard.type(text, delay=4)
+        # Long Premium posts (up to 25k chars) would crawl at a per-key delay, so drop it.
+        delay = 0 if len(text) > 2000 else 4
+        page.keyboard.type(text, delay=delay)
     except Exception as exc:
         raise RuntimeError("Could not type the post text into the X composer.") from exc
 

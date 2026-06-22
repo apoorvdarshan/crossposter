@@ -270,9 +270,9 @@ invisibly; set it to `false` to watch the browser if X changes its layout or
 shows a checkpoint. Click **Log in to X** in Settings once to sign in (including
 2FA); the session is reused for every post after.
 
-Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. Crossposter uses the
-280 character tweet limit for X text. The Premium toggle is only used for larger
-X video uploads.
+Set `X_PREMIUM_LONG_POSTS=true` only for Premium accounts. It raises the X text
+limit from 280 to 25,000 characters (X Premium long posts) and the video size
+limit from 512 MB to 16 GB. Free accounts keep the 280 character limit.
 
 Media limits:
 

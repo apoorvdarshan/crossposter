@@ -237,7 +237,7 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
       "Set X browser profile folder to a unique folder per account, for example .x-browser/apoorvdarshan.",
       "Click Log in to X. A real browser window opens once. Sign in (including any 2FA), then it saves the session and closes.",
       "Keep X browser headless on so future posts run invisibly. Set it to false only to watch the browser if a post fails.",
-      "Turn on X Premium media limits only for Premium accounts. Text still uses the 280-character limit; Premium raises video size.",
+      "Turn on X Premium media limits only for Premium accounts. It raises the text limit from 280 to 25,000 characters and video size from 512 MB to 16 GB.",
       "Save config, then select X / Twitter on the Dashboard.",
       "Crossposter publishes user-triggered posts only. X may still challenge, limit, or lock accounts for automated-looking behavior, so keep posting occasional and human-paced.",
       "Local images, GIFs, and MP4 video are attached in the composer."

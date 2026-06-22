@@ -373,7 +373,7 @@ export const configFields: ConfigField[] = [
   {
     name: "X_PREMIUM_LONG_POSTS",
     label: "X Premium media limits",
-    help: "Set true only for X Premium accounts. Text still uses the 280-character limit; Premium raises video size from 512 MB to 16 GB.",
+    help: "Set true only for X Premium accounts. Raises the text limit from 280 to 25,000 characters and video size from 512 MB to 16 GB.",
     defaultValue: "false",
     showFor: ["x"]
   }
