@@ -132,22 +132,38 @@ def set_aspect_ratio(page):
     if not opened:
         return
 
-    page.wait_for_timeout(900)
-
-    dims = page.evaluate(
-        """() => {
-          const v = document.querySelector('[role=dialog] video');
-          if (v && v.videoWidth) return {w: v.videoWidth, h: v.videoHeight};
-          const img = [...document.querySelectorAll('[role=dialog] img')].find(i => i.naturalWidth > 200);
-          if (img) return {w: img.naturalWidth, h: img.naturalHeight};
-          return null;
-        }"""
-    )
+    # Poll until the media reports real dimensions. Video metadata can lag past a
+    # fixed wait; if dims come back empty the old code fell back to a SQUARE crop,
+    # which cut 9:16 reels (e.g. one published cut while an identical video did not,
+    # purely on timing). Never fall back to a square crop for a video.
+    dims = None
+    is_video = False
+    for _ in range(25):  # up to ~5s
+        info = page.evaluate(
+            """() => {
+              const v = document.querySelector('[role=dialog] video');
+              if (v) return {w: v.videoWidth || 0, h: v.videoHeight || 0, video: true};
+              const img = [...document.querySelectorAll('[role=dialog] img')].find(i => i.naturalWidth > 200);
+              if (img) return {w: img.naturalWidth, h: img.naturalHeight, video: false};
+              return null;
+            }"""
+        )
+        if info:
+            is_video = info.get("video", False)
+            if info["w"] and info["h"]:
+                dims = info
+                break
+        page.wait_for_timeout(200)
 
     if dims and dims["h"] > dims["w"] * 1.02:
-        targets = ["Crop portrait icon", "Crop square icon"]
+        # vertical: for video never add a square fallback (it would cut the reel)
+        targets = ["Crop portrait icon"] if is_video else ["Crop portrait icon", "Crop square icon"]
     elif dims and dims["w"] > dims["h"] * 1.02:
-        targets = ["Crop landscape icon", "Crop square icon"]
+        targets = ["Crop landscape icon"] if is_video else ["Crop landscape icon", "Crop square icon"]
+    elif is_video:
+        # couldn't measure a video: assume a vertical reel; if the portrait preset
+        # isn't found, leave Instagram's default (9:16) rather than square-cropping
+        targets = ["Crop portrait icon"]
     else:
         targets = ["Crop square icon"]
 
