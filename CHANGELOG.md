@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.7
+
+- Fix Instagram square-cropping 9:16 vertical videos (reels) on a slow preview-metadata read. The crop step waited a fixed 900 ms, then read the preview video's dimensions to pick the matching aspect; when the metadata hadn't loaded yet, `dims` came back empty and the code fell back to a **1:1 square** crop — cutting the top and bottom off a 9:16 reel. Because it hinged purely on timing, one reel could publish cut while a byte-identical video posted full-frame. The crop step now **polls up to ~5 s** for the real dimensions and **never square-falls-back a video**: a vertical video selects portrait (9:16), and if the preset can't be found it leaves Instagram's default (still 9:16) instead of square-cropping. Image behavior is unchanged.
+
 ## 1.1.6
 
 - Replace X / Twitter publishing with a dedicated, isolated **headless browser** method — the same approach as Instagram — and remove `bird` entirely. `bird` called X's GraphQL API with browser cookies and tripped X's automation rate-limit (error 344) even at low volume. Now a one-time **Log in to X** saves the session into an isolated per-profile folder (never your personal Chrome), and posts are typed and sent through X's own web composer headlessly, so X's own frontend generates and signs the request. Posts text, images, GIFs, and MP4 video, and captures the posted tweet's URL into the Published history.
