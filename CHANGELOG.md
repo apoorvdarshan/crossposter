@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.8
+
+- Remove **Peerlist** as a supported platform. The provider, `peerlist` platform type, config fields (`PEERLIST_*`), validation, per-platform limits, the dashboard channel + media warnings, the Settings setup card, the social logo, the docs entries, and the marketing-site provider card are all gone. Existing non-Peerlist channels are unaffected.
+- Instagram: select the crop preset **explicitly** instead of guessing from the source orientation — vertical videos always post as a full-bleed **9:16** reel and photos always post **1:1 (square)**, each retried in case the crop selector renders a beat late. This replaces the dimension-polling heuristic from 1.1.7, which could still square-crop a reel when the preview metadata read lagged. Square sources stay full-frame because Instagram's own 1:1 default also applies if the preset can't be clicked.
+- Scheduler: each scheduled post now shows its attached image or video as a preview on the right of the card, rendered at the media's natural aspect ratio (no squish or enlarge).
+- Dashboard: warn at upload when an attached image needs Instagram-specific sizing.
+
 ## 1.1.7
 
 - Fix Instagram square-cropping 9:16 vertical videos (reels) on a slow preview-metadata read. The crop step waited a fixed 900 ms, then read the preview video's dimensions to pick the matching aspect; when the metadata hadn't loaded yet, `dims` came back empty and the code fell back to a **1:1 square** crop — cutting the top and bottom off a 9:16 reel. Because it hinged purely on timing, one reel could publish cut while a byte-identical video posted full-frame. The crop step now **polls up to ~5 s** for the real dimensions and **never square-falls-back a video**: a vertical video selects portrait (9:16), and if the preset can't be found it leaves Instagram's default (still 9:16) instead of square-cropping. Image behavior is unchanged.
