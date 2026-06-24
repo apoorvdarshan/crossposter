@@ -2,8 +2,10 @@
 .env
 .env*.local
 poster.config.local.json
+poster.config.local.json.bak*
 .instagram-sessions
 .instagram-browser
+.x-browser
 .pinterest-sessions
 .poster-uploads
 .venv
