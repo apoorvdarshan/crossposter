@@ -292,8 +292,8 @@ const setupGuides: Partial<Record<Platform, SetupGuide>> = {
     ],
     steps: [
       "Create or open a Dribbble API application.",
-      "Set the application's callback URL to http://localhost:2004/settings/socials.",
-      "Add a Dribbble profile here and paste the client ID and client secret.",
+      "Set the application's callback URL to http://localhost:2004/settings/socials/dribbble/callback.",
+      "Add a Dribbble profile here. The client ID and client secret fields are right below Profile name — paste them there.",
       "Leave Dribbble OAuth scopes as public upload, then click Connect Dribbble.",
       "Optionally add comma-separated tags. Dribbble accepts up to 12 tags.",
       "Optionally set a team ID or enable Low Profile.",
