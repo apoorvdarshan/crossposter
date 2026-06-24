@@ -34,7 +34,7 @@ that server process is running.
 ## Unofficial Integrations And Platform Terms
 
 Crossposter includes a mix of official APIs and local unofficial integrations.
-X / Twitter, Instagram, YouTube, Pinterest, Peerlist, and Hacker News may use
+X / Twitter, Instagram, YouTube, Pinterest, and Hacker News may use
 cookies, local sessions, private APIs, third-party tools, or normal web submit
 flows.
 
@@ -56,7 +56,6 @@ challenges, rate limits, failed posts, or account restrictions.
 | YouTube | Unofficial local video uploads through YouTube.js/InnerTube cookies |
 | Dev.to | Markdown articles |
 | Pinterest | Unofficial local Pin uploads through `py3-pinterest` session folders |
-| Peerlist | Unofficial local Scroll posting through Peerlist cookies and API requests |
 | Hacker News | Personal link/text submission through HN's normal form flow |
 | Nostr | Kind-1 text notes published to configured relays |
 | Dribbble | Official OAuth shot uploads through the Dribbble API |
@@ -499,28 +498,6 @@ Supported media:
 
 - image: JPG, PNG, GIF, or WebP up to 20 MB
 - video: MP4 or MOV up to 100 MB
-
-### Peerlist
-
-Peerlist publishing is unofficial local Scroll posting through Peerlist cookies
-and API requests. Crossposter reads cookies from your signed-in Chrome profile.
-
-Required field:
-
-```text
-PEERLIST_CHROME_PROFILE
-```
-
-Optional fields:
-
-```text
-PEERLIST_CONTEXT
-PEERLIST_USERNAME
-PEERLIST_TIMEOUT_MS
-```
-
-Peerlist can publish post text, media-only posts, or post text with optional
-title and image. Local media supports JPG, PNG, WebP, or GIF up to 15 MB.
 
 ### Hacker News
 

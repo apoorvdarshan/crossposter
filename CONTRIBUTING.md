@@ -17,7 +17,6 @@ Supported publishing providers:
 - YouTube
 - Dev.to
 - Pinterest
-- Peerlist
 - Hacker News
 - Nostr
 - Dribbble

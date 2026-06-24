@@ -28,7 +28,6 @@ import {
   instagramPhotoMediaSizeLimit,
   instagramVideoMediaSizeLimit,
   dribbbleImageMediaSizeLimit,
-  peerlistImageMediaSizeLimit,
   pinterestImageMediaSizeLimit,
   pinterestVideoMediaSizeLimit,
   postLimitIssuesForTargets,
@@ -99,7 +98,7 @@ const channels: Array<{
     note: "Browser session media post",
     uses: ["Post", "Media"],
     target: "Posts through this profile's signed-in Instagram browser session.",
-    media: "Requires a local JPG, PNG, WebP image up to 8 MB, or MP4/MOV video up to 300 MB."
+    media: "Requires a local JPG, PNG, WebP image up to 8 MB, or MP4/MOV video up to 300 MB. Photos post as 1:1 square and videos as 9:16 reels — use those ratios so nothing is cropped."
   },
   {
     id: "youtube",
@@ -124,14 +123,6 @@ const channels: Array<{
     uses: ["Title", "Link", "Post", "Media"],
     target: "Uses the active Pinterest py3-pinterest profile from Settings.",
     media: "Title becomes the Pin title. Post becomes the description. Link becomes the destination URL. Requires a local image or MP4/MOV video."
-  },
-  {
-    id: "peerlist",
-    label: "Peerlist",
-    note: "Headless Scroll API post",
-    uses: ["Title", "Post", "Media"],
-    target: "Uses the active Peerlist Chrome-cookie profile from Settings.",
-    media: "Title is optional. Post becomes the caption. A local JPG, PNG, WebP, or GIF up to 15 MB can be uploaded."
   },
   {
     id: "hackernews",
@@ -194,10 +185,6 @@ const envLabels: Record<string, string> = {
   PINTEREST_USERNAME: "username",
   PINTEREST_BOARD_ID: "board ID",
   PINTEREST_CRED_ROOT: "session folder",
-  PEERLIST_CONTEXT: "context",
-  PEERLIST_USERNAME: "username",
-  PEERLIST_CHROME_PROFILE: "Chrome profile",
-  PEERLIST_TIMEOUT_MS: "timeout",
   LINKEDIN_ACCESS_TOKEN: "access token",
   LINKEDIN_AUTHOR_URN: "author URN",
   NOSTR_PRIVATE_KEY: "private key",
@@ -328,8 +315,6 @@ const pinterestImageTypes = new Set(["image/jpeg", "image/png", "image/gif", "im
 const pinterestVideoTypes = new Set(["video/mp4", "video/quicktime"]);
 const pinterestImageTargetSize = 19 * 1024 * 1024;
 const pinterestVideoTargetSize = 95 * 1024 * 1024;
-const peerlistImageTypes = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
-const peerlistImageTargetSize = 14 * 1024 * 1024;
 const linkedInImageTypes = new Set(["image/jpeg", "image/png", "image/gif"]);
 const linkedInVideoTypes = new Set(["video/mp4"]);
 const xImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -858,27 +843,6 @@ function mediaPreflightIssues(
     }
   }
 
-  if (platforms.includes("peerlist")) {
-    if (kind !== "image") {
-      issues.push({
-        id: "peerlist-kind",
-        message: `Peerlist can upload images and GIFs only; selected media is a ${mediaKindLabel(kind)}.`
-      });
-    } else if (!peerlistImageTypes.has(file.type)) {
-      issues.push({
-        id: "peerlist-image-type",
-        message: `Peerlist supports JPG, PNG, WebP, and GIF images; selected file is ${file.type || "unknown"}.`,
-        compress: file.type === "image/gif" ? undefined : "image"
-      });
-    } else if (file.size > peerlistImageMediaSizeLimit) {
-      issues.push({
-        id: "peerlist-image-size",
-        message: `Peerlist image limit is 15 MB; selected file is ${formatBytes(file.size)}.`,
-        compress: file.type === "image/gif" ? undefined : "image"
-      });
-    }
-  }
-
   if (platforms.includes("youtube")) {
     const extension = fileExtension(file.name);
     const supportedExtension = youtubeVideoExtensions.has(extension);
@@ -1013,10 +977,6 @@ function imageTargetBytesForPlatforms(platforms: Platform[], file: File): number
 
   if (platforms.includes("pinterest") && file.size > pinterestImageMediaSizeLimit) {
     targets.push(pinterestImageTargetSize);
-  }
-
-  if (platforms.includes("peerlist") && file.size > peerlistImageMediaSizeLimit) {
-    targets.push(peerlistImageTargetSize);
   }
 
   if (platforms.includes("mastodon") && file.size > mastodonImageSizeLimit) {
@@ -2104,12 +2064,10 @@ export default function Home() {
     const hasYouTube = publishPlatforms.includes("youtube");
     const hasDribbble = publishPlatforms.includes("dribbble");
     const hasPinterest = publishPlatforms.includes("pinterest");
-    const hasPeerlist = publishPlatforms.includes("peerlist");
     const hasOnlyTextOptionalPlatforms = publishPlatforms.every((platform) =>
       platform === "hackernews" ||
       platform === "dribbble" ||
-      platform === "pinterest" ||
-      (platform === "peerlist" && Boolean(mediaFile))
+      platform === "pinterest"
     );
 
     if ((hasHackerNews || hasYouTube || hasDribbble) && !title.trim()) {
@@ -2117,15 +2075,6 @@ export default function Home() {
         [hasHackerNews ? "Hacker News" : "", hasYouTube ? "YouTube" : "", hasDribbble ? "Dribbble" : ""]
           .filter(Boolean)
           .join(", ") + " require a title."
-      );
-      return;
-    }
-
-    if (hasPeerlist && !text.trim() && !mediaFile) {
-      setError(
-        title.trim()
-          ? "Peerlist cannot publish title only. Add post text or upload an image/GIF."
-          : "Peerlist requires post text or image/GIF media."
       );
       return;
     }
@@ -2259,12 +2208,10 @@ export default function Home() {
     const hasYouTube = publishPlatforms.includes("youtube");
     const hasDribbble = publishPlatforms.includes("dribbble");
     const hasPinterest = publishPlatforms.includes("pinterest");
-    const hasPeerlist = publishPlatforms.includes("peerlist");
     const hasOnlyTextOptionalPlatforms = publishPlatforms.every((platform) =>
       platform === "hackernews" ||
       platform === "dribbble" ||
-      platform === "pinterest" ||
-      (platform === "peerlist" && Boolean(mediaFile))
+      platform === "pinterest"
     );
 
     if ((hasHackerNews || hasYouTube || hasDribbble) && !title.trim()) {
@@ -2272,15 +2219,6 @@ export default function Home() {
         [hasHackerNews ? "Hacker News" : "", hasYouTube ? "YouTube" : "", hasDribbble ? "Dribbble" : ""]
           .filter(Boolean)
           .join(", ") + " require a title."
-      );
-      return;
-    }
-
-    if (hasPeerlist && !text.trim() && !mediaFile) {
-      setError(
-        title.trim()
-          ? "Peerlist cannot schedule title only. Add post text or upload an image/GIF."
-          : "Peerlist requires post text or image/GIF media."
       );
       return;
     }
@@ -2459,13 +2397,11 @@ export default function Home() {
   const hasYouTube = selectedPlatforms.includes("youtube");
   const hasDribbble = selectedPlatforms.includes("dribbble");
   const hasPinterest = selectedPlatforms.includes("pinterest");
-  const hasPeerlist = selectedPlatforms.includes("peerlist");
   const isHackerNewsOnly = showHackerNewsLink && selectedPlatforms.length === 1;
   const hasOnlyTextOptionalPlatforms = selectedPlatforms.every((platform) =>
     platform === "hackernews" ||
     platform === "dribbble" ||
-    platform === "pinterest" ||
-    (platform === "peerlist" && Boolean(mediaFile))
+    platform === "pinterest"
   );
   const hasRequiredHackerNewsTitle = !showHackerNewsLink || Boolean(title.trim());
   const hasRequiredYouTubeTitle = !hasYouTube || Boolean(title.trim());
@@ -2477,8 +2413,7 @@ export default function Home() {
   const hasRequiredPostText =
     Boolean(text.trim()) ||
     (isHackerNewsOnly && Boolean(title.trim())) ||
-    (hasOnlyTextOptionalPlatforms && Boolean(title.trim())) ||
-    (selectedPlatforms.length === 1 && hasPeerlist && Boolean(mediaFile));
+    (hasOnlyTextOptionalPlatforms && Boolean(title.trim()));
   const draftLimitIssues = [
     ...titleLimitIssues(selectedPlatforms, title),
     ...postLimitIssuesForTargets(selectedLimitTargets, text)
@@ -2563,6 +2498,37 @@ export default function Home() {
               message: "Hacker News ignores local media; use the Link field or post text instead."
             }
           ];
+        }
+
+        if (platform === "instagram") {
+          if (selectedMediaKind === "video") {
+            return [
+              {
+                id: "instagram-video-reel",
+                message:
+                  "Instagram posts videos as a 9:16 reel — use a 1080x1920 (9:16) video so nothing is cropped (max 300 MB)."
+              }
+            ];
+          }
+          if (selectedMediaKind === "image") {
+            const dims = mediaDimensions;
+            const isSquare =
+              dims && Math.abs(dims.width - dims.height) <= Math.max(dims.width, dims.height) * 0.02;
+            if (dims && !isSquare) {
+              return [
+                {
+                  id: "instagram-image-square",
+                  message: `Instagram posts photos as 1:1 square — your ${dims.width}x${dims.height} image will be cropped to a square. Use a 1080x1080 image so nothing is cut.`
+                }
+              ];
+            }
+            return [
+              {
+                id: "instagram-image-square-ok",
+                message: "Instagram posts photos as a 1:1 square (best at 1080x1080, max 8 MB)."
+              }
+            ];
+          }
         }
 
         return [];

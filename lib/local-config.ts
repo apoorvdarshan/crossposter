@@ -48,7 +48,6 @@ const platforms: Platform[] = [
   "youtube",
   "dribbble",
   "pinterest",
-  "peerlist",
   "devto",
   "hackernews",
   "nostr"
@@ -311,14 +310,13 @@ function normalizeScheduledPost(value: unknown): ScheduledPost | null {
   const text = stringValue(record.text, storedPostTextLimit);
   const isHackerNewsOnly = platforms.length === 1 && platforms[0] === "hackernews";
   const media = normalizePublishedMedia(record.media);
-  const isPeerlistOnly = platforms.length === 1 && platforms[0] === "peerlist";
   const results = Array.isArray(record.results)
     ? record.results.map(normalizePublishResult).filter((item): item is PublishResult => Boolean(item))
     : [];
 
   if (
     !Number.isFinite(scheduledAt) ||
-    (!text.trim() && !(isHackerNewsOnly && title.trim()) && !(isPeerlistOnly && media)) ||
+    (!text.trim() && !(isHackerNewsOnly && title.trim())) ||
     platforms.length === 0
   ) {
     return null;

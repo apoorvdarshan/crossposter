@@ -4,7 +4,6 @@ import {
   siDribbble,
   siInstagram,
   siMastodon,
-  siPeerlist,
   siPinterest,
   siX,
   siYoutube,
@@ -22,7 +21,6 @@ const socialIcons: Partial<Record<Platform, SimpleIcon>> = {
   youtube: siYoutube,
   dribbble: siDribbble,
   pinterest: siPinterest,
-  peerlist: siPeerlist,
   devto: siDevdotto,
   hackernews: siYcombinator
 };
@@ -36,7 +34,6 @@ const socialNames: Record<Platform, string> = {
   youtube: "YouTube",
   dribbble: "Dribbble",
   pinterest: "Pinterest",
-  peerlist: "Peerlist",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"
@@ -51,7 +48,6 @@ const brandColors: Record<Platform, string> = {
   youtube: `#${siYoutube.hex}`,
   dribbble: `#${siDribbble.hex}`,
   pinterest: `#${siPinterest.hex}`,
-  peerlist: `#${siPeerlist.hex}`,
   devto: `#${siDevdotto.hex}`,
   hackernews: `#${siYcombinator.hex}`,
   nostr: "#8f3ffc"

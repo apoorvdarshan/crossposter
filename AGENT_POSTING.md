@@ -6,7 +6,7 @@ read Crossposter's source code.
 
 Crossposter composes one post and sends it to multiple connected social accounts
 (X/Twitter, LinkedIn, Bluesky, Mastodon, Instagram, YouTube, Dribbble, Pinterest,
-Peerlist, Dev.to, Hacker News, Nostr). Accounts are configured by the human in the
+Dev.to, Hacker News, Nostr). Accounts are configured by the human in the
 Crossposter UI; you only choose which to post to and what to post.
 
 ---
@@ -72,7 +72,7 @@ curl -fsS http://localhost:2004/api/config
   — use it to check a platform is configured at all.
 
 **Platform IDs** (use these exact strings): `x`, `linkedin`, `bluesky`, `mastodon`,
-`instagram`, `youtube`, `dribbble`, `pinterest`, `peerlist`, `devto`, `hackernews`, `nostr`.
+`instagram`, `youtube`, `dribbble`, `pinterest`, `devto`, `hackernews`, `nostr`.
 
 ### Choosing targets two ways
 
@@ -234,7 +234,6 @@ Drafts do **not** post anything — use this when the human wants to review firs
 | dribbble | **required** (shot title) | optional | **required: image** | image must meet Dribbble specs |
 | pinterest | optional (pin title) | optional | **required: image/video** | `linkUrl` = pin destination |
 | instagram | ignored | required (caption) | **required: image/video** | |
-| peerlist | optional | text **or** media | optional | title-only is rejected |
 
 ### Media criteria & text limits per platform
 
@@ -248,7 +247,6 @@ Over-limit text and unsupported/oversized media are rejected with a clear `error
 | mastodon | 500 | — | image — instance limits (often ≤ 16 MB) | video — instance limits (often ≤ 40–99 MB) |
 | linkedin | 3,000 | — | JPG, PNG, GIF | MP4 — 75 KB – 500 MB |
 | instagram | 2,200 | — | JPG, PNG, WebP — ≤ 8 MB | MP4, MOV — ≤ 300 MB |
-| peerlist | 2,000 | optional, ≤ 120 | JPG, PNG, WebP, GIF — ≤ 15 MB | none (image only) |
 | youtube | 5,000 (description) | **required**, ≤ 100 | — | 3GPP, AVI, MP4, MPEG, MOV, WebM, FLV — ≤ 256 GB |
 | pinterest | 800 (description) | optional, ≤ 100 | JPG, PNG, GIF, WebP — ≤ 20 MB | MP4, MOV — ≤ 100 MB |
 | dribbble | optional | **required** | JPG, PNG, GIF — **exactly 400×300 or 800×600**, ≤ 8 MB | none (image only) |
@@ -256,17 +254,16 @@ Over-limit text and unsupported/oversized media are rejected with a clear `error
 | hackernews | optional (text post) | **required**, ≤ 80 | none — `linkUrl` is the submitted URL | none |
 | nostr | no limit | — | none — paste media links in the text | none |
 
-Notes: Bluesky and Peerlist are **image-only** (no video); Bluesky's 1 MB image cap is
+Notes: Bluesky is **image-only** (no video); Bluesky's 1 MB image cap is
 strict, so compress screenshots first. Dev.to, Hacker News, and Nostr take **no local
 media upload** — put image/video URLs in the text/markdown. X (headless browser),
-Instagram, Pinterest, Peerlist, YouTube, and Hacker News use local/unofficial flows; LinkedIn,
+Instagram, Pinterest, YouTube, and Hacker News use local/unofficial flows; LinkedIn,
 Bluesky, Mastodon, Dribbble, and Dev.to use official APIs.
 
 General validation the API enforces (it returns a clear `error` if violated):
 
 - At least one channel selected.
-- `text` is required **unless** it's a Peerlist-only post with media, or a
-  title-only post to Hacker News / Dribbble / Pinterest.
+- `text` is required **unless** it's a title-only post to Hacker News / Dribbble / Pinterest.
 - Character limits per platform (e.g. X 280, Bluesky 300, Mastodon 500, Instagram 2200,
   LinkedIn 3000). Over-limit posts are rejected with a message naming the platform.
 - Media type/size limits per platform (e.g. Instagram image ≤ 8 MB / video ≤ 300 MB).

@@ -14,8 +14,7 @@ import {
   Music2,
   RefreshCw,
   Send,
-  Trash2,
-  Video
+  Trash2
 } from "lucide-react";
 import { ProjectLinks } from "@/components/project-links";
 import { SocialLogo } from "@/components/social-logo";
@@ -37,7 +36,6 @@ const platformLabels: Record<Platform, string> = {
   youtube: "YouTube",
   dribbble: "Dribbble",
   pinterest: "Pinterest",
-  peerlist: "Peerlist",
   devto: "Dev.to",
   hackernews: "Hacker News",
   nostr: "Nostr"
@@ -531,6 +529,7 @@ export default function ScheduledPage() {
 
               return (
                 <article className="scheduled-card" key={post.id}>
+                  <div className="scheduled-card-body">
                   <div className="scheduled-card-head">
                     <div>
                       <span className={`badge scheduler-status ${post.status}`}>
@@ -552,22 +551,6 @@ export default function ScheduledPage() {
                       <span>{post.linkUrl}</span>
                       <ExternalLink size={13} />
                     </a>
-                  ) : null}
-
-                  {post.media ? (
-                    <div className="scheduled-media">
-                      {post.media.kind === "video" ? (
-                        <Video size={17} />
-                      ) : post.media.kind === "audio" ? (
-                        <Music2 size={17} />
-                      ) : (
-                        <FileIcon size={17} />
-                      )}
-                      <span>
-                        {post.media.filename} · {post.media.contentType || "file"} ·{" "}
-                        {formatBytes(post.media.size)}
-                      </span>
-                    </div>
                   ) : null}
 
                   <div className="history-platforms">
@@ -663,6 +646,35 @@ export default function ScheduledPage() {
                         Discard
                       </button>
                     </div>
+                  ) : null}
+                  </div>
+                  {post.media ? (
+                    <aside className="scheduled-card-media">
+                      {post.media.kind === "image" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/api/media/${encodeURIComponent(post.media.id)}`}
+                          alt={post.media.filename}
+                          loading="lazy"
+                        />
+                      ) : post.media.kind === "video" ? (
+                        <video
+                          src={`/api/media/${encodeURIComponent(post.media.id)}`}
+                          controls
+                          muted
+                          preload="metadata"
+                          playsInline
+                        />
+                      ) : (
+                        <div className="scheduled-media-fileicon">
+                          {post.media.kind === "audio" ? <Music2 size={28} /> : <FileIcon size={28} />}
+                        </div>
+                      )}
+                      <span className="scheduled-media-caption">
+                        {post.media.filename} · {post.media.contentType || "file"} ·{" "}
+                        {formatBytes(post.media.size)}
+                      </span>
+                    </aside>
                   ) : null}
                 </article>
               );

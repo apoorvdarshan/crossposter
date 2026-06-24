@@ -2501,12 +2501,67 @@ a.history-platform.ok:hover {
 }
 
 .scheduled-card {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel-soft);
   padding: 14px;
+}
+
+.scheduled-card-body {
+  display: grid;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.scheduled-card-media {
+  flex: 0 0 auto;
+  width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scheduled-card-media img,
+.scheduled-card-media video {
+  width: 100%;
+  height: auto;
+  max-height: 380px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #000;
+  display: block;
+}
+
+.scheduled-media-fileicon {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--line-muted);
+  border-radius: 8px;
+  color: var(--muted);
+}
+
+.scheduled-media-caption {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .scheduled-card {
+    flex-direction: column;
+  }
+  .scheduled-card-media {
+    width: 100%;
+  }
 }
 
 .scheduled-card-head {
@@ -2575,6 +2630,44 @@ a.history-platform.ok:hover {
 .scheduled-media span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.scheduled-media-thumb {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.scheduled-media-thumb img,
+.scheduled-media-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.scheduled-media-thumb.is-file {
+  background: var(--line-muted);
+  color: var(--muted);
+}
+
+.scheduled-media-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
 }
 
 .scheduled-results {

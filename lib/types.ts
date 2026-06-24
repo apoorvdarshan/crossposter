@@ -7,7 +7,6 @@ export type Platform =
   | "youtube"
   | "dribbble"
   | "pinterest"
-  | "peerlist"
   | "devto"
   | "hackernews"
   | "nostr";

@@ -165,27 +165,6 @@ function invalidReason(name: string, value: string): string | null {
     }
     case "PINTEREST_HEADLESS":
       return value === "true" || value === "false" ? null : "must be true or false";
-    case "PEERLIST_CONTEXT":
-      return /^(#?(show|ask|book|ama|hiring|open[-_ ]?for|news|event|quiz)|SHOW|ASK|BOOK|AMA|HIRING|OPEN_FOR|NEWS|EVENT|QUIZ)$/i.test(value)
-        ? null
-        : "must be a Peerlist Scroll context like SHOW or ASK";
-    case "PEERLIST_USERNAME":
-      return /^[A-Za-z0-9][A-Za-z0-9_-]{1,60}$/.test(value) && !value.startsWith("@")
-        ? null
-        : "must be a Peerlist username without @";
-    case "PEERLIST_CHROME_PROFILE":
-      return /^[A-Za-z0-9 _.-]{1,120}$/.test(value)
-        ? null
-        : "must be a Chrome profile name";
-    case "PEERLIST_TIMEOUT_MS": {
-      if (!/^\d+$/.test(value)) {
-        return "must be milliseconds";
-      }
-
-      const timeout = Number(value);
-
-      return timeout >= 30_000 && timeout <= 300_000 ? null : "must be between 30000 and 300000";
-    }
     case "YOUTUBE_COOKIE_SOURCE":
       return /^(chrome|manual)$/i.test(value) ? null : "must be chrome or manual";
     case "YOUTUBE_CHROME_PROFILE":
