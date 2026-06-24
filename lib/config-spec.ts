@@ -244,33 +244,6 @@ export const configFields: ConfigField[] = [
     showFor: ["pinterest"]
   },
   {
-    name: "PEERLIST_CONTEXT",
-    label: "Peerlist context",
-    help: "Scroll context such as SHOW, ASK, BOOK, HIRING, NEWS, EVENT, or QUIZ. Crossposter defaults to SHOW.",
-    defaultValue: "SHOW",
-    showFor: ["peerlist"]
-  },
-  {
-    name: "PEERLIST_USERNAME",
-    label: "Peerlist username",
-    help: "Your Peerlist username without @. Used to show the published profile posts link if Peerlist does not return a post URL.",
-    showFor: ["peerlist"]
-  },
-  {
-    name: "PEERLIST_CHROME_PROFILE",
-    label: "Peerlist Chrome profile",
-    help: "Chrome profile folder to read Peerlist cookies from, usually Default.",
-    defaultValue: "Default",
-    requiredFor: ["peerlist"]
-  },
-  {
-    name: "PEERLIST_TIMEOUT_MS",
-    label: "Peerlist timeout",
-    help: "Timeout for the headless Peerlist API publish flow in milliseconds.",
-    defaultValue: "120000",
-    showFor: ["peerlist"]
-  },
-  {
     name: "LINKEDIN_CLIENT_ID",
     label: "LinkedIn client ID",
     help: "Client ID from your LinkedIn developer app. Used only to connect this profile locally.",
@@ -396,7 +369,6 @@ export const requiredConfigByPlatform = configFields.reduce(
     youtube: [],
     dribbble: [],
     pinterest: [],
-    peerlist: [],
     devto: [],
     hackernews: [],
     nostr: []

@@ -18,7 +18,6 @@ const platformSchema = z.enum([
   "youtube",
   "dribbble",
   "pinterest",
-  "peerlist",
   "devto",
   "hackernews",
   "nostr"
@@ -89,17 +88,12 @@ function canPublishWithoutText(value: {
     return false;
   }
 
-  if (platforms.every((platform) => platform === "peerlist")) {
-    return Boolean(value.mediaId);
-  }
-
   return (
     Boolean(value.title?.trim()) &&
     platforms.every((platform) =>
       platform === "hackernews" ||
       platform === "dribbble" ||
-      platform === "pinterest" ||
-      (platform === "peerlist" && Boolean(value.mediaId))
+      platform === "pinterest"
     )
   );
 }
@@ -147,7 +141,7 @@ const requestSchema = z
     message: "Dribbble requires a title."
   })
   .refine((value) => value.text.trim() || canPublishWithoutText(value), {
-    message: "Write post text, or use media for Peerlist-only posts."
+    message: "Write post text, or add a title for title-only channels."
   })
   .refine((value) => Number.isFinite(Date.parse(value.scheduledFor)), {
     message: "Choose a valid scheduled time."

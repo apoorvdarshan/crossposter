@@ -6,7 +6,6 @@ import { publishLinkedIn } from "@/lib/providers/linkedin";
 import { publishMastodon } from "@/lib/providers/mastodon";
 import { publishInstagram } from "@/lib/providers/instagram";
 import { publishNostr } from "@/lib/providers/nostr";
-import { publishPeerlist } from "@/lib/providers/peerlist";
 import { publishPinterest } from "@/lib/providers/pinterest";
 import { publishX } from "@/lib/providers/x";
 import { publishYouTube } from "@/lib/providers/youtube";
@@ -23,7 +22,6 @@ export const providers: Record<Platform, Provider> = {
   youtube: publishYouTube,
   dribbble: publishDribbble,
   pinterest: publishPinterest,
-  peerlist: publishPeerlist,
   devto: publishDevto,
   hackernews: publishHackerNews,
   nostr: publishNostr

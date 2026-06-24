@@ -7,6 +7,7 @@ so each step tries several selectors and fails with a clear, actionable message
 rather than a raw Playwright error.
 """
 import argparse
+import os
 import re
 from pathlib import Path
 
@@ -21,6 +22,46 @@ from instagram_browser_lib import (
 )
 
 STEP_TIMEOUT_MS = 60_000
+
+# --- diagnostic instrumentation (no effect unless IG_DEBUG_DIR is set) ---
+_DEBUG_DIR = os.environ.get("IG_DEBUG_DIR")
+_DEBUG_NO_SHARE = os.environ.get("IG_DEBUG_NO_SHARE") == "1"
+_dbg_step = [0]
+
+
+def _dbg(page, name):
+    if not _DEBUG_DIR:
+        return
+    try:
+        _dbg_step[0] += 1
+        Path(_DEBUG_DIR).mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=f"{_DEBUG_DIR}/{_dbg_step[0]:02d}-{name}.png")
+        info = page.evaluate(
+            """() => {
+              const v = document.querySelector('[role=dialog] video') || document.querySelector('video');
+              let rect = null, clip = null;
+              if (v) {
+                const r = v.getBoundingClientRect();
+                rect = {w: Math.round(r.width), h: Math.round(r.height), ratio: +(r.width/r.height).toFixed(3)};
+                // walk up to the nearest ancestor that CLIPS (overflow hidden) = the crop window
+                let p = v.parentElement;
+                for (let i=0; i<7 && p; i++) {
+                  const cs = getComputedStyle(p);
+                  if ((cs.overflow==='hidden'||cs.overflowX==='hidden'||cs.overflowY==='hidden')) {
+                    const cr = p.getBoundingClientRect();
+                    if (cr.width>200 && cr.height>200 && cr.height < r.height + 2) { clip = {w:Math.round(cr.width), h:Math.round(cr.height), ratio:+(cr.width/cr.height).toFixed(3)}; break; }
+                  }
+                  p = p.parentElement;
+                }
+              }
+              const dlgs = [...document.querySelectorAll('[role=dialog]')].map(d => (d.innerText||'').replace(/\\s+/g,' ').slice(0,160));
+              const crops = [...document.querySelectorAll('[aria-label*="rop"]')].map(e => e.getAttribute('aria-label'));
+              return { videoSrc: v && (v.videoWidth+'x'+v.videoHeight), rendered: rect, cropWindow: clip, dialogs: dlgs, cropControls: crops };
+            }"""
+        )
+        print(f"DBG {_dbg_step[0]:02d}-{name}: {info}", flush=True)
+    except Exception as exc:
+        print(f"DBG {name} capture-error: {exc}", flush=True)
 
 
 def parse_args():
@@ -107,75 +148,6 @@ def attach_media(page, media_path):
         raise RuntimeError(
             "Could not attach the media file in the Instagram create dialog."
         ) from exc
-
-
-def set_aspect_ratio(page):
-    """On the crop screen, pick the aspect matching the media's orientation.
-
-    Instagram defaults the crop to 1:1 (square). We open the crop selector and
-    choose the preset that matches the source orientation so a vertical video
-    posts as a vertical reel instead of being square-cropped. The crop presets
-    are matched by their icon labels (Crop portrait/landscape/square icon) so we
-    never accidentally hit unrelated controls like "Original audio".
-    """
-    opened = False
-    for sel in ('svg[aria-label="Select crop"]', '[aria-label="Select crop"]'):
-        try:
-            crop = page.locator(sel).first
-            if crop.is_visible(timeout=3000):
-                crop.click()
-                opened = True
-                break
-        except Exception:
-            continue
-
-    if not opened:
-        return
-
-    # Poll until the media reports real dimensions. Video metadata can lag past a
-    # fixed wait; if dims come back empty the old code fell back to a SQUARE crop,
-    # which cut 9:16 reels (e.g. one published cut while an identical video did not,
-    # purely on timing). Never fall back to a square crop for a video.
-    dims = None
-    is_video = False
-    for _ in range(25):  # up to ~5s
-        info = page.evaluate(
-            """() => {
-              const v = document.querySelector('[role=dialog] video');
-              if (v) return {w: v.videoWidth || 0, h: v.videoHeight || 0, video: true};
-              const img = [...document.querySelectorAll('[role=dialog] img')].find(i => i.naturalWidth > 200);
-              if (img) return {w: img.naturalWidth, h: img.naturalHeight, video: false};
-              return null;
-            }"""
-        )
-        if info:
-            is_video = info.get("video", False)
-            if info["w"] and info["h"]:
-                dims = info
-                break
-        page.wait_for_timeout(200)
-
-    if dims and dims["h"] > dims["w"] * 1.02:
-        # vertical: for video never add a square fallback (it would cut the reel)
-        targets = ["Crop portrait icon"] if is_video else ["Crop portrait icon", "Crop square icon"]
-    elif dims and dims["w"] > dims["h"] * 1.02:
-        targets = ["Crop landscape icon"] if is_video else ["Crop landscape icon", "Crop square icon"]
-    elif is_video:
-        # couldn't measure a video: assume a vertical reel; if the portrait preset
-        # isn't found, leave Instagram's default (9:16) rather than square-cropping
-        targets = ["Crop portrait icon"]
-    else:
-        targets = ["Crop square icon"]
-
-    for label in targets:
-        try:
-            option = page.get_by_role("button", name=re.compile(re.escape(label), re.I)).first
-            if option.is_visible(timeout=1200):
-                option.click()
-                page.wait_for_timeout(700)
-                return
-        except Exception:
-            continue
 
 
 def share_button(page):
@@ -272,6 +244,88 @@ def wait_for_share_complete(page, timeout_ms):
         return False
 
 
+def select_reel_aspect_916(page):
+    """Force the 9:16 crop so a vertical video posts as a full-bleed reel.
+
+    Instagram's reel crop screen defaults to a 4:5 crop window. The crop selector
+    offers Original / 1:1 / 9:16 / 16:9, where the "Crop portrait icon" preset is
+    9:16. We open the selector and click 9:16, retrying because the menu can
+    render a beat late — if the click is missed, Instagram keeps the 4:5 default
+    and the reel ends up cropped. Returns True if 9:16 was selected.
+    """
+    for _ in range(4):
+        opened = False
+        for sel in ('svg[aria-label="Select crop"]', '[aria-label="Select crop"]'):
+            try:
+                crop = page.locator(sel).first
+                if crop.is_visible(timeout=3000):
+                    crop.click()
+                    page.wait_for_timeout(700)
+                    opened = True
+                    break
+            except Exception:
+                continue
+
+        if not opened:
+            page.wait_for_timeout(700)
+            continue
+
+        try:
+            option = page.get_by_role(
+                "button", name=re.compile("Crop portrait icon", re.I)
+            ).first
+            option.wait_for(state="visible", timeout=3000)
+            option.click()
+            page.wait_for_timeout(900)
+            return True
+        except Exception:
+            page.wait_for_timeout(500)
+            continue
+
+    return False
+
+
+def select_square_1x1(page):
+    """Force a 1:1 (square) crop for Instagram photos.
+
+    Instagram's crop screen already defaults photos to 1:1, but we select it
+    explicitly (with retries, since the selector can render a beat late) so a
+    square source always posts full-frame and never depends on the default. The
+    1:1 preset is the "Crop square icon". If it can't be selected, Instagram's own
+    1:1 default still applies — so a square image is never cropped either way.
+    """
+    for _ in range(4):
+        opened = False
+        for sel in ('svg[aria-label="Select crop"]', '[aria-label="Select crop"]'):
+            try:
+                crop = page.locator(sel).first
+                if crop.is_visible(timeout=3000):
+                    crop.click()
+                    page.wait_for_timeout(700)
+                    opened = True
+                    break
+            except Exception:
+                continue
+
+        if not opened:
+            page.wait_for_timeout(700)
+            continue
+
+        try:
+            option = page.get_by_role(
+                "button", name=re.compile("Crop square icon", re.I)
+            ).first
+            option.wait_for(state="visible", timeout=3000)
+            option.click()
+            page.wait_for_timeout(900)
+            return True
+        except Exception:
+            page.wait_for_timeout(500)
+            continue
+
+    return False
+
+
 def run_publish(context, args):
     page = first_page(context)
     page.set_default_timeout(STEP_TIMEOUT_MS)
@@ -297,12 +351,27 @@ def run_publish(context, args):
     open_create_dialog(page)
     attach_media(page, args.media)
     page.wait_for_timeout(4000)
-    set_aspect_ratio(page)
+    _dbg(page, "after-attach")
+    # Instagram crops by media kind:
+    #  - video -> we must EXPLICITLY select 9:16, or the reel is cropped (the crop
+    #    screen defaults a 4:5 window over the 9:16 <video>).
+    #  - photo -> we post 1:1 (square). Instagram already defaults photos to 1:1,
+    #    but we select it explicitly so a square source always posts full and never
+    #    depends on the default landing right.
+    if args.kind == "video":
+        select_reel_aspect_916(page)
+    else:
+        select_square_1x1(page)
+    _dbg(page, "pre-advance")
 
     if not advance_to_share(page):
         raise RuntimeError(
             "Could not reach the Instagram caption/share screen after attaching media."
         )
+    _dbg(page, "share-screen")
+
+    if _DEBUG_NO_SHARE:
+        return {"ok": True, "message": "DEBUG: stopped before Share (no post made)."}
 
     fill_caption(page, args.caption)
     share_post(page)
