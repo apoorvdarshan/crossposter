@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.9
+
+- Add a GitHub **star call-to-action** to the CLI startup output — when Crossposter boots, it now prints a short prompt linking to the repo, right after the local URL and data-folder lines. Since the app is launched via `npx`, this reaches users while they're actively using it.
+- Highlight the **Star** link in the app header as a filled accent pill so it stands out from the other project links (Follow, Ko-fi, Vote), with a solid fill on hover.
+
 ## 1.1.8
 
 - Remove **Peerlist** as a supported platform. The provider, `peerlist` platform type, config fields (`PEERLIST_*`), validation, per-platform limits, the dashboard channel + media warnings, the Settings setup card, the social logo, the docs entries, and the marketing-site provider card are all gone. Existing non-Peerlist channels are unaffected.
