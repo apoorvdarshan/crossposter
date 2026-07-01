@@ -413,6 +413,20 @@ h2 {
   text-underline-offset: 3px;
 }
 
+.project-link-featured {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring-strong);
+  padding: 3px 10px;
+}
+
+.project-link-featured:hover,
+.project-link-featured:focus-visible {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  text-decoration: none;
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;

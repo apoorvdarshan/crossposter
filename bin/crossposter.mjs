@@ -299,6 +299,20 @@ function startNext(port, dataRoot, dotEnvValues) {
   return child;
 }
 
+function starBanner() {
+  const repo = "https://github.com/apoorvdarshan/crossposter";
+  const rule = "─".repeat(60);
+
+  return [
+    "",
+    rule,
+    "  ⭐  Enjoying Crossposter? A GitHub star genuinely helps it grow.",
+    `      Star it here: ${repo}`,
+    rule,
+    ""
+  ].join("\n");
+}
+
 async function main() {
   if (hasArg("--help") || hasArg("-h")) {
     console.log(help());
@@ -368,6 +382,7 @@ async function main() {
 
   console.log(`Crossposter local URL: ${localUrl}`);
   console.log(`Crossposter data folder: ${dataRoot}`);
+  console.log(starBanner());
 
   if (shouldOpenBrowser()) {
     void waitForServer(healthUrl).then((ready) => {

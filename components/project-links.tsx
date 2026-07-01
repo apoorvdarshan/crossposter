@@ -7,6 +7,7 @@ type ProjectLink = {
   title: string;
   icon?: LucideIcon;
   simpleIcon?: SimpleIcon;
+  featured?: boolean;
 };
 
 const projectLinks: ProjectLink[] = [
@@ -14,7 +15,8 @@ const projectLinks: ProjectLink[] = [
     href: "https://github.com/apoorvdarshan/crossposter",
     label: "Star",
     title: "Star Crossposter on GitHub",
-    icon: Github
+    icon: Github,
+    featured: true
   },
   {
     href: "https://x.com/apoorvdarshan",
@@ -44,7 +46,7 @@ export function ProjectLinks() {
 
         return (
           <a
-            className="project-link"
+            className={`project-link${link.featured ? " project-link-featured" : ""}`}
             href={link.href}
             key={link.href}
             rel="noreferrer"
