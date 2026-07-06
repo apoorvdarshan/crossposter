@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.10
+
+- Fix LinkedIn and Dribbble **Connect** failing with "The redirect_uri does not match the registered value". Next.js builds `request.url` from the server's bind address (`0.0.0.0` by default), not the host shown in the browser, so OAuth redirect URIs went out as `http://0.0.0.0:2004/...` and never matched the registered `localhost` callback. Absolute URLs — OAuth redirect URIs, settings redirects, uploaded-media URLs, and scheduler tick URLs — are now rebuilt from the request's `Host` header, honoring `X-Forwarded-Host`/`X-Forwarded-Proto` behind a proxy.
+- Publish to npm **automatically from CI** when a GitHub release is published, gated on typecheck and lint.
+
 ## 1.1.9
 
 - Add a GitHub **star call-to-action** to the CLI startup output — when Crossposter boots, it now prints a short prompt linking to the repo, right after the local URL and data-folder lines. Since the app is launched via `npx`, this reaches users while they're actively using it.
