@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { getConfigValue, readLocalConfig } from "@/lib/local-config";
+import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
@@ -15,7 +16,7 @@ function scopesFor(value: string): string[] {
 }
 
 function redirectToSocials(request: NextRequest, status: string): NextResponse {
-  const url = new URL("/settings/socials", request.url);
+  const url = new URL("/settings/socials", requestOrigin(request));
   url.searchParams.set("dribbble", status);
 
   return NextResponse.redirect(url);
@@ -48,7 +49,7 @@ export function GET(request: NextRequest) {
   }
 
   const state = randomBytes(24).toString("base64url");
-  const redirectUri = new URL(callbackPath, request.url).toString();
+  const redirectUri = new URL(callbackPath, requestOrigin(request)).toString();
   const authorizeUrl = new URL("https://dribbble.com/oauth/authorize");
 
   authorizeUrl.searchParams.set("client_id", clientId);

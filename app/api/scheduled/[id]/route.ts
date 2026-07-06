@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getScheduledPosts, removeScheduledPost, updateScheduledPost } from "@/lib/local-config";
+import { requestOrigin } from "@/lib/request-origin";
 import { ensureSchedulerStarted } from "@/lib/scheduler";
 import type { ScheduledPost } from "@/lib/types";
 
@@ -67,7 +68,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     results: undefined
   }));
 
-  ensureSchedulerStarted(new URL("/api/scheduled/tick", request.url).toString());
+  ensureSchedulerStarted(new URL("/api/scheduled/tick", requestOrigin(request)).toString());
 
   return NextResponse.json({
     scheduledPost: updated,

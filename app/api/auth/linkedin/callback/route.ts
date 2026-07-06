@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { NextResponse, type NextRequest } from "next/server";
 import { getConfigValue, readLocalConfig, writeLocalConfig } from "@/lib/local-config";
+import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
@@ -31,7 +32,7 @@ type LinkedInMe = {
 };
 
 function redirectToSettings(request: NextRequest, status: string): NextResponse {
-  const url = new URL("/settings", request.url);
+  const url = new URL("/settings", requestOrigin(request));
   url.searchParams.set("linkedin", status);
 
   const response = NextResponse.redirect(url);
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
     return redirectToSettings(request, "failed");
   }
 
-  const redirectUri = new URL(callbackPath, request.url).toString();
+  const redirectUri = new URL(callbackPath, requestOrigin(request)).toString();
   const tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },

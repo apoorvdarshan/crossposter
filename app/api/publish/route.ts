@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getConfigValue } from "@/lib/local-config";
 import { postLimitIssuesForTargets, titleLimitIssues } from "@/lib/platform-limits";
 import { runPublish } from "@/lib/publish-runner";
+import { requestOrigin } from "@/lib/request-origin";
 import type { Platform, PublishTarget } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -219,7 +220,7 @@ export async function POST(request: Request) {
       mediaUrl: parsed.data.mediaUrl,
       platforms: parsed.data.platforms || [],
       targets: parsed.data.targets,
-      requestUrl: request.url
+      requestUrl: requestOrigin(request)
     });
 
     return NextResponse.json({ results, publishedPost });

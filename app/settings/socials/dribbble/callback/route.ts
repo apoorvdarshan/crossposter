@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getConfigValue, readLocalConfig, writeLocalConfig } from "@/lib/local-config";
+import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,7 @@ function scopesFor(value: string): string[] {
 }
 
 function redirectToSocials(request: NextRequest, status: string): NextResponse {
-  const url = new URL("/settings/socials", request.url);
+  const url = new URL("/settings/socials", requestOrigin(request));
   url.searchParams.set("dribbble", status);
 
   const response = NextResponse.redirect(url);
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
     return redirectToSocials(request, "failed");
   }
 
-  const redirectUri = new URL(callbackPath, request.url).toString();
+  const redirectUri = new URL(callbackPath, requestOrigin(request)).toString();
   const tokenResponse = await fetch("https://dribbble.com/oauth/token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },

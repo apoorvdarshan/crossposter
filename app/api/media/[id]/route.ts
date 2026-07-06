@@ -1,6 +1,7 @@
 import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { deleteUploadedMedia, openUploadedMedia } from "@/lib/media-store";
+import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ function contentDisposition(filename: string): string {
 export async function GET(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
-    const { media, stream } = await openUploadedMedia(id, request.url);
+    const { media, stream } = await openUploadedMedia(id, requestOrigin(request));
 
     return new Response(Readable.toWeb(stream) as ReadableStream<Uint8Array>, {
       headers: {

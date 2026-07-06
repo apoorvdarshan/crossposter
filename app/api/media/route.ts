@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteAllUploadedMedia, saveUploadedMedia } from "@/lib/media-store";
+import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 export const maxDuration = 900;
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing media file" }, { status: 400 });
     }
 
-    const media = await saveUploadedMedia(file, request.url);
+    const media = await saveUploadedMedia(file, requestOrigin(request));
 
     return NextResponse.json({
       media: {

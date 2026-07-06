@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getConfigValue, getScheduledPosts, upsertScheduledPost } from "@/lib/local-config";
 import { getUploadedMedia } from "@/lib/media-store";
 import { postLimitIssuesForTargets, titleLimitIssues } from "@/lib/platform-limits";
+import { requestOrigin } from "@/lib/request-origin";
 import { ensureSchedulerStarted, runScheduledTick } from "@/lib/scheduler";
 import type { Platform, PublishedMedia, PublishTarget, ScheduledPost } from "@/lib/types";
 
@@ -212,7 +213,7 @@ function mediaSummary(media: Awaited<ReturnType<typeof getUploadedMedia>>): Publ
 }
 
 export async function GET(request: Request) {
-  const tickUrl = new URL("/api/scheduled/tick", request.url).toString();
+  const tickUrl = new URL("/api/scheduled/tick", requestOrigin(request)).toString();
 
   ensureSchedulerStarted(tickUrl);
   await runScheduledTick(tickUrl);
@@ -246,7 +247,7 @@ export async function POST(request: Request) {
 
   if (parsed.data.mediaId) {
     try {
-      media = mediaSummary(await getUploadedMedia(parsed.data.mediaId, request.url));
+      media = mediaSummary(await getUploadedMedia(parsed.data.mediaId, requestOrigin(request)));
     } catch {
       return NextResponse.json({ error: "Uploaded media was not found" }, { status: 400 });
     }
@@ -267,7 +268,7 @@ export async function POST(request: Request) {
     status: "scheduled",
     attempts: 0
   } satisfies ScheduledPost);
-  const tickUrl = new URL("/api/scheduled/tick", request.url).toString();
+  const tickUrl = new URL("/api/scheduled/tick", requestOrigin(request)).toString();
 
   ensureSchedulerStarted(tickUrl);
 
