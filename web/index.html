@@ -97,6 +97,60 @@
               "https://x.com/apoorvdarshan",
               "https://www.producthunt.com/products/crossposter-2"
             ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://crossposter.apoorvdarshan.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is Crossposter free?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Crossposter is free and open source under the MIT license. Run it locally with npx @apoorvdarshan/crossposter@latest — there is no account, subscription, or paid tier."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which social media platforms does Crossposter support?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Eleven, from one composer: X / Twitter, LinkedIn, Bluesky, Mastodon, Instagram, YouTube, Dev.to, Pinterest, Hacker News, Nostr, and Dribbble."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I schedule posts to multiple social networks at once?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Compose once, pick the target accounts, then publish now or schedule for later. The scheduler runs from your own local or self-hosted Crossposter server."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is Crossposter a self-hosted, local social media scheduler?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Crossposter is local-first: it runs on http://localhost:2004 or your own server, with no database and no third-party backend."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Where are my credentials and drafts stored?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "On your machine. Tokens, sessions, drafts, media, scheduled posts, and history stay in poster.config.local.json and local folders — nothing is sent to a Crossposter cloud."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I cross-post to X and LinkedIn at the same time?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Connect both accounts in Settings, select them as targets on the dashboard, write the post once, and publish. Crossposter sends it to every selected account and shows per-platform results."
+                }
+              }
+            ]
           }
         ]
       }
@@ -256,6 +310,7 @@
             <a href="#media">Media</a>
             <a href="#security">Security</a>
             <a href="#policy">Privacy & terms</a>
+            <a href="#faq">FAQ</a>
             <a href="#contact">Contact</a>
           </nav>
         </aside>
@@ -462,6 +517,37 @@ crossposter uninstall-service</code></pre>
               <article>
                 <h3>Unofficial flows</h3>
                 <p>Unofficial integrations can break when platforms change and may trigger challenges, rate limits, failed posts, or account restrictions.</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="faq" class="doc-section" data-search="faq questions free open source self-hosted local social media scheduler crosspost multiple platforms accounts schedule privacy x twitter linkedin instagram">
+            <div class="section-kicker">FAQ</div>
+            <h2>Frequently asked questions.</h2>
+            <div class="split-list">
+              <article>
+                <h3>Is Crossposter free?</h3>
+                <p>Yes. Crossposter is free and open source under the MIT license. Run it locally with <code>npx @apoorvdarshan/crossposter@latest</code> — there is no account, subscription, or paid tier.</p>
+              </article>
+              <article>
+                <h3>Which social media platforms does it support?</h3>
+                <p>Eleven, from one composer: X / Twitter, LinkedIn, Bluesky, Mastodon, Instagram, YouTube, Dev.to, Pinterest, Hacker News, Nostr, and Dribbble.</p>
+              </article>
+              <article>
+                <h3>Can I schedule posts to multiple social networks at once?</h3>
+                <p>Yes. Compose once, pick the target accounts, then publish now or schedule for later. The scheduler runs from your own local or self-hosted Crossposter server.</p>
+              </article>
+              <article>
+                <h3>Is it a self-hosted, local social media scheduler?</h3>
+                <p>Yes. Crossposter is local-first: it runs on <code>http://localhost:2004</code> or your own server, with no database and no third-party backend.</p>
+              </article>
+              <article>
+                <h3>Where are my credentials and drafts stored?</h3>
+                <p>On your machine. Tokens, sessions, drafts, media, scheduled posts, and history stay in <code>poster.config.local.json</code> and local folders — nothing is sent to a Crossposter cloud.</p>
+              </article>
+              <article>
+                <h3>How do I cross-post to X and LinkedIn at the same time?</h3>
+                <p>Connect both accounts in Settings, select them as targets on the dashboard, write the post once, and publish. Crossposter sends it to every selected account and shows per-platform results.</p>
               </article>
             </div>
           </section>
