@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.11
+
+- Release automation: pushing a `vX.Y.Z` tag now publishes to npm **and** automatically creates the matching GitHub release, with notes pulled from this changelog. Previously npm publishing was tied to manually publishing a GitHub release.
+- Static site SEO: add an FAQ section with `FAQPage` structured data and refresh the sitemap `lastmod` to improve search indexing of crossposter.apoorvdarshan.com.
+
 ## 1.1.10
 
 - Fix LinkedIn and Dribbble **Connect** failing with "The redirect_uri does not match the registered value". Next.js builds `request.url` from the server's bind address (`0.0.0.0` by default), not the host shown in the browser, so OAuth redirect URIs went out as `http://0.0.0.0:2004/...` and never matched the registered `localhost` callback. Absolute URLs — OAuth redirect URIs, settings redirects, uploaded-media URLs, and scheduler tick URLs — are now rebuilt from the request's `Host` header, honoring `X-Forwarded-Host`/`X-Forwarded-Proto` behind a proxy.
