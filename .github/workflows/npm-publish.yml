@@ -23,3 +23,29 @@ jobs:
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create GitHub release from tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          # Pull the matching "## <version>" block out of CHANGELOG.md, if present.
+          notes="$(awk -v v="## ${version}" '
+            $0 == v { grab = 1; next }
+            /^## / && grab { exit }
+            grab { print }
+          ' CHANGELOG.md)"
+          if [ -n "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            printf '%s\n' "$notes" > release-notes.md
+            gh release create "$tag" --title "$tag" --notes-file release-notes.md --verify-tag
+          else
+            gh release create "$tag" --title "$tag" --generate-notes --verify-tag
+          fi
