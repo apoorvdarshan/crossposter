@@ -620,15 +620,19 @@ Live site:
 https://crossposter.apoorvdarshan.com
 ```
 
-The static site is deployed to Cloudflare Pages with Wrangler:
+The static site is deployed as a Cloudflare Worker with static assets:
 
 ```bash
-wrangler pages dev
-wrangler pages deploy --branch main
+cd web
+npm install
+npm run build
+npx wrangler dev
+npx wrangler deploy
 ```
 
-Wrangler reads `wrangler.jsonc` from the repository root and publishes the
-contents of `web/` without a build step.
+Cloudflare Workers Builds watches `web/*` on `main`, runs `npm run build` from
+`web/`, and deploys with `npx wrangler deploy`. Wrangler publishes `web/dist/`
+and routes `crossposter.apoorvdarshan.com` to the Worker.
 
 Files:
 
