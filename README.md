@@ -620,11 +620,22 @@ Live site:
 https://crossposter.apoorvdarshan.com
 ```
 
+The static site is deployed to Cloudflare Pages with Wrangler:
+
+```bash
+wrangler pages dev
+wrangler pages deploy --branch main
+```
+
+Wrangler reads `wrangler.jsonc` from the repository root and publishes the
+contents of `web/` without a build step.
+
 Files:
 
 ```text
 web/index.html
 web/assets/logo-crossposter.png
+wrangler.jsonc
 ```
 
 Privacy and terms are published inside `web/index.html` so the static website is

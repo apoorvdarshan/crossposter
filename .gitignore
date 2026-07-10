@@ -10,6 +10,7 @@ poster.config.local.json.bak*
 .poster-uploads
 .venv
 .next
+.wrangler
 node_modules
 out
 dist
