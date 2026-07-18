@@ -92,14 +92,29 @@ def click_first(page, locators, timeout=STEP_TIMEOUT_MS):
 
 def dismiss_optional_dialog(page):
     """Closes interstitials like the 'video posts are now reels' notice."""
-    for name in ("OK", "Not Now", "Allow"):
-        try:
-            button = page.get_by_role("button", name=re.compile(f"^{name}$", re.I)).first
+    dismissed = False
 
-            if button.is_visible(timeout=1500):
-                button.click()
-        except Exception:
-            continue
+    for name in ("OK", "Not Now", "Allow"):
+        dialog = page.locator('[role="dialog"]:visible').last
+        candidates = [
+            dialog.get_by_role("button", name=re.compile(f"^{name}$", re.I)).first,
+            dialog.get_by_text(re.compile(f"^{name}$", re.I), exact=True).first,
+        ]
+
+        for button in candidates:
+            try:
+                if button.is_visible(timeout=1500):
+                    button.click(timeout=5000, force=True)
+                    page.wait_for_timeout(500)
+                    dismissed = True
+                    break
+            except Exception:
+                continue
+
+        if dismissed:
+            break
+
+    return dismissed
 
 
 def open_create_dialog(page):
@@ -259,7 +274,7 @@ def select_reel_aspect_916(page):
             try:
                 crop = page.locator(sel).first
                 if crop.is_visible(timeout=3000):
-                    crop.click()
+                    crop.click(timeout=5000)
                     page.wait_for_timeout(700)
                     opened = True
                     break
@@ -275,7 +290,7 @@ def select_reel_aspect_916(page):
                 "button", name=re.compile("Crop portrait icon", re.I)
             ).first
             option.wait_for(state="visible", timeout=3000)
-            option.click()
+            option.click(timeout=5000)
             page.wait_for_timeout(900)
             return True
         except Exception:
@@ -300,7 +315,7 @@ def select_square_1x1(page):
             try:
                 crop = page.locator(sel).first
                 if crop.is_visible(timeout=3000):
-                    crop.click()
+                    crop.click(timeout=5000)
                     page.wait_for_timeout(700)
                     opened = True
                     break
@@ -316,7 +331,7 @@ def select_square_1x1(page):
                 "button", name=re.compile("Crop square icon", re.I)
             ).first
             option.wait_for(state="visible", timeout=3000)
-            option.click()
+            option.click(timeout=5000)
             page.wait_for_timeout(900)
             return True
         except Exception:
@@ -352,6 +367,18 @@ def run_publish(context, args):
     attach_media(page, args.media)
     page.wait_for_timeout(4000)
     _dbg(page, "after-attach")
+    dismiss_optional_dialog(page)
+
+    reels_notice = page.get_by_text(
+        re.compile("Video posts are now shared as reels", re.I)
+    ).first
+
+    if is_visible(reels_notice, timeout=1500):
+        raise RuntimeError(
+            "Instagram's reels information dialog is blocking the crop screen. "
+            "Close it in a visible browser and try again."
+        )
+
     # Instagram crops by media kind:
     #  - video -> we must EXPLICITLY select 9:16, or the reel is cropped (the crop
     #    screen defaults a 4:5 window over the 9:16 <video>).
